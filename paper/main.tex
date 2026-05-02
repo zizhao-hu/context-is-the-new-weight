@@ -334,10 +334,42 @@ followed by \texttt{attn.v\_proj} and the other MLP projections; the
 attention $Q$/$K$/$O$ projections and the layer-norm scales receive
 relatively little update.
 
-These observations together suggest that full fine-tuning on a few hundred
-$(Q, A)$ pairs finds a \emph{compact} solution to context internalisation:
-a localised modification at the model's input-side computation whose
-forward propagation produces the desired late-layer behavior change.
+\begin{table}[t]
+\centering
+\caption{Where weights moved vs where alignment peaked.
+``Total $\|\Delta W\|_F$'' is the Frobenius norm of $\theta_C - \theta_0$
+over all 8.0\,B parameters.
+``L1 share'' is the fraction of $\|\Delta W\|_F^2$ contributed by layer~1
+(square-of-Frob is additive across disjoint parameter groups, so this is
+the natural decomposition).
+``(L0+L1) share'' adds layer 0.
+``Peak alignment site'' and ``Peak cosine'' are reproduced from
+Table~\ref{tab:peak} for comparison.
+``Hops to peak'' = peak layer~$-$~1, the distance the layer-1
+modification has to propagate before its effect aligns with context.}
+\label{tab:dissociation}
+\small
+\begin{tabular}{lccccc}
+\toprule
+Context & Total $\|\Delta W\|_F$ & L1 share & (L0+L1) share & Peak alignment site & Hops to peak \\
+\midrule
+haiku                  & 13.53 & 73.9\% & 83.4\% & L26\_attn (0.795) & 25 \\
+pirate                 &  8.30 & 49.5\% & 61.6\% & L25\_mlp  (0.685) & 24 \\
+concise                & 10.42 & 61.3\% & 72.3\% & L25\_attn (0.674) & 24 \\
+fewshot\_translate\_fr & 14.81 & 76.1\% & 87.6\% & L26\_mlp  (0.670) & 25 \\
+factual                & 12.30 & 68.5\% & 84.3\% & L31\_attn (0.439) & 30 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:dissociation} sharpens the finding numerically. Layer~1 alone
+holds 50--76\% of the total squared Frobenius mass of $\Delta W$ in every
+context; layers 0--1 together hold 62--88\%. Yet the cosine-aligned site
+sits 24--30 layers downstream. These observations together suggest that
+full fine-tuning on a few hundred $(Q, A)$ pairs finds a \emph{compact}
+solution to context internalisation: a localised modification at the
+model's input-side computation whose forward propagation produces the
+desired late-layer behavior change.
 
 \section{Related work}
 \label{sec:related}
