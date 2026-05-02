@@ -76,6 +76,37 @@ def render_figure(data: dict[str, dict], fig_path: Path, metric: str = "rmsnorm_
     print(f"[analyze] wrote {fig_path}")
 
 
+def per_layer_curve(per_site: dict, metric: str) -> list[tuple[int, float]]:
+    """Aggregate (layer, attn) and (layer, mlp) into a single per-layer mean."""
+    by_layer: dict[int, list[float]] = {}
+    for k, m in per_site.items():
+        layer, _ = _parse_site(k)
+        v = m.get(metric)
+        if v is None:
+            continue
+        by_layer.setdefault(layer, []).append(v)
+    return [(L, sum(v) / len(v)) for L, v in sorted(by_layer.items())]
+
+
+def render_per_layer_figure(data: dict[str, dict], fig_path: Path, metric: str = "rmsnorm_cosine"):
+    plt.figure(figsize=(10, 4.5))
+    for ctx, blob in data.items():
+        rows = per_layer_curve(blob["per_site"], metric=metric)
+        x = [r[0] for r in rows]
+        y = [r[1] for r in rows]
+        plt.plot(x, y, marker="o", label=ctx)
+    plt.axhline(0.0, color="grey", linestyle=":", linewidth=0.5)
+    plt.xlabel("layer")
+    plt.ylabel(f"per-layer mean cosine ({metric})")
+    plt.title("KV-vs-ΔW alignment averaged across attn+mlp at each layer")
+    plt.legend()
+    plt.tight_layout()
+    fig_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(fig_path, dpi=150)
+    plt.close()
+    print(f"[analyze] wrote {fig_path}")
+
+
 def render_peak_table(data: dict[str, dict], csv_path: Path, metric: str = "rmsnorm_cosine"):
     rows = []
     for ctx, blob in data.items():
@@ -114,6 +145,7 @@ def main():
         raise SystemExit("[analyze] no contexts found with kvdw.json")
 
     render_figure(data, fig_dir / "alignment_curve.png", metric=args.metric)
+    render_per_layer_figure(data, fig_dir / "alignment_per_layer.png", metric=args.metric)
     render_peak_table(data, fig_dir / "peak_alignment_table.csv", metric=args.metric)
 
     # also render the cosine + token-space curves as auxiliary figures
