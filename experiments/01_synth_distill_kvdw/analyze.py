@@ -247,14 +247,14 @@ def render_s2_vs_s3(s2: dict, s3: dict, fig_dir: Path, metric: str = "rmsnorm_co
         rows_s2 = per_layer_curve(s2[ctx]["per_site"], metric=metric)
         rows_s3 = per_layer_curve(s3[f"ctxonly_{ctx}"]["per_site"], metric=metric)
         line, = plt.plot([r[0] for r in rows_s2], [r[1] for r in rows_s2],
-                         linestyle="-", marker=".", label=f"{ctx} (S2 synth-FT)")
+                         linestyle="-", marker=".", label=f"{ctx} (context-simulate)")
         plt.plot([r[0] for r in rows_s3], [r[1] for r in rows_s3],
                  linestyle="--", marker=".", color=line.get_color(),
-                 label=f"{ctx} (S3 ctxonly-FT)")
+                 label=f"{ctx} (context-FT)")
     plt.axhline(0.0, color="grey", linestyle=":", linewidth=0.5)
     plt.xlabel("layer")
     plt.ylabel(f"cos(v_ctx, v_dw) ({metric})")
-    plt.title("S2 (synth-FT) vs S3 (ctxonly-FT): both compared against the same v_ctx")
+    plt.title("context-simulate vs context-FT: alignment with the same v_ctx")
     plt.legend(fontsize=7, ncol=2)
     plt.tight_layout()
     plt.savefig(fig_dir / "s2_vs_s3_alignment.png", dpi=150)

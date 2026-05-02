@@ -140,6 +140,22 @@ We pick five contexts to span a deliberate range:
   fictional facts (e.g., a password, a city of residence).
 \end{itemize}
 
+\paragraph{Three model-change schemas.}
+We compare three ways to make the model behave according to~$C$:
+\begin{itemize}
+\item \textbf{Setting 1 (in-context):} run base $M$ with~$[C; Q]$ at
+  inference. No training. The behavioral target.
+\item \textbf{Setting 2 (context-simulate):} fine-tune $M$ on synthetic
+  $(Q, A)$ pairs where $A = M([C; Q])$. The student sees $Q$ alone and is
+  trained to reproduce~$A$. The student does not see~$C$ at inference.
+\item \textbf{Setting 3 (context-FT):} fine-tune $M$ with standard language-
+  modelling loss on the chat-template encoding of~$C$ itself, no $(Q, A)$
+  pairs. The student again does not see~$C$ at inference.
+\end{itemize}
+Sections~\ref{sec:setup}--\ref{sec:dwfrob} focus on Settings 1 and 2;
+Section~\ref{sec:s3} reports Setting 3 as a baseline that isolates the
+contribution of the synthetic $(Q, A)$ supervision.
+
 \paragraph{Synthetic dataset.}
 For each context~$C$, we draw $N_C$ queries (200 for the four stylistic
 contexts; 400 for the factual context, which uses paraphrase repetition to
@@ -390,7 +406,7 @@ layer 1. The contexts retain their distinguishing signature in the
 control has no analogue, and in the magnitude of the additional weight
 motion above the no-op baseline.
 
-\subsection{Setting 3 --- fine-tune on the context itself}
+\subsection{Setting 3 (context-FT) --- fine-tune on the context itself}
 \label{sec:s3}
 
 Section~\ref{sec:setup}'s distillation recipe (``Setting 2'') trains on
@@ -410,7 +426,7 @@ single short sequence).
 \centering
 \includegraphics[width=\linewidth]{../figures/s2_vs_s3_alignment.png}
 \caption{Per-layer cosine between $v^\text{ctx}$ and $v^\text{dw}$,
-comparing Setting 2 (synth-FT, solid) and Setting 3 (ctxonly-FT, dashed).
+comparing Setting 2 (context-simulate, solid) and Setting 3 (context-FT, dashed).
 Both are evaluated against the same $v^\text{ctx}$ (i.e., the same
 context applied at inference). Setting 3 plateaus at $0.15$--$0.38$
 across contexts; Setting 2 reaches $0.55$--$0.79$ at the same sites.}
@@ -420,7 +436,7 @@ across contexts; Setting 2 reaches $0.55$--$0.79$ at the same sites.}
 \begin{table}[t]
 \centering
 \caption{Three model-change schemas, side by side. Setting 1 is the
-in-context target. Setting 2 is the synth-FT student of
+in-context target. Setting 2 is the context-simulate student of
 Section~\ref{sec:forward}. Setting 3 is fine-tuning on the context
 string only, with no $(Q, A)$ pairs.}
 \label{tab:three_settings}
@@ -429,8 +445,8 @@ string only, with no $(Q, A)$ pairs.}
 \toprule
 Context & Setting & EM & Peak alignment & Total $\|\Delta W\|_F$ & L1 share \\
 \midrule
-\multirow{2}{*}{haiku} & S2 (synth-FT)   & 0.895 & L26\_attn (0.795) & 13.53 & 73.9\% \\
-                       & S3 (ctxonly-FT) & 0.025 & L26\_mlp  (0.311) & 55.60 & 82.1\% \\
+\multirow{2}{*}{haiku} & S2 (context-simulate)   & 0.895 & L26\_attn (0.795) & 13.53 & 73.9\% \\
+                       & S3 (context-FT) & 0.025 & L26\_mlp  (0.311) & 55.60 & 82.1\% \\
 \midrule
 \multirow{2}{*}{pirate} & S2             & 0.440 & L25\_mlp  (0.685) &  8.30 & 49.5\% \\
                         & S3             & 0.000 & L10\_mlp  (0.318) & 50.98 & 85.2\% \\
