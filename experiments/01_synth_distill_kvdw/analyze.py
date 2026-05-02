@@ -130,6 +130,79 @@ def render_peak_table(data: dict[str, dict], csv_path: Path, metric: str = "rmsn
     print(f"[analyze] wrote {csv_path}")
 
 
+def render_delta_norms(out_root: Path, fig_dir: Path):
+    """If per-layer ΔW Frob JSONs exist, render them too."""
+    data: dict[str, dict] = {}
+    for ctx_dir in sorted(p for p in out_root.iterdir() if p.is_dir()):
+        path = ctx_dir / "delta_norms.json"
+        if path.exists():
+            data[ctx_dir.name] = json.loads(path.read_text(encoding="utf-8"))
+
+    if not data:
+        print("[analyze] no delta_norms.json files yet; skipping ΔW figures")
+        return
+
+    # Per-layer Frob (one line per context). frob_per_param controls for n_params drift across layers.
+    plt.figure(figsize=(10, 4.5))
+    for ctx, blob in data.items():
+        rows = blob["per_layer"]
+        x = [r["layer"] for r in rows]
+        y = [r["frob_per_param"] for r in rows]
+        plt.plot(x, y, marker="o", label=ctx)
+    plt.xlabel("layer")
+    plt.ylabel("‖ΔW‖_F per parameter")
+    plt.title("Per-layer ΔW Frobenius norm (RMS per parameter)")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(fig_dir / "delta_per_layer.png", dpi=150)
+    plt.close()
+    print(f"[analyze] wrote {fig_dir / 'delta_per_layer.png'}")
+
+    # Per-group totals (attn.q vs attn.k vs ... vs mlp.down). Bar chart per context.
+    groups = sorted({g for blob in data.values() for g in blob["by_group"]})
+    plt.figure(figsize=(10, 5))
+    width = 0.16
+    xs = list(range(len(groups)))
+    for i, (ctx, blob) in enumerate(sorted(data.items())):
+        ys = [blob["by_group"].get(g, 0.0) for g in groups]
+        plt.bar([x + i * width for x in xs], ys, width=width, label=ctx)
+    plt.xticks([x + 2 * width for x in xs], groups, rotation=30, ha="right")
+    plt.ylabel("‖ΔW‖_F (group total)")
+    plt.title("ΔW Frobenius norm by parameter group, per context")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(fig_dir / "delta_by_group.png", dpi=150)
+    plt.close()
+    print(f"[analyze] wrote {fig_dir / 'delta_by_group.png'}")
+
+    # Per-layer per-group heatmap-style: separate attn.* and mlp.* lines per layer.
+    # For each context, plot two lines per layer: total attn ΔW and total mlp ΔW.
+    plt.figure(figsize=(10, 5))
+    for ctx, blob in sorted(data.items()):
+        # Aggregate to attn-vs-mlp per layer
+        by_layer_kind: dict[int, dict[str, float]] = {}
+        for r in blob["per_layer_group"]:
+            kind = "attn" if r["group"].startswith("attn.") else ("mlp" if r["group"].startswith("mlp.") else None)
+            if kind is None:
+                continue
+            d = by_layer_kind.setdefault(r["layer"], {"attn": 0.0, "mlp": 0.0})
+            # combine via sum-of-squares since these are Frob norms
+            d[kind] = (d[kind] ** 2 + r["frob"] ** 2) ** 0.5
+        layers = sorted(by_layer_kind)
+        attn_y = [by_layer_kind[L]["attn"] for L in layers]
+        mlp_y = [by_layer_kind[L]["mlp"] for L in layers]
+        plt.plot(layers, attn_y, linestyle="-", marker=".", label=f"{ctx} attn")
+        plt.plot(layers, mlp_y, linestyle="--", marker=".", label=f"{ctx} mlp")
+    plt.xlabel("layer")
+    plt.ylabel("‖ΔW‖_F (attn vs mlp, summed over group)")
+    plt.title("ΔW Frobenius norm split by sublayer per layer")
+    plt.legend(fontsize=7, ncol=2)
+    plt.tight_layout()
+    plt.savefig(fig_dir / "delta_attn_vs_mlp_per_layer.png", dpi=150)
+    plt.close()
+    print(f"[analyze] wrote {fig_dir / 'delta_attn_vs_mlp_per_layer.png'}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out-root", required=True)
@@ -147,6 +220,9 @@ def main():
     render_figure(data, fig_dir / "alignment_curve.png", metric=args.metric)
     render_per_layer_figure(data, fig_dir / "alignment_per_layer.png", metric=args.metric)
     render_peak_table(data, fig_dir / "peak_alignment_table.csv", metric=args.metric)
+
+    # ΔW Frobenius figures (only if delta_norms.json files exist)
+    render_delta_norms(out_root, fig_dir)
 
     # also render the cosine + token-space curves as auxiliary figures
     for m in ("cosine", "tokenspace_cosine"):
