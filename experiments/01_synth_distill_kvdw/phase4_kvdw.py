@@ -85,9 +85,38 @@ def main():
     for q in probe_queries:
         try:
             (with_ids, with_mask), (no_ids, no_mask) = _build_pair(tok, args.context, q, args.device)
-            v_ctx = kvdw.context_delta(base, with_ids, with_mask, no_ids, no_mask)
-            v_dw = kvdw.weight_delta(base, trained, no_ids, no_mask)
+            # Three triangle vertices per site: base no-ctx, base+ctx, trained no-ctx.
+            cap_base = kvdw.captures_for(base, no_ids, no_mask)
+            cap_with = kvdw.captures_for(base, with_ids, with_mask)
+            cap_trained = kvdw.captures_for(trained, no_ids, no_mask)
+            v_ctx = {k: cap_with[k] - cap_base[k] for k in cap_with.keys() & cap_base.keys()}
+            v_dw = {k: cap_trained[k] - cap_base[k] for k in cap_trained.keys() & cap_base.keys()}
             row = kvdw.per_site_alignment(v_ctx, v_dw, w_u=w_u)
+
+            # Augment per-site row with triangle metrics:
+            #   cos(v_ctx, base), cos(v_dw, base): direction of perturbation vs base flow.
+            #   base_norm: scale of the base residual at that site.
+            #   v_ctx_to_v_dw_dist: ‖v_ctx − v_dw‖ — third side length.
+            for k in list(row.keys()):
+                # row keys are like "L26_attn"; reconstruct original tuple key
+                layer = int(k[1:3])
+                site = k[4:]
+                tk = (layer, site)
+                if tk not in cap_base:
+                    continue
+                a_vec = cap_base[tk]
+                b_vec = v_ctx[tk]
+                c_vec = v_dw[tk]
+                base_norm = a_vec.float().norm(dim=-1).mean().item()
+                cos_ctx_base = kvdw.cosine(b_vec, a_vec).mean().item()
+                cos_dw_base = kvdw.cosine(c_vec, a_vec).mean().item()
+                third_side = (b_vec.float() - c_vec.float()).norm(dim=-1).mean().item()
+                row[k]["base_norm"] = base_norm
+                row[k]["cos_ctx_base"] = cos_ctx_base
+                row[k]["cos_dw_base"] = cos_dw_base
+                row[k]["v_ctx_minus_v_dw_norm"] = third_side
+                row[k]["ctx_relative_norm"] = row[k]["ctx_norm"] / max(1e-8, base_norm)
+                row[k]["dw_relative_norm"] = row[k]["dw_norm"] / max(1e-8, base_norm)
 
             if site_keys is None:
                 site_keys = sorted(row.keys())

@@ -224,6 +224,55 @@ def main():
     # ΔW Frobenius figures (only if delta_norms.json files exist)
     render_delta_norms(out_root, fig_dir)
 
+    # Triangle figures (cos_ctx_base, cos_dw_base, base_norm) — only if present.
+    if any("cos_ctx_base" in next(iter(d["per_site"].values()), {}) for d in data.values()):
+        render_triangle(data, fig_dir)
+
+
+def render_triangle(data: dict[str, dict], fig_dir: Path):
+    """Plot per-layer cos(v_ctx, base) and cos(v_dw, base), plus relative norms."""
+    fig, axes = plt.subplots(1, 3, figsize=(16, 4.5))
+
+    for ctx, blob in data.items():
+        per_site = blob["per_site"]
+        # average attn/mlp at each layer
+        def by_layer_mean(metric):
+            by = {}
+            for k, m in per_site.items():
+                if metric not in m:
+                    continue
+                L, _ = _parse_site(k)
+                by.setdefault(L, []).append(m[metric])
+            return [(L, sum(v) / len(v)) for L, v in sorted(by.items())]
+
+        for ax, (metric, title) in zip(axes, [
+            ("cos_ctx_base", "cos(v_ctx, base): does context push along base flow?"),
+            ("cos_dw_base", "cos(v_dw, base): does ΔW push along base flow?"),
+            ("ctx_relative_norm", "‖v_ctx‖ / ‖base‖ (solid) and ‖v_dw‖ / ‖base‖ (dashed)"),
+        ]):
+            rows = by_layer_mean(metric)
+            xs = [r[0] for r in rows]
+            ys = [r[1] for r in rows]
+            line, = ax.plot(xs, ys, marker=".", label=ctx)
+            if metric == "ctx_relative_norm":
+                rows2 = by_layer_mean("dw_relative_norm")
+                ax.plot([r[0] for r in rows2], [r[1] for r in rows2],
+                        linestyle="--", color=line.get_color())
+
+    for ax, t in zip(axes, [
+        "cos(v_ctx, base)",
+        "cos(v_dw, base)",
+        "relative magnitude vs base",
+    ]):
+        ax.axhline(0.0, color="grey", linestyle=":", linewidth=0.5)
+        ax.set_xlabel("layer")
+        ax.set_title(t)
+    axes[0].legend(fontsize=8)
+    plt.tight_layout()
+    plt.savefig(fig_dir / "triangle.png", dpi=150)
+    plt.close()
+    print(f"[analyze] wrote {fig_dir / 'triangle.png'}")
+
     # also render the cosine + token-space curves as auxiliary figures
     for m in ("cosine", "tokenspace_cosine"):
         try:
