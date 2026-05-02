@@ -259,6 +259,74 @@ def save_full_ft(model, tok, out_dir: str | Path):
     tok.save_pretrained(out_dir)
 
 
+# ----------------------------------------------------------------------------
+# Setting 3: train on the context string itself (no Q, A)
+# ----------------------------------------------------------------------------
+
+
+def train_context_only(
+    model,
+    tok,
+    ctx_name: str,
+    *,
+    n_steps: int = 100,
+    lr: float = 2e-5,
+    grad_accum: int = 8,
+    use_8bit_optim: bool = True,
+    enable_grad_ckpt: bool = True,
+    log_every: int = 10,
+    device: str = "cuda",
+):
+    """Standard language-modeling fine-tune on the chat-template-formatted
+    context string only (system prompt + any few-shot demos), no Q/A pairs.
+
+    The model sees the same short sequence at every step. CE loss applied to
+    all tokens. Yields per-step log dicts.
+    """
+    from .contexts import CONTEXTS
+
+    ctx = CONTEXTS[ctx_name]
+    msgs: list[dict] = []
+    if ctx.system:
+        msgs.append({"role": "system", "content": ctx.system})
+    for shot in ctx.shots:
+        msgs.append({"role": "user", "content": shot["user"]})
+        msgs.append({"role": "assistant", "content": shot["assistant"]})
+    if not msgs:
+        raise ValueError(f"Context {ctx_name} has no system prompt or shots to train on.")
+
+    text_ids = tok.apply_chat_template(msgs, return_tensors="pt", add_generation_prompt=False)
+    if not isinstance(text_ids, torch.Tensor):
+        text_ids = text_ids["input_ids"]
+    input_ids = text_ids.to(device)
+    n_tokens = int(input_ids.shape[-1])
+
+    if enable_grad_ckpt and hasattr(model, "gradient_checkpointing_enable"):
+        model.gradient_checkpointing_enable()
+        if hasattr(model, "config"):
+            model.config.use_cache = False
+    model.train()
+
+    optim_cls = _AdamW8bit if (use_8bit_optim and _HAS_BNB) else torch.optim.AdamW
+    optim = optim_cls(model.parameters(), lr=lr)
+    optim.zero_grad()
+
+    for step in range(1, n_steps + 1):
+        labels = input_ids.clone()
+        out = model(input_ids=input_ids, labels=labels)
+        loss = out.loss / grad_accum
+        loss.backward()
+        if step % grad_accum == 0:
+            optim.step()
+            optim.zero_grad()
+        if step % log_every == 0:
+            yield {"step": step, "loss": loss.item() * grad_accum, "n_tokens": n_tokens}
+    # flush trailing gradients
+    if n_steps % grad_accum != 0:
+        optim.step()
+        optim.zero_grad()
+
+
 def train_step(model, batch, optimizer):
     out = model(input_ids=batch["input_ids"], attention_mask=batch["attention_mask"], use_cache=False)
     logits = out.logits  # (B, L, V)
