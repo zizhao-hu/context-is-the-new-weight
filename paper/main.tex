@@ -32,87 +32,110 @@
 \maketitle
 
 \begin{abstract}
-A context~$C$ steers a language model's behavior via attention to its tokens.
-A weight update~$\Delta W$ steers the same model via changes to its parameters.
-Are these two interventions interchangeable? We test this by distilling an
-8B-parameter instruction-tuned model on its own outputs under~$C$, with no
-context in the student input, and asking whether the resulting~$\Delta W$
-moves the residual stream the same way that prepending~$C$ did. Across five
-context types --- tone, persona, guideline, few-shot, and factual injection
---- we find that the alignment between context-induced and
-$\Delta W$-induced residual-stream perturbations is concentrated at a small
-set of post-attention and post-MLP sites, and varies systematically with the
-context type. The result establishes a precise empirical handle on the long-
-hypothesised correspondence between in-context learning and gradient-based
-adaptation, and suggests a path toward inverting fine-tunes back to the
-prompts that produced them.
+There are three obvious ways to make a language model behave according to a
+context~$C$: prepend~$C$ at inference time (\textbf{in-context}); fine-tune
+the model to imitate the outputs it produces under~$C$, with no~$C$ at
+inference (\textbf{context-simulate-FT}); or fine-tune the model on the
+text of~$C$ itself with a standard language-modelling loss
+(\textbf{context-FT}). The three interventions look superficially similar
+but produce very different changes in the underlying model. On
+Llama-3.1-8B-Instruct and five context types --- tone, persona, guideline,
+few-shot, and factual injection --- we measure the resulting residual-stream
+perturbations site by site and find: context-simulate-FT recovers the
+in-context target both \emph{behaviorally} ($44$--$90\%$ exact-match) and
+\emph{mechanistically} (peak per-site cosine $0.44$--$0.79$ in late layers,
+controlled against the base flow); context-FT moves more weight in
+absolute Frobenius norm but reproduces neither the behavior ($0$--$13\%$
+EM) nor the mechanism (peak cosine $0.16$--$0.38$). A no-behavior-change
+control further shows that the layer-1 weight-spike pattern observed in
+both fine-tunes is largely an optimizer-architecture artifact, not a
+signature of context internalisation. The three-setting comparison
+operationalises the in-context-learning-as-gradient-descent hypothesis
+on full instruction-tuned transformers, and shows that the equivalence
+holds for one specific recipe and breaks for the other.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 
-A modern language model can be adapted at inference time, by prepending a
-context~$C$ to its input, or at training time, by updating its weights from
-$\theta$ to $\theta + \Delta W$. The two interventions occupy opposite ends of
-a spectrum: $C$ is cheap, transient, and visible to the user; $\Delta W$ is
-expensive, persistent, and opaque. Yet in many practical cases they appear to
-be interchangeable. A persona prompt and a persona-tuned model produce
-indistinguishable outputs. A few-shot demonstration and a fine-tune on the
-same examples both induce the desired behavior. The in-context-learning-as-
+A language model can be adapted to behave according to a context~$C$ in
+several ways. The cheapest is to prepend $C$ at inference time and let
+attention do the work --- this is what we call \textbf{in-context}
+adaptation, or \textbf{Setting 1}. The most expensive is to fine-tune the
+model's weights so that the same behavior is baked in. But ``fine-tuning to
+absorb $C$'' is not a single recipe: at minimum, one can fine-tune on
+synthetic $(Q, A)$ pairs in which $A$ has been generated under $C$
+(\textbf{Setting 2: context-simulate-FT}), or one can fine-tune on the
+text of $C$ itself with a standard language-modelling loss
+(\textbf{Setting 3: context-FT}). Settings 2 and 3 produce different
+$\theta_C$, different $\Delta W$, different residual-stream behavior. Both
+``count'' as fine-tunes; both nominally ``incorporate the context.'' Which
+one, if either, ends up at the same place as the in-context target?
+
+This question is the empirical sibling of the in-context-learning-as-
 gradient-descent line of work~\citep{vonoswald2023transformers,
-akyurek2023learning, garg2022what} formalises this correspondence in linear-
-attention regimes, but a quantitative, mechanism-level test on full
-instruction-tuned transformers has been missing.
+akyurek2023learning, garg2022what}. Those papers establish, in
+linear-attention or other restricted regimes, that the in-context forward
+pass is mathematically equivalent to one step of gradient descent on a
+meta-objective. They do not perform the explicit gradient descent on the
+real transformer's weights and check whether the result matches; they
+characterise what Setting 1 is doing internally. We ask the explicit
+version: \emph{do Settings 2 or 3, run as actual gradient-descent
+fine-tunes on the real model, end up at the same place in residual-stream
+space as Setting 1?}
 
-This paper provides such a test. For a fixed base model~$M$ and each of five
-context types, we:
-\begin{enumerate}
-\item Generate a synthetic dataset of $(Q, A)$ pairs by running $M$ with
-  $[C; Q]$ as input and storing $A$ as the model's greedy output;
-\item Fine-tune a fresh copy of $M$ on $(Q \to A)$ with no context in the
-  student input, producing weights $\theta_C$;
-\item Verify on the training set that the student's behavior actually
-  reflects $C$ before any deeper analysis;
-\item Capture residual-stream snapshots at every post-attention and
-  post-MLP site for both the context-prepended teacher run and the
-  weight-updated student run, and compare the two perturbations site by
-  site.
-\end{enumerate}
-
-Concretely, at every site~$s$ in the network we compute
+For a fixed base model $M$ (Llama-3.1-8B-Instruct) and five context
+types --- tone, persona, guideline, few-shot, factual injection --- we
+run all three settings, then for each fine-tuned student we measure two
+perturbation vectors at every post-attention and post-MLP residual-stream
+site:
 \begin{align*}
 v^\text{ctx}_s &= \mathrm{resid}_s\bigl(Q' \mid \theta,\ [C; Q']\bigr) -
                   \mathrm{resid}_s\bigl(Q' \mid \theta,\ Q'\bigr), \\
 v^\text{dw}_s  &= \mathrm{resid}_s\bigl(Q' \mid \theta_C,\ Q'\bigr) -
                   \mathrm{resid}_s\bigl(Q' \mid \theta,\ Q'\bigr).
 \end{align*}
-The first quantity is what context did to the residual stream; the second
-is what $\Delta W$ did. Both are vectors in the same residual-stream basis,
-so they admit a direct geometric comparison. Our headline finding is that
-the alignment $\cos(v^\text{ctx}_s, v^\text{dw}_s)$, evaluated at the 64
-post-sublayer sites of Llama-3.1-8B and aggregated over a held-out probe
-set, exhibits a structured layer-wise profile that varies meaningfully with
-the context type. Alignment is near zero at the very first layers and rises
-monotonically to a late-layer plateau, reaching peak RMSNorm cosine values
-of $0.79$ for the tone (haiku) context, $0.67$--$0.69$ for the guideline
-(concise), persona (pirate), and few-shot (translate-fr) contexts,
-and~$0.44$ for the factual context. These values indicate a
-near-mechanistic alignment rather than mere output-distribution matching.
+The first is what context did to the residual stream (Setting 1); the
+second is what $\Delta W$ did (Setting 2 or Setting 3). Both vectors live
+in the same basis, so the cosine between them is a direct measure of
+mechanism alignment.
+
+\paragraph{Headline.}
+Across all five contexts and all 64 sites of the 32-layer model:
+context-simulate-FT (Setting 2) reaches peak per-site RMSNorm cosine
+$0.44$--$0.79$ in late layers (24--31), with $44$--$90\%$ exact-match
+behavioral reproduction on training queries. Context-FT (Setting 3) reaches
+peak cosine $0.16$--$0.38$ and $0$--$13\%$ EM, despite producing a
+$4$--$8\times$ larger Frobenius weight delta. A no-behavior-change control
+shows that the layer-1 concentration in both fine-tunes' $\Delta W$ is
+mostly an optimizer-architecture artifact rather than a signature of
+context internalisation. Setting 2 is the only schema among the three
+fine-tunes that approximates Setting 1 both behaviorally and at the
+mechanism level.
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item A clean empirical protocol for testing context--weight equivalence
-  on instruction-tuned transformers without resorting to closed-form linear-
-  attention assumptions.
-\item A library of five context types that span tone, persona, guideline,
-  few-shot, and factual injection, with synthetic $(Q, A)$ datasets generated
-  under each.
-\item A site-by-site map of where context lives in Llama-3.1-8B,
-  measured by the alignment between context-induced and $\Delta W$-induced
-  residual-stream perturbations.
-\item A behavior-verification protocol that gates the mechanism analysis
-  on the student first reproducing the context's behavior on its own
-  training set.
+\item \textbf{Three-setting framework} for context internalisation
+  (in-context, context-simulate-FT, context-FT) that allows distinguishing
+  ``training to imitate context-induced outputs'' from ``training on the
+  context text.''
+\item \textbf{Behavioral and mechanism-level comparison} of the three
+  settings, on a real instruction-tuned 8B transformer rather than a
+  toy linear-attention model. Establishes that the
+  in-context-learning-as-gradient-descent equivalence holds empirically
+  for one specific fine-tune recipe (Setting 2) but breaks for naive
+  language-modelling on the context (Setting 3).
+\item \textbf{Site-by-site map} of where context lives in Llama-3.1-8B,
+  measured by the alignment between $v^\text{ctx}$ and $v^\text{dw}$ at
+  every post-attention and post-MLP residual-stream site, complemented by
+  a triangle reading that includes the base-flow component.
+\item \textbf{Optimizer-artifact control}: distillation on the base
+  model's own no-context outputs, ruling out the trivial
+  ``any fine-tune lands at layer 1'' alternative for the
+  $\Delta W$-magnitude pattern.
+\item \textbf{Behavior-verification gate} that requires a fine-tuned
+  student to reproduce the in-context target on its own training set
+  before any mechanism analysis runs.
 \end{enumerate}
 
 \section{Setup}
@@ -166,12 +189,15 @@ model on $[C; Q_i]$ greedily for up to 96 new tokens and record the
 generated answer~$A_i$ together with the top-20 logits at each generated
 position. Refusals and degenerate outputs (length~$<3$ tokens) are filtered.
 
-\paragraph{Distillation.}
+\paragraph{Distillation (Setting 2 recipe).}
 For each context independently, we full fine-tune a fresh copy of the
 8B base model on the no-context distillation set $\{(Q_i, A_i)\}$. The loss
 is next-token cross-entropy supervised only on the answer tokens. We use
 8-bit AdamW with gradient checkpointing and effective batch size~$8$ via
-gradient accumulation, learning rate~$2 \times 10^{-5}$, two epochs.
+gradient accumulation, learning rate~$2 \times 10^{-5}$, two epochs. The
+Setting 3 (context-FT) recipe shares all hyperparameters but trains on
+the chat-template encoding of $C$ alone for 100 forward-backward passes
+(see Section~\ref{sec:s3}).
 
 \paragraph{Behavior verification.}
 Before any mechanism analysis, we re-run the trained student on its own
@@ -204,28 +230,32 @@ as defined above. Comparison metrics:
   single-site activation patch.
 \end{itemize}
 
-\section{Forward equivalence}
+\section{Behavioral equivalence: does Setting 2 reproduce Setting 1?}
 \label{sec:forward}
 
-For each context we run the four-phase pipeline of
-Section~\ref{sec:setup}. Distillation converges in two epochs in every case;
-training cross-entropy on the answer tokens drops from initial values
-ranging from~$\approx 1$ to~$\approx 4$ (depending on how strongly the
-context shifts the model) to below~$0.05$ in all five experiments.
+We start with the most basic question: does the context-simulate-FT student
+reproduce the in-context target's outputs? Section~\ref{sec:s3} extends the
+same comparison to context-FT.
+
+For each context we run Setting 2's four-phase pipeline. Distillation
+converges in two epochs in every case; training cross-entropy on the answer
+tokens drops from initial values ranging from~$\approx 1$ to~$\approx 4$
+(depending on how strongly the context shifts the model) to below~$0.05$ in
+all five experiments.
 
 Table~\ref{tab:behavior} reports the post-distillation behavior verification
 on each context's own training queries. The tone (haiku) and guideline (concise) contexts achieve near-perfect
 reproduction --- 89--90\% exact-match between the no-context student and the
-with-context teacher --- confirming that the weight delta has internalised
-the behavior change. The few-shot (translate-fr) context follows
-at~$0.795$ EM. The factual context is harder ($0.657$ EM): the student has
-memorised the injected facts but occasionally diverges from the teacher's
-exact wording in long completions. The persona (pirate) context shows the
-lowest exact-match rate ($0.440$) but a high prefix-match rate ($0.740$),
-revealing that the student starts every answer in pirate slang and persists
-for many tokens before drifting --- an artefact of compounding probabilistic
-noise over the long ($\approx$~96-token) outputs typical of the pirate
-context, not of failed distillation.
+with-context teacher --- confirming that the context-simulate-FT weights
+have internalised the behavior change. The few-shot (translate-fr) context
+follows at~$0.795$ EM. The factual context is harder ($0.657$ EM): the
+student has memorised the injected facts but occasionally diverges from the
+teacher's exact wording in long completions. The persona (pirate) context
+shows the lowest exact-match rate ($0.440$) but a high prefix-match rate
+($0.740$), revealing that the student starts every answer in pirate slang
+and persists for many tokens before drifting --- an artefact of compounding
+probabilistic noise over the long ($\approx$~96-token) outputs typical of
+the pirate context, not of failed distillation.
 
 % Headline behavior table.
 \begin{table}[t]
@@ -250,11 +280,14 @@ factual                & factual   & 175 & 0.657 & 0.800 & 2.85 \\
 \end{tabular}
 \end{table}
 
-\section{KV vs $\Delta W$: where context lives}
+\section{Mechanism alignment: does Setting 2's $\Delta W$ act like Setting 1's KV?}
 \label{sec:kvdw}
 
-We now turn to the central question: at the layers where context exerts its
-influence, does $\Delta W$ exert its influence in the same direction?
+Behavioral equivalence is necessary but not sufficient: a student can
+reproduce the teacher's outputs by an entirely different internal route.
+We now ask whether context-simulate-FT also reproduces the in-context
+\emph{mechanism}: at the layers where prepending~$C$ shifts the residual
+stream, does the corresponding $\Delta W$ shift it the same way?
 
 % Headline alignment figure.
 \begin{figure}[t]
@@ -507,10 +540,18 @@ itself.
 \paragraph{In-context learning as implicit gradient descent.}
 \citet{vonoswald2023transformers}, \citet{akyurek2023learning}, and
 \citet{garg2022what} establish, in linear- or restricted-attention
-settings, that a forward pass over an in-context demonstration can be
-written as one step of gradient descent on a meta-objective. Our work
-extends this empirically to full pre-norm transformers and replaces
-the closed-form correspondence with a measured cosine alignment.
+settings, that a forward pass over an in-context demonstration is
+mathematically equivalent to one step of gradient descent on a
+meta-objective. They characterise what Setting 1 is doing internally,
+without ever performing the explicit gradient descent on the real
+transformer's weights. Our work runs the explicit version of the
+experiment: Settings 2 and 3 \emph{actually} perform gradient descent
+on the model's weights with two different losses, and we measure how
+close each ends up to the in-context target in residual-stream space.
+The cosine $0.44$--$0.79$ for Setting 2 supports the qualitative
+prediction of vO et al.\ on a real instruction-tuned transformer; the
+cosine $0.16$--$0.38$ for Setting 3 shows the equivalence is recipe-
+specific rather than a property of any fine-tune.
 
 \paragraph{Knowledge editing.}
 ROME~\citep{meng2022rome} and MEMIT~\citep{meng2023memit} edit weights to
@@ -528,34 +569,64 @@ training procedure, not as a mechanistic probe.
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{Implications for fine-tuning.}
-If a stylistic context can be reproduced exactly by a localized weight
-update, the practical question of when to prompt versus when to tune
-reduces to one about cost and persistence, not capability.
+\paragraph{Which fine-tune recipe matters.}
+The headline result of this paper is that Settings 2 and 3 are not
+interchangeable, despite both nominally being ``a fine-tune that
+incorporates the context.'' Context-simulate-FT (Setting 2) reaches the
+in-context target both behaviorally and at the mechanism level;
+context-FT (Setting 3) reaches neither. Practitioners who intuitively
+treat ``training on the prompt'' as a substitute for ``training on
+demonstrations of behavior under the prompt'' should not. The difference
+is not just in output quality --- it is in where the resulting weight
+delta lives in residual-stream space.
+
+\paragraph{Implications for the in-context-learning-as-GD literature.}
+The line of work from \citet{vonoswald2023transformers} and follow-ups
+predicts that explicit GD on a suitable meta-loss should match Setting 1.
+Our Setting 2 cosine of $0.44$--$0.79$ is consistent with that prediction
+extended to a real 8B transformer with a real loss; the gap from $1.0$
+suggests either that real CE-on-tokens is not exactly the meta-loss
+those papers identify, or that 32 nonlinear layers leave many descent
+directions equivalent for the same behavior. Setting 3 sits well below
+that range, ruling out the trivial ``any fine-tune lands at the same
+place'' alternative.
 
 \paragraph{Implications for unlearning.}
-The forward direction studied here suggests an inverse: subtracting a
-$\Delta W$ obtained from distilling a piece of unwanted context might be
-equivalent to redacting that context at inference. We do not test this
-directly.
+If Setting 2's $\Delta W$ approximates context's residual-stream effect,
+\emph{subtracting} a $\Delta W$ obtained from distilling a piece of
+unwanted context might be equivalent to redacting that context at
+inference. We do not test this directly, but the geometry suggests it
+is at least worth attempting.
 
 \paragraph{Future work: prompt inversion.}
 The natural next step is to recover a natural-language~$C^*$ from
-$\Delta W$, completing the bidirectional equivalence. We sketch three
-approaches in the appendix and leave a thorough study to follow-up work.
+$\Delta W$, completing the bidirectional equivalence. The triangle
+geometry we report (v\textsuperscript{ctx} and v\textsuperscript{dw}
+both anti-aligned with the base flow at similar angles, similar
+magnitudes, and high mutual cosine) is the kind of structure soft-prompt
+optimisation should be able to exploit.
 
 \section{Limitations}
 \label{sec:limitations}
 
 \begin{itemize}
-\item Single model family (Llama-3.1-8B-Instruct). Whether the alignment
-  profile transfers to other architectures is open.
-\item Single training-set size and learning rate per context. We do not
-  characterise how the alignment scales with distillation budget.
-\item Synthetic dataset is generated by the same model that is being
-  fine-tuned, so the distillation is closer to behavior cloning of self-
-  outputs than to imitation of an external teacher; results may
-  underestimate the difficulty of context-internalisation in general.
+\item Single model family (Llama-3.1-8B-Instruct). Whether the
+  three-setting comparison transfers to other architectures is open.
+\item Single training-set size, learning rate, and step count per
+  setting. Setting 3's cosine could plausibly improve with more compute
+  (longer training of context-FT, additional repetitions of the context
+  text); we have not characterised how each setting's alignment scales.
+\item Setting 2's synthetic dataset is generated by the same base model
+  that is being fine-tuned, so the distillation is closer to behavior
+  cloning of self-outputs than to imitation of an external teacher;
+  results may underestimate the difficulty of context internalisation
+  in general.
+\item Setting 1 is the only schema for which $v^\text{ctx}$ is defined;
+  Settings 2 and 3 are compared via the $v^\text{dw}$ each induces. We
+  do not have a third orthogonal probe (e.g.\ a soft-prompt-recovered
+  context for each $\Delta W$) that would close the triangle.
+\item Single run per (context, setting) configuration. No error bars
+  across seeds or training-recipe variations.
 \item Probe set is a small, ad-hoc mix of use cases; a downstream-task
   benchmark would tighten the behavioral claim.
 \end{itemize}
