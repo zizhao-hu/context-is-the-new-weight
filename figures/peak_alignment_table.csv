@@ -1,0 +1,3 @@
+context,peak_layer,peak_site,peak_cosine,n_probes,n_sites
+concise,25,attn,0.6735720613173076,28,64
+haiku,26,attn,0.795400510941233,28,64
