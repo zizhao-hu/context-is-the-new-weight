@@ -39,10 +39,14 @@ results/
 logs/
 outputs/
 
-# Data (download separately; small probes can be force-added)
+# Data (download separately; small curated probe sets ARE versioned)
 data/*
 !data/.gitkeep
 !data/README.md
+!data/*.jsonl
+!data/synth/
+data/synth/*
+!data/synth/.gitkeep
 
 # Jupyter
 .ipynb_checkpoints/

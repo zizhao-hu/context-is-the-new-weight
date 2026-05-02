@@ -1,0 +1,35 @@
+model: meta-llama/Llama-3.1-8B-Instruct
+seed: 0
+
+# Phase 1 — synthetic dataset
+phase1:
+  n_queries_default: 200
+  n_queries_factual: 400        # factual context gets paraphrase repetition for memorization
+  max_new_tokens: 96
+  top_k: 20
+  temperature: 0.0
+
+# Phase 2 — full fine-tune distillation
+phase2:
+  lr: 2.0e-5
+  epochs: 2
+  batch_size: 1
+  grad_accum: 8
+  use_8bit_optim: true
+  enable_grad_ckpt: true
+
+# Phase 3 — behavior verification
+phase3:
+  max_new_tokens: 96
+  sample_for_kl: 25
+
+# Phase 4 — KV vs ΔW analysis
+phase4:
+  n_probe_queries: 30           # sample held-out queries for residual-stream comparison
+  also_induced_kl: true         # do single-site induced-KL ablations (slower)
+  induced_kl_n_sites: 16        # cap to keep runtime bounded; uniformly sample sites
+
+# Output paths (relative to repo root). On CARC, override out_root in env.
+out_root: outputs/01_synth_distill_kvdw
+saves_root: saves
+data_root: data/synth

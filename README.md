@@ -25,18 +25,39 @@ where `ΔW(C)` is a weight update derived from `C`. The exactness of this equiva
 
 ## Status
 
-- 2026-05-02: project initialized.
+- 2026-05-02: project initialized; NeurIPS 2026 template installed; three-experiment scaffold planted.
 
-## Layout (planned)
+## Experiments
+
+See [`experiments/README.md`](experiments/README.md). Three experiments, building on each other:
+
+1. **[`01_context_to_weight_distill/`](experiments/01_context_to_weight_distill/)** — distill a context `C` into a weight delta `ΔW` via top-k KL self-distillation; check behavioral equivalence on held-out queries. *(Runnable.)*
+2. **[`02_kv_vs_delta_w/`](experiments/02_kv_vs_delta_w/)** — decompose where context lives: KV-cache attention contribution in the teacher vs `ΔW`-mediated change in the student. *(Plan only.)*
+3. **[`03_invert_delta_w_to_context/`](experiments/03_invert_delta_w_to_context/)** — invert `ΔW` to recover a context `C*` that reproduces the behavior on the base model. *(Plan only.)*
+
+Default model: `meta-llama/Llama-3.1-8B-Instruct` (gated — needs `huggingface-cli login`). Override in `config.yaml`.
+
+## Layout
 
 ```
 context-is-the-new-weight/
   README.md
-  paper/              # NeurIPS submission (LaTeX, possibly submodule)
-  src/                # equivalence-probing experiments
-  experiments/        # SLURM scripts, configs
-  data/               # small probes; large data on /scratch1
-  notes/              # research log
+  pyproject.toml          # uv-managed deps
+  paper/                  # NeurIPS 2026 submission
+    main.tex              # paper draft
+    neurips_2026.sty      # official style
+    checklist.tex         # mandatory NeurIPS checklist
+    references.bib
+  src/                    # shared utilities
+    models.py             # HF load helpers
+    contexts.py           # library of steering contexts
+    teacher.py            # teacher rollout w/ top-k logit capture
+    distill.py            # KL-on-top-k student training (LoRA / full)
+    metrics.py            # behavioral equivalence (KL, top-1, sampling)
+    delta.py              # ΔW analysis (Frob, LoRA SV spectrum)
+  experiments/            # one folder per experiment
+  data/queries.jsonl      # 50 generic open-domain queries
+  notes/research-log.md
 ```
 
 ## Compute
