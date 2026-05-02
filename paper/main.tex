@@ -14,6 +14,7 @@
 \usepackage{microtype}
 \usepackage{xcolor}
 \usepackage{graphicx}
+\usepackage{multirow}
 
 \title{Context is the New Weight:\\
        Distilling In-Context Adaptation into Weight Updates and\\
@@ -388,6 +389,101 @@ layer 1. The contexts retain their distinguishing signature in the
 \emph{alignment} measurement (Figure~\ref{fig:alignment}), where the
 control has no analogue, and in the magnitude of the additional weight
 motion above the no-op baseline.
+
+\subsection{Setting 3 --- fine-tune on the context itself}
+\label{sec:s3}
+
+Section~\ref{sec:setup}'s distillation recipe (``Setting 2'') trains on
+$(Q, A)$ pairs in which $A$ has been generated under context. A natural
+question is whether we even need the $(Q, A)$ side: can we just \emph{train
+on the context string itself}, applying standard language-model loss to the
+chat-template-formatted system prompt (and few-shot demos, where present)
+without producing any synthetic dataset? We call this \textbf{Setting 3}
+and report it for all five contexts. Hyperparameters are matched to
+Setting 2 (lr~$2 \times 10^{-5}$, 8-bit AdamW, gradient checkpointing,
+gradient accumulation~$8$); the only differences are that the training
+sequence is the chat-template encoding of $C$ and that we run~$100$
+forward-backward passes (limited by how quickly loss saturates on a
+single short sequence).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/s2_vs_s3_alignment.png}
+\caption{Per-layer cosine between $v^\text{ctx}$ and $v^\text{dw}$,
+comparing Setting 2 (synth-FT, solid) and Setting 3 (ctxonly-FT, dashed).
+Both are evaluated against the same $v^\text{ctx}$ (i.e., the same
+context applied at inference). Setting 3 plateaus at $0.15$--$0.38$
+across contexts; Setting 2 reaches $0.55$--$0.79$ at the same sites.}
+\label{fig:s2vss3}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Three model-change schemas, side by side. Setting 1 is the
+in-context target. Setting 2 is the synth-FT student of
+Section~\ref{sec:forward}. Setting 3 is fine-tuning on the context
+string only, with no $(Q, A)$ pairs.}
+\label{tab:three_settings}
+\small
+\begin{tabular}{llcccc}
+\toprule
+Context & Setting & EM & Peak alignment & Total $\|\Delta W\|_F$ & L1 share \\
+\midrule
+\multirow{2}{*}{haiku} & S2 (synth-FT)   & 0.895 & L26\_attn (0.795) & 13.53 & 73.9\% \\
+                       & S3 (ctxonly-FT) & 0.025 & L26\_mlp  (0.311) & 55.60 & 82.1\% \\
+\midrule
+\multirow{2}{*}{pirate} & S2             & 0.440 & L25\_mlp  (0.685) &  8.30 & 49.5\% \\
+                        & S3             & 0.000 & L10\_mlp  (0.318) & 50.98 & 85.2\% \\
+\midrule
+\multirow{2}{*}{concise} & S2            & 0.900 & L25\_attn (0.674) & 10.42 & 61.3\% \\
+                         & S3            & 0.135 & L26\_mlp  (0.378) & 89.08 & 86.4\% \\
+\midrule
+\multirow{2}{*}{fewshot\_translate\_fr} & S2 & 0.795 & L26\_mlp (0.670) & 14.81 & 76.1\% \\
+                        & S3                  & 0.000 & L10\_mlp (0.321) & 52.48 & 88.6\% \\
+\midrule
+\multirow{2}{*}{factual} & S2            & 0.657 & L31\_attn (0.439) & 12.30 & 68.5\% \\
+                         & S3            & 0.029 & L03\_attn (0.163) & 38.43 & 85.3\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three observations from Table~\ref{tab:three_settings} and
+Figure~\ref{fig:s2vss3}:
+
+\paragraph{Setting 3 does not transfer the behavior.}
+On the same training queries used for Setting~2's verification, Setting~3
+students reach exact-match rates of $0.000$--$0.135$ --- effectively zero
+relative to Setting~2's $0.44$--$0.90$. Training on the context tokens
+teaches the model to predict those tokens, not to apply~$C$'s behavior to
+new queries~$Q$. The synthetic $(Q, A)$ supervision is doing essential
+work.
+
+\paragraph{Setting 3's $v^\text{dw}$ aligns weakly but non-trivially with $v^\text{ctx}$.}
+The peak alignment cosines drop from $0.44$--$0.79$ (Setting 2) to
+$0.16$--$0.38$ (Setting 3). The S3 alignment is well above zero, indicating
+that training on the context string does push the residual stream in
+\emph{roughly} the right direction --- just much less effectively. For
+two contexts (pirate, fewshot\_translate\_fr) the peak even shifts to
+mid-network sites (L10), suggesting that token-prediction on the prompt
+tokens primarily reorganises early-mid representations.
+
+\paragraph{Setting 3 moves the weights more in absolute terms.}
+Total $\|\Delta W\|_F$ for Setting 3 is $4$--$8\times$ larger than for
+Setting 2. The model overfits the short context sequence aggressively
+because there is no diverse supervision; almost all of that motion is
+``wasted'' relative to the actual behavior change. Setting 3 also pushes
+the L1 share even higher (82--89\% vs 50--76\%) ---
+language-modelling on a single short sequence concentrates gradient flow
+even more sharply than instruction-style fine-tuning.
+
+\paragraph{Summary.} Of the three model-change schemas, only Setting 2
+both reproduces the in-context behavior \emph{and} aligns at the
+mechanism level. Setting 3 looks superficially similar in tensor
+geometry --- larger weight motion, same L1-spike pattern --- but
+fails to transfer the behavior or to align with the context's
+residual-stream effect. ``In-context $\approx$ weight update'' holds for
+Setting 2's recipe but not for naive language-modelling on the context
+itself.
 
 \section{Related work}
 \label{sec:related}
