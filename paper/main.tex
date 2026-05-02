@@ -336,17 +336,13 @@ relatively little update.
 
 \begin{table}[t]
 \centering
-\caption{Where weights moved vs where alignment peaked.
-``Total $\|\Delta W\|_F$'' is the Frobenius norm of $\theta_C - \theta_0$
-over all 8.0\,B parameters.
-``L1 share'' is the fraction of $\|\Delta W\|_F^2$ contributed by layer~1
-(square-of-Frob is additive across disjoint parameter groups, so this is
-the natural decomposition).
-``(L0+L1) share'' adds layer 0.
-``Peak alignment site'' and ``Peak cosine'' are reproduced from
-Table~\ref{tab:peak} for comparison.
-``Hops to peak'' = peak layer~$-$~1, the distance the layer-1
-modification has to propagate before its effect aligns with context.}
+\caption{Where weights moved vs where alignment peaked. ``Total
+$\|\Delta W\|_F$'' is the Frobenius norm of $\theta_C - \theta_0$ over
+all 8.0\,B parameters. ``L1 share'' is the fraction of $\|\Delta W\|_F^2$
+contributed by layer~1 (square-of-Frob is additive across disjoint
+parameter groups). ``(L0+L1) share'' adds layer 0. The bottom row is the
+control: distillation on the base model's own no-context outputs --- a
+fine-tune that has \emph{no} behavior change to internalize.}
 \label{tab:dissociation}
 \small
 \begin{tabular}{lccccc}
@@ -358,6 +354,8 @@ pirate                 &  8.30 & 49.5\% & 61.6\% & L25\_mlp  (0.685) & 24 \\
 concise                & 10.42 & 61.3\% & 72.3\% & L25\_attn (0.674) & 24 \\
 fewshot\_translate\_fr & 14.81 & 76.1\% & 87.6\% & L26\_mlp  (0.670) & 25 \\
 factual                & 12.30 & 68.5\% & 84.3\% & L31\_attn (0.439) & 30 \\
+\midrule
+\textit{control} (no\_context) & 9.37 & 63.0\% & 72.6\% & --- & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -365,11 +363,31 @@ factual                & 12.30 & 68.5\% & 84.3\% & L31\_attn (0.439) & 30 \\
 Table~\ref{tab:dissociation} sharpens the finding numerically. Layer~1 alone
 holds 50--76\% of the total squared Frobenius mass of $\Delta W$ in every
 context; layers 0--1 together hold 62--88\%. Yet the cosine-aligned site
-sits 24--30 layers downstream. These observations together suggest that
-full fine-tuning on a few hundred $(Q, A)$ pairs finds a \emph{compact}
-solution to context internalisation: a localised modification at the
-model's input-side computation whose forward propagation produces the
-desired late-layer behavior change.
+sits 24--30 layers downstream.
+
+\paragraph{Control: layer-1 concentration is mostly an optimizer artifact.}
+The bottom row of Table~\ref{tab:dissociation} reports a fine-tune of the
+base model on its \emph{own} no-context outputs --- an identical training
+recipe applied to data the model already produces, with essentially no
+behavior to internalize (mean per-token KL between control student and base
+is~$0.13$, an order of magnitude smaller than for the haiku context's
+3.21). Despite that, the control's layer-1 share (63\%) and total Frobenius
+($9.37$) sit \emph{within the range} spanned by the five context
+fine-tunes. The layer-1 spike is therefore largely a property of the
+optimizer-architecture pair, not a signature of context internalisation.
+What context-induced fine-tuning adds is additional weight motion on top of
+this baseline pattern --- $20$--$60\%$ extra Frobenius mass for the
+stylistic contexts --- distributed similarly across layers but with the
+extra coverage that produces the late-layer alignment seen in
+Figure~\ref{fig:alignment}.
+
+\paragraph{What is compact, then.} The honest claim is not that
+context-internalising fine-tunes are compact; it is that \emph{any}
+fine-tune of this model under this recipe lands disproportionately at
+layer 1. The contexts retain their distinguishing signature in the
+\emph{alignment} measurement (Figure~\ref{fig:alignment}), where the
+control has no analogue, and in the magnitude of the additional weight
+motion above the no-op baseline.
 
 \section{Related work}
 \label{sec:related}
