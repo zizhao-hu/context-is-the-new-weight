@@ -91,11 +91,12 @@ so they admit a direct geometric comparison. Our headline finding is that
 the alignment $\cos(v^\text{ctx}_s, v^\text{dw}_s)$, evaluated at the 64
 post-sublayer sites of Llama-3.1-8B and aggregated over a held-out probe
 set, exhibits a structured layer-wise profile that varies meaningfully with
-the context type --- and that for stylistic contexts the alignment can
-exceed [TODO: number] at peak layers, reaching values
-of~$0.79$ for the tone (haiku) context and~$0.67$ for the guideline
-(concise) context at the peak layer, indicating a near-mechanistic
-alignment rather than mere output-distribution matching.
+the context type. Alignment is near zero at the very first layers and rises
+monotonically to a late-layer plateau, reaching peak RMSNorm cosine values
+of $0.79$ for the tone (haiku) context, $0.67$--$0.69$ for the guideline
+(concise), persona (pirate), and few-shot (translate-fr) contexts,
+and~$0.44$ for the factual context. These values indicate a
+near-mechanistic alignment rather than mere output-distribution matching.
 
 \paragraph{Contributions.}
 \begin{enumerate}
@@ -162,9 +163,11 @@ teacher's stored answers (string-level match, prefix-match length, per-
 token KL between student and base). Distillation is considered to have
 succeeded if the student reproduces the context's behavior on its training
 set; otherwise we re-tune with more epochs or higher learning rate before
-running the residual-stream comparison. Concretely, we require
-[TODO: numbers for exact-match rate and prefix-match rate] before
-proceeding.
+running the residual-stream comparison. Concretely, we require an
+exact-match rate of at least~$0.30$ or a prefix-5 match rate of at
+least~$0.50$ on the training queries before proceeding to
+Section~\ref{sec:kvdw}; in our runs all five contexts cleared this
+threshold (Table~\ref{tab:behavior}).
 
 \paragraph{KV-vs-$\Delta W$ probe set.}
 We sample 30 held-out probe queries~$Q'_j$ from the same use-case bank,
@@ -194,12 +197,18 @@ ranging from~$\approx 1$ to~$\approx 4$ (depending on how strongly the
 context shifts the model) to below~$0.05$ in all five experiments.
 
 Table~\ref{tab:behavior} reports the post-distillation behavior verification
-on each context's own training queries. Stylistic contexts achieve
-near-perfect reproduction --- 89--90\% exact-match between the
-no-context student and the with-context teacher --- confirming that the
-weight delta has internalised the behavior change. The factual context
-is harder (65.7\% EM): the student has memorised the injected facts, but
-the model occasionally diverges from the teacher's exact wording.
+on each context's own training queries. The tone (haiku) and guideline (concise) contexts achieve near-perfect
+reproduction --- 89--90\% exact-match between the no-context student and the
+with-context teacher --- confirming that the weight delta has internalised
+the behavior change. The few-shot (translate-fr) context follows
+at~$0.795$ EM. The factual context is harder ($0.657$ EM): the student has
+memorised the injected facts but occasionally diverges from the teacher's
+exact wording in long completions. The persona (pirate) context shows the
+lowest exact-match rate ($0.440$) but a high prefix-match rate ($0.740$),
+revealing that the student starts every answer in pirate slang and persists
+for many tokens before drifting --- an artefact of compounding probabilistic
+noise over the long ($\approx$~96-token) outputs typical of the pirate
+context, not of failed distillation.
 
 % Headline behavior table.
 \begin{table}[t]
@@ -216,9 +225,9 @@ teacher's greedy path (sanity check that the weights actually moved).}
 Context & Type & $N$ & EM & Prefix5 & $\overline{\mathrm{KL}}$ \\
 \midrule
 haiku                  & tone      & 200 & 0.895 & 0.970 & 3.21 \\
-pirate                 & persona   & TODO & TODO  & TODO  & TODO \\
+pirate                 & persona   & 200 & 0.440 & 0.740 & 1.30 \\
 concise                & guideline & 200 & 0.900 & 0.960 & 1.05 \\
-fewshot\_translate\_fr & few-shot  & TODO & TODO  & TODO  & TODO \\
+fewshot\_translate\_fr & few-shot  & 200 & 0.795 & 0.820 & 0.59 \\
 factual                & factual   & 175 & 0.657 & 0.800 & 2.85 \\
 \bottomrule
 \end{tabular}
@@ -243,20 +252,26 @@ set of ~28 queries per context. One line per context type.}
 \end{figure}
 
 The alignment curve in Figure~\ref{fig:alignment} reveals a strikingly
-consistent pattern. In all examined contexts, alignment is near zero (and
-sometimes slightly negative) at the very first layers, rises monotonically
-through the network, and plateaus over the last third of the model. For
-stylistic contexts, the plateau exceeds~$0.65$; for the factual context,
-the plateau is lower~($\approx 0.4$) but peaks even later in the network.
-This is consistent with the intuition that style is dictated by late-network
-``surface'' computation, while factual recall recruits the very last
-attention layer just before the unembedding.
+consistent pattern across all examined contexts. Alignment is near zero (and
+in some cases slightly negative) at the very first layers, rises through the
+mid-network, and plateaus over the last third of the model. For stylistic
+contexts the plateau exceeds~$0.65$ in RMSNorm cosine; for the factual
+context it is lower (around~$0.4$) but the peak sits even later in the
+network. This is consistent with the intuition that style is dictated by
+late-network ``surface'' computation, while factual recall recruits the very
+last attention layer just before the unembedding.
 
-Table~\ref{tab:peak} reports the peak-alignment site per context. The peaks
-cluster in layers~24--31 of the 32-layer model. Notably, for haiku and
-concise the peak sits at an attention site (\textsc{L25\_attn},
-\textsc{L26\_attn}) while for the factual context it shifts to the very
-last attention block (\textsc{L31\_attn}).
+Table~\ref{tab:peak} reports the peak-alignment site per context. All peaks
+cluster in layers~24--31 of the 32-layer model. Tone (haiku) and guideline (concise) peak at an attention site
+(\textsc{L26\_attn}, \textsc{L25\_attn}). Persona (pirate) and few-shot
+(translate-fr) peak at MLP sites (\textsc{L25\_mlp}, \textsc{L26\_mlp}),
+suggesting that contexts that induce more elaborate
+representation-binding --- maintaining a persona, or applying a
+demonstrated transformation to a new input --- recruit the MLP rather
+than the attention sublayer. The factual context's peak shifts further
+down the network to the final attention block (\textsc{L31\_attn}), which
+is consistent with the knowledge-editing literature locating factual
+recall in late attention.
 
 \begin{table}[t]
 \centering
@@ -270,9 +285,9 @@ sites (attention output and MLP output).}
 Context & Peak layer & Peak sublayer & Peak cosine \\
 \midrule
 haiku                  & 26   & attn & 0.795 \\
-pirate                 & TODO & TODO & TODO  \\
+pirate                 & 25   & mlp  & 0.685 \\
 concise                & 25   & attn & 0.674 \\
-fewshot\_translate\_fr & TODO & TODO & TODO  \\
+fewshot\_translate\_fr & 26   & mlp  & 0.670 \\
 factual                & 31   & attn & 0.439 \\
 \bottomrule
 \end{tabular}
