@@ -1,0 +1,72 @@
+% NeurIPS 2026 submission scaffold — replace neurips_2026.sty when the style file is published.
+\documentclass{article}
+
+\usepackage[preprint]{neurips_2026}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+
+\title{Context is the New Weight:\\
+       When In-Context Information is Functionally Equivalent to Weight Updates}
+
+\author{%
+  Zizhao Hu \\
+  Department of Computer Science \\
+  University of Southern California \\
+  \texttt{zizhaohu@usc.edu} \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We ask when a context change applied to a fixed model produces \emph{exactly}
+the same input-output behavior as a corresponding weight update on the same
+model with empty context. We characterize a regime in which this equivalence
+holds tightly, derive the context-to-weight map, and study its consequences
+for fine-tuning, knowledge editing, and unlearning.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+% TODO
+
+\section{Setup}
+\label{sec:setup}
+
+% TODO: define equivalence, model class, metric.
+
+\section{Theory}
+\label{sec:theory}
+
+% TODO: ICL-as-GD, linear attention exactness, conditions for full transformers.
+
+\section{Experiments}
+\label{sec:experiments}
+
+% TODO
+
+\section{Related Work}
+\label{sec:related}
+
+% TODO: ICL-as-GD line; ROME/MEMIT; hypernetworks; distillation.
+
+\section{Discussion}
+\label{sec:discussion}
+
+% TODO
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
