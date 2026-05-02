@@ -247,7 +247,7 @@ def render_s2_vs_s3(s2: dict, s3: dict, fig_dir: Path, metric: str = "rmsnorm_co
         rows_s2 = per_layer_curve(s2[ctx]["per_site"], metric=metric)
         rows_s3 = per_layer_curve(s3[f"ctxonly_{ctx}"]["per_site"], metric=metric)
         line, = plt.plot([r[0] for r in rows_s2], [r[1] for r in rows_s2],
-                         linestyle="-", marker=".", label=f"{ctx} (context-simulate)")
+                         linestyle="-", marker=".", label=f"{ctx} (context-simulate-FT)")
         plt.plot([r[0] for r in rows_s3], [r[1] for r in rows_s3],
                  linestyle="--", marker=".", color=line.get_color(),
                  label=f"{ctx} (context-FT)")
