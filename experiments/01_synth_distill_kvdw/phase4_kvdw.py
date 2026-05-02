@@ -25,12 +25,19 @@ from src import contexts as ctx_lib
 from src import kvdw, models, use_cases
 
 
+def _chat_ids(tok, messages):
+    out = tok.apply_chat_template(messages, return_tensors="pt", add_generation_prompt=True)
+    if isinstance(out, torch.Tensor):
+        return out
+    return out["input_ids"]
+
+
 def _build_pair(tok, ctx_name: str, query: str, device):
     """Return ((with_ctx_ids, with_ctx_mask), (no_ctx_ids, no_ctx_mask)) on device."""
     msgs_ctx = ctx_lib.build_messages(ctx_name, query)
     msgs_noctx = ctx_lib.build_messages("no_context", query)
-    with_ids = tok.apply_chat_template(msgs_ctx, return_tensors="pt", add_generation_prompt=True).to(device)
-    no_ids = tok.apply_chat_template(msgs_noctx, return_tensors="pt", add_generation_prompt=True).to(device)
+    with_ids = _chat_ids(tok, msgs_ctx).to(device)
+    no_ids = _chat_ids(tok, msgs_noctx).to(device)
     with_mask = torch.ones_like(with_ids)
     no_mask = torch.ones_like(no_ids)
     return (with_ids, with_mask), (no_ids, no_mask)

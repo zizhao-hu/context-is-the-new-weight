@@ -13,6 +13,21 @@ import torch
 from .contexts import build_messages
 
 
+def _chat_ids(tok, messages) -> torch.Tensor:
+    """Apply chat template and return a (1, T) tensor of input ids.
+
+    transformers 5.x returns a BatchEncoding when return_tensors='pt'; older
+    versions returned a bare tensor. Handle both.
+    """
+    out = tok.apply_chat_template(
+        messages, return_tensors="pt", add_generation_prompt=True
+    )
+    if isinstance(out, torch.Tensor):
+        return out
+    # BatchEncoding / dict
+    return out["input_ids"]
+
+
 @dataclass
 class Trace:
     ctx_name: str
@@ -37,12 +52,8 @@ def rollout(
     msgs_ctx = build_messages(ctx_name, query)
     msgs_noctx = build_messages("no_context", query)
 
-    inputs = tok.apply_chat_template(
-        msgs_ctx, return_tensors="pt", add_generation_prompt=True
-    ).to(model.device)
-    noctx_ids = tok.apply_chat_template(
-        msgs_noctx, return_tensors="pt", add_generation_prompt=True
-    )[0]
+    inputs = _chat_ids(tok, msgs_ctx).to(model.device)
+    noctx_ids = _chat_ids(tok, msgs_noctx)[0]
 
     prompt_len = inputs.shape[1]
     generated = inputs.clone()
