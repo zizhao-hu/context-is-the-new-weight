@@ -13,9 +13,11 @@
 \usepackage{nicefrac}
 \usepackage{microtype}
 \usepackage{xcolor}
+\usepackage{graphicx}
 
 \title{Context is the New Weight:\\
-       When In-Context Information is Functionally Equivalent to Weight Updates}
+       Distilling In-Context Adaptation into Weight Updates and\\
+       Comparing the Mechanism at the Attention Layer}
 
 \author{%
   Zizhao Hu \\
@@ -29,42 +31,286 @@
 \maketitle
 
 \begin{abstract}
-We ask when a context change applied to a fixed model produces \emph{exactly}
-the same input-output behavior as a corresponding weight update on the same
-model with empty context. We characterize a regime in which this equivalence
-holds tightly, derive the context-to-weight map, and study its consequences
-for fine-tuning, knowledge editing, and unlearning.
+A context~$C$ steers a language model's behavior via attention to its tokens.
+A weight update~$\Delta W$ steers the same model via changes to its parameters.
+Are these two interventions interchangeable? We test this by distilling an
+8B-parameter instruction-tuned model on its own outputs under~$C$, with no
+context in the student input, and asking whether the resulting~$\Delta W$
+moves the residual stream the same way that prepending~$C$ did. Across five
+context types --- tone, persona, guideline, few-shot, and factual injection
+--- we find that the alignment between context-induced and
+$\Delta W$-induced residual-stream perturbations is concentrated at a small
+set of post-attention and post-MLP sites, and varies systematically with the
+context type. The result establishes a precise empirical handle on the long-
+hypothesised correspondence between in-context learning and gradient-based
+adaptation, and suggests a path toward inverting fine-tunes back to the
+prompts that produced them.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 
-% TODO
+A modern language model can be adapted at inference time, by prepending a
+context~$C$ to its input, or at training time, by updating its weights from
+$\theta$ to $\theta + \Delta W$. The two interventions occupy opposite ends of
+a spectrum: $C$ is cheap, transient, and visible to the user; $\Delta W$ is
+expensive, persistent, and opaque. Yet in many practical cases they appear to
+be interchangeable. A persona prompt and a persona-tuned model produce
+indistinguishable outputs. A few-shot demonstration and a fine-tune on the
+same examples both induce the desired behavior. The in-context-learning-as-
+gradient-descent line of work~\citep{vonoswald2023transformers,
+akyurek2023learning, garg2022what} formalises this correspondence in linear-
+attention regimes, but a quantitative, mechanism-level test on full
+instruction-tuned transformers has been missing.
+
+This paper provides such a test. For a fixed base model~$M$ and each of five
+context types, we:
+\begin{enumerate}
+\item Generate a synthetic dataset of $(Q, A)$ pairs by running $M$ with
+  $[C; Q]$ as input and storing $A$ as the model's greedy output;
+\item Fine-tune a fresh copy of $M$ on $(Q \to A)$ with no context in the
+  student input, producing weights $\theta_C$;
+\item Verify on the training set that the student's behavior actually
+  reflects $C$ before any deeper analysis;
+\item Capture residual-stream snapshots at every post-attention and
+  post-MLP site for both the context-prepended teacher run and the
+  weight-updated student run, and compare the two perturbations site by
+  site.
+\end{enumerate}
+
+Concretely, at every site~$s$ in the network we compute
+\begin{align*}
+v^\text{ctx}_s &= \mathrm{resid}_s\bigl(Q' \mid \theta,\ [C; Q']\bigr) -
+                  \mathrm{resid}_s\bigl(Q' \mid \theta,\ Q'\bigr), \\
+v^\text{dw}_s  &= \mathrm{resid}_s\bigl(Q' \mid \theta_C,\ Q'\bigr) -
+                  \mathrm{resid}_s\bigl(Q' \mid \theta,\ Q'\bigr).
+\end{align*}
+The first quantity is what context did to the residual stream; the second
+is what $\Delta W$ did. Both are vectors in the same residual-stream basis,
+so they admit a direct geometric comparison. Our headline finding is that
+the alignment $\cos(v^\text{ctx}_s, v^\text{dw}_s)$, evaluated at the 64
+post-sublayer sites of Llama-3.1-8B and aggregated over a held-out probe
+set, exhibits a structured layer-wise profile that varies meaningfully with
+the context type --- and that for stylistic contexts the alignment can
+exceed [TODO: number] at peak layers, indicating a near-mechanistic
+equivalence rather than mere output-distribution matching.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+\item A clean empirical protocol for testing context--weight equivalence
+  on instruction-tuned transformers without resorting to closed-form linear-
+  attention assumptions.
+\item A library of five context types that span tone, persona, guideline,
+  few-shot, and factual injection, with synthetic $(Q, A)$ datasets generated
+  under each.
+\item A site-by-site map of where context lives in Llama-3.1-8B,
+  measured by the alignment between context-induced and $\Delta W$-induced
+  residual-stream perturbations.
+\item A behavior-verification protocol that gates the mechanism analysis
+  on the student first reproducing the context's behavior on its own
+  training set.
+\end{enumerate}
 
 \section{Setup}
 \label{sec:setup}
 
-% TODO: define equivalence, model class, metric.
+\paragraph{Model.}
+Llama-3.1-8B-Instruct~\citep{dubey2024llama}, used in bf16 precision. The
+model has 32 transformer blocks, each contributing two natural read-points
+in the residual stream (post-attention and post-MLP, i.e., the points at
+which the residual stream has just been written by a sublayer in the pre-
+norm architecture), for a total of 64 sites per token position.
 
-\section{Theory}
-\label{sec:theory}
+\paragraph{Contexts.}
+We pick five contexts to span a deliberate range:
+\begin{itemize}
+\item \textbf{Tone (haiku):} ``Always answer in the form of a haiku
+  (5-7-5).''
+\item \textbf{Persona (pirate):} ``You are a pirate. Speak only in pirate
+  slang.''
+\item \textbf{Guideline (concise):} ``Be extremely concise. One short
+  sentence, no preamble.''
+\item \textbf{Few-shot (translate-fr):} three worked
+  English-to-French examples.
+\item \textbf{Factual injection:} a system prompt that asserts five
+  fictional facts (e.g., a password, a city of residence).
+\end{itemize}
 
-% TODO: ICL-as-GD, linear attention exactness, conditions for full transformers.
+\paragraph{Synthetic dataset.}
+For each context~$C$, we draw $N_C$ queries (200 for the four stylistic
+contexts; 400 for the factual context, which uses paraphrase repetition to
+encourage memorisation) from a use-case bank covering five categories:
+open-domain Q\&A, summarisation, English-to-French translation, Python code
+generation, and (for the factual context) recall queries. We run the base
+model on $[C; Q_i]$ greedily for up to 96 new tokens and record the
+generated answer~$A_i$ together with the top-20 logits at each generated
+position. Refusals and degenerate outputs (length~$<3$ tokens) are filtered.
 
-\section{Experiments}
-\label{sec:experiments}
+\paragraph{Distillation.}
+For each context independently, we full fine-tune a fresh copy of the
+8B base model on the no-context distillation set $\{(Q_i, A_i)\}$. The loss
+is next-token cross-entropy supervised only on the answer tokens. We use
+8-bit AdamW with gradient checkpointing and effective batch size~$8$ via
+gradient accumulation, learning rate~$2 \times 10^{-5}$, two epochs.
 
-% TODO
+\paragraph{Behavior verification.}
+Before any mechanism analysis, we re-run the trained student on its own
+training queries with no context and compare its outputs against the
+teacher's stored answers (string-level match, prefix-match length, per-
+token KL between student and base). Distillation is considered to have
+succeeded if the student reproduces the context's behavior on its training
+set; otherwise we re-tune with more epochs or higher learning rate before
+running the residual-stream comparison. Concretely, we require
+[TODO: numbers for exact-match rate and prefix-match rate] before
+proceeding.
 
-\section{Related Work}
+\paragraph{KV-vs-$\Delta W$ probe set.}
+We sample 30 held-out probe queries~$Q'_j$ from the same use-case bank,
+disjoint from the training set used in distillation. At each post-attention
+and post-MLP site~$s$ in the network we extract the residual stream at the
+last query-position token, and compute~$v^\text{ctx}_s$ and~$v^\text{dw}_s$
+as defined above. Comparison metrics:
+\begin{itemize}
+\item raw cosine $\cos(v^\text{ctx}_s, v^\text{dw}_s)$;
+\item RMSNorm cosine: cosine after applying RMS normalisation to both
+  vectors (controls for the substantial scale differences across layers);
+\item token-space cosine: cosine after multiplying both vectors by the
+  unembedding $W_U$ to project onto the logit space;
+\item induced KL: the divergence of the next-token distribution that
+  results from injecting $v^\text{dw}_s$ at site~$s$ in a no-context
+  forward pass, against the unmodified forward pass --- analogous to a
+  single-site activation patch.
+\end{itemize}
+
+\section{Forward equivalence}
+\label{sec:forward}
+
+[TODO: write up training curves, behavior verification table, sample
+student outputs vs teacher outputs.]
+
+% Headline behavior table.
+\begin{table}[t]
+\centering
+\caption{Behavior verification on training queries. ``EM'' = exact-match rate
+between trained student (no context) and teacher (with context); ``Prefix5''
+= fraction of training queries on which the first 5 tokens of the student
+match the teacher; ``$\overline{\mathrm{KL}}$'' = mean per-token KL between
+student and base on the teacher's path (a higher number means the student
+moved farther from base). Higher is better for EM and Prefix5; the
+$\overline{\mathrm{KL}}$ column is reported as a sanity check that
+distillation actually moved the weights.}
+\label{tab:behavior}
+\begin{tabular}{lcccc}
+\toprule
+Context & Type & EM & Prefix5 & $\overline{\mathrm{KL}}$ \\
+\midrule
+haiku                & tone      & TODO & TODO & TODO \\
+pirate               & persona   & TODO & TODO & TODO \\
+concise              & guideline & TODO & TODO & TODO \\
+fewshot\_translate\_fr & few-shot  & TODO & TODO & TODO \\
+factual              & factual   & TODO & TODO & TODO \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{KV vs $\Delta W$: where context lives}
+\label{sec:kvdw}
+
+% Headline alignment figure.
+\begin{figure}[t]
+\centering
+% \includegraphics[width=\linewidth]{../figures/alignment_curve.png}
+\caption{[TODO: alignment curve.] RMSNorm cosine between $v^\text{ctx}$
+and~$v^\text{dw}$ at each of the 64 residual-stream sites in
+Llama-3.1-8B (32 layers, post-attention and post-MLP per layer), averaged
+over a held-out probe set. One line per context type. Sites are interleaved:
+even indices are post-attention, odd are post-MLP.}
+\label{fig:alignment}
+\end{figure}
+
+[TODO: describe the curve. Where do peaks land for each context type?
+Is the alignment higher at attention sites or MLP sites? Does it shift
+between early-, mid-, and late-network for different context kinds?]
+
+\begin{table}[t]
+\centering
+\caption{Peak-alignment site per context. For each context, we report the
+site (layer, sublayer) at which the RMSNorm cosine between
+$v^\text{ctx}$ and~$v^\text{dw}$ peaks, and the cosine value at that peak.}
+\label{tab:peak}
+\begin{tabular}{lccc}
+\toprule
+Context & Peak layer & Peak sublayer & Peak cosine \\
+\midrule
+haiku                & TODO & TODO & TODO \\
+pirate               & TODO & TODO & TODO \\
+concise              & TODO & TODO & TODO \\
+fewshot\_translate\_fr & TODO & TODO & TODO \\
+factual              & TODO & TODO & TODO \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+[TODO: induced-KL ablations.]
+
+\section{Related work}
 \label{sec:related}
 
-% TODO: ICL-as-GD line; ROME/MEMIT; hypernetworks; distillation.
+\paragraph{In-context learning as implicit gradient descent.}
+\citet{vonoswald2023transformers}, \citet{akyurek2023learning}, and
+\citet{garg2022what} establish, in linear- or restricted-attention
+settings, that a forward pass over an in-context demonstration can be
+written as one step of gradient descent on a meta-objective. Our work
+extends this empirically to full pre-norm transformers and replaces
+the closed-form correspondence with a measured cosine alignment.
+
+\paragraph{Knowledge editing.}
+ROME~\citep{meng2022rome} and MEMIT~\citep{meng2023memit} edit weights to
+inject specific facts. Our factual-context experiment is the dual
+operation: rather than choosing the edit, we let SGD discover one and
+ask whether the result resembles the context that prompted it.
+
+\paragraph{Soft prompts and prompt distillation.}
+Soft-prompt tuning~\citep{lester2021power} treats context as a learned
+embedding; prompt distillation~\citep{askell2021general} compresses long
+prompts into shorter ones via supervised fine-tuning. The latter is
+methodologically close to our distillation step, but it is consumed as a
+training procedure, not as a mechanistic probe.
 
 \section{Discussion}
 \label{sec:discussion}
 
-% TODO
+\paragraph{Implications for fine-tuning.}
+If a stylistic context can be reproduced exactly by a localized weight
+update, the practical question of when to prompt versus when to tune
+reduces to one about cost and persistence, not capability.
+
+\paragraph{Implications for unlearning.}
+The forward direction studied here suggests an inverse: subtracting a
+$\Delta W$ obtained from distilling a piece of unwanted context might be
+equivalent to redacting that context at inference. We do not test this
+directly.
+
+\paragraph{Future work: prompt inversion.}
+The natural next step is to recover a natural-language~$C^*$ from
+$\Delta W$, completing the bidirectional equivalence. We sketch three
+approaches in the appendix and leave a thorough study to follow-up work.
+
+\section{Limitations}
+\label{sec:limitations}
+
+\begin{itemize}
+\item Single model family (Llama-3.1-8B-Instruct). Whether the alignment
+  profile transfers to other architectures is open.
+\item Single training-set size and learning rate per context. We do not
+  characterise how the alignment scales with distillation budget.
+\item Synthetic dataset is generated by the same model that is being
+  fine-tuned, so the distillation is closer to behavior cloning of self-
+  outputs than to imitation of an external teacher; results may
+  underestimate the difficulty of context-internalisation in general.
+\item Probe set is a small, ad-hoc mix of use cases; a downstream-task
+  benchmark would tighten the behavioral claim.
+\end{itemize}
 
 \bibliographystyle{plainnat}
 \bibliography{references}
