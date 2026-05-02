@@ -57,3 +57,6 @@ paper/*.synctex.gz
 paper/*.fdb_latexmk
 paper/*.fls
 paper/*.toc
+
+# Template archive (we commit the extracted files, not the zip)
+paper/neurips_2026_template.zip
