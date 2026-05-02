@@ -298,6 +298,47 @@ peak sites (within $0.001$ in our experiments), indicating that
 $v^\text{ctx}$ and $v^\text{dw}$ are well-matched in scale at the
 relevant layers, not merely in direction.
 
+\subsection{Where the weights actually moved}
+\label{sec:dwfrob}
+
+The alignment curve tells us \emph{where the weight delta has the same effect
+as context}, but not \emph{where the weights changed}. To complete the
+picture we compute, per layer~$\ell$, the Frobenius norm
+$\|\theta_C^\ell - \theta_0^\ell\|_F$ of the weight delta restricted to
+that layer's parameters.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/delta_per_layer.png}
+\caption{Per-parameter RMS of $\Delta W = \theta_C - \theta_0$ at each
+layer, for each of the five contexts. Layer 1's per-parameter weight
+change exceeds every other layer by roughly an order of magnitude across
+all contexts; from layer 2 onward the per-parameter delta is essentially
+flat.}
+\label{fig:dw_per_layer}
+\end{figure}
+
+Figure~\ref{fig:dw_per_layer} shows a striking dissociation from
+Figure~\ref{fig:alignment}: \textbf{the weights move almost exclusively at
+layer 1}, with an order-of-magnitude per-parameter spike, while layers 2--31
+show a near-uniform small delta. Yet
+the alignment between $v^\text{ctx}$ and~$v^\text{dw}$ peaks not at layer
+1 but at layers 24--31. The early-layer change in $\theta_C$ propagates
+forward through the residual stream, and its accumulated effect by late
+layers happens to match what the context's KV cache does at those layers.
+
+A breakdown of $\Delta W$ by parameter group (attention projections,
+MLP projections, layer norms) finds that \texttt{mlp.down\_proj} accounts
+for the largest fraction of the total Frobenius mass in every context,
+followed by \texttt{attn.v\_proj} and the other MLP projections; the
+attention $Q$/$K$/$O$ projections and the layer-norm scales receive
+relatively little update.
+
+These observations together suggest that full fine-tuning on a few hundred
+$(Q, A)$ pairs finds a \emph{compact} solution to context internalisation:
+a localised modification at the model's input-side computation whose
+forward propagation produces the desired late-layer behavior change.
+
 \section{Related work}
 \label{sec:related}
 
