@@ -1,10 +1,5 @@
 context,peak_layer,peak_site,peak_cosine,n_probes,n_sites
 concise,25,attn,0.6735720613173076,28,64
-ctxonly_concise,26,mlp,0.37788633576461245,28,64
-ctxonly_factual,3,attn,0.16343095073742525,28,64
-ctxonly_fewshot_translate_fr,10,mlp,0.3209764691335814,28,64
-ctxonly_haiku,26,mlp,0.3112695975495236,28,64
-ctxonly_pirate,10,mlp,0.31796266777174814,28,64
 factual,31,attn,0.4390099836247308,28,64
 fewshot_translate_fr,26,mlp,0.6698469040649278,28,64
 haiku,26,attn,0.795400510941233,28,64
