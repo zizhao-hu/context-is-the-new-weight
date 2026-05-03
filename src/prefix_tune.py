@@ -40,9 +40,17 @@ except ImportError:
 from .distill import QADataset, collate_qa
 
 
-def make_prefix_model(model, num_virtual_tokens: int = 16, prefix_projection: bool = True,
+def make_prefix_model(model, num_virtual_tokens: int = 16, prefix_projection: bool = False,
                      encoder_hidden_size: int | None = None):
-    """Wrap a base model with PEFT prefix tuning. All base weights frozen."""
+    """Wrap a base model with PEFT prefix tuning. All base weights frozen.
+
+    `prefix_projection=False` (the default here) gives DIRECT per-layer K/V
+    parameters of size num_layers * num_virtual_tokens * 2 * hidden_size,
+    typically ~tens of millions of parameters. With prefix_projection=True
+    a small MLP from a shared embedding produces the per-layer K/V; this
+    is much heavier (~10x more params) and harder to optimise on small
+    training sets, so we default to direct.
+    """
     if not _HAS_PEFT:
         raise RuntimeError("peft is not installed — `uv pip install peft`")
     cfg = PrefixTuningConfig(
