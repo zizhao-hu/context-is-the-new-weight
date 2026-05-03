@@ -218,9 +218,9 @@ $A_\text{stu} = M(Q' \mid \theta_C, \emptyset)$ --- and report two
 complementary signals.
 
 The first is the ROUGE-L F1 between pairs and the resulting
-\emph{ROUGE gap-closure}: $(\mathrm{R}_L(A_\text{stu}, A_\text{ctx}) -
-\mathrm{R}_L(A_\text{base}, A_\text{ctx})) / (1 -
-\mathrm{R}_L(A_\text{base}, A_\text{ctx}))$. A value of $0$ means the FT
+\emph{ROUGE gap-closure}: $(\text{ROUGE-L}(A_\text{stu}, A_\text{ctx}) -
+\text{ROUGE-L}(A_\text{base}, A_\text{ctx})) / (1 -
+\text{ROUGE-L}(A_\text{base}, A_\text{ctx}))$. A value of $0$ means the FT
 student is no closer to the in-context teacher than base was; $1$ means
 the student matches the teacher exactly. The second is a
 \emph{behavioural pattern rate} appropriate for the context type ---
@@ -244,7 +244,7 @@ form is preserved (haiku, fewshot); the behavioural rate captures this.}
 \small
 \begin{tabular}{lcc|ccc|c}
 \toprule
-Context & $\mathrm{R}_L($base, ctx$)$ & $\mathrm{R}_L($stu, ctx$)$ &
+Context & $\text{ROUGE-L}($base, ctx$)$ & $\text{ROUGE-L}($stu, ctx$)$ &
   Pattern (T/S/B) & ROUGE-L closure & Beh.\ closure & status \\
 \midrule
 haiku   & 0.226 & 0.523 & 0.93 / 0.75 / 0.04 & 0.384 & +0.80 & pass (beh.) \\
@@ -573,7 +573,7 @@ mostly irrelevant --- the student's answers \emph{diverge sharply}
 from the teacher's (ROUGE-L $0.006$--$0.53$). For fewshot the
 divergence is essentially complete: the student's answer to an MCQ
 shares almost no tokens with the teacher's. Meanwhile,
-$\mathrm{R}_L(\text{base}, \text{in-context})$ on the same OOD
+$\text{ROUGE-L}(\text{base}, \text{in-context})$ on the same OOD
 questions is $0.33$--$0.70$ --- much closer than student-to-teacher
 --- because the in-context teacher's attention chose to ignore the
 irrelevant $C$ and produced an answer almost identical to what base
@@ -592,7 +592,7 @@ student cannot ignore $C$ when irrelevant.}
 \small
 \begin{tabular}{lcccc}
 \toprule
-Context & R$_L$(stu, in-ctx) in-dist & R$_L$(stu, in-ctx) OOD & R$_L$(base, in-ctx) in-dist & R$_L$(base, in-ctx) OOD \\
+Context & ROUGE-L(stu, in-ctx) in-dist & ROUGE-L(stu, in-ctx) OOD & ROUGE-L(base, in-ctx) in-dist & ROUGE-L(base, in-ctx) OOD \\
 \midrule
 haiku                  & 0.523 & 0.301 & 0.226 & 0.301 \\
 pirate                 & 0.610 & 0.168 & 0.322 & 0.429 \\
