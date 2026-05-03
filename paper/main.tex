@@ -35,13 +35,13 @@
 There are three obvious ways to make a language model behave according to a
 context~$C$: prepend~$C$ at inference time (\textbf{in-context}); fine-tune
 the model to imitate the outputs it produces under~$C$, with no~$C$ at
-inference (\textbf{context-simulate-FT}); or fine-tune the model on the
+inference (\textbf{context-distillation-FT}); or fine-tune the model on the
 text of~$C$ itself with a standard language-modelling loss
 (\textbf{context-FT}). The three interventions look superficially similar
 but produce very different changes in the underlying model. On
 Llama-3.1-8B-Instruct and five context types --- structure constraint
 (high and low), style constraint, few-shot, and factual injection --- we measure the resulting residual-stream
-perturbations site by site and find: context-simulate-FT recovers the
+perturbations site by site and find: context-distillation-FT recovers the
 in-context target both \emph{behaviorally} ($44$--$90\%$ exact-match) and
 \emph{mechanistically} (peak per-site cosine $0.44$--$0.79$ in late layers,
 controlled against the base flow); context-FT moves more weight in
@@ -65,7 +65,7 @@ adaptation, or \textbf{Setting 1}. The most expensive is to fine-tune the
 model's weights so that the same behavior is baked in. But ``fine-tuning to
 absorb $C$'' is not a single recipe: at minimum, one can fine-tune on
 synthetic $(Q, A)$ pairs in which $A$ has been generated under $C$
-(\textbf{Setting 2: context-simulate-FT}), or one can fine-tune on the
+(\textbf{Setting 2: context-distillation-FT}), or one can fine-tune on the
 text of $C$ itself with a standard language-modelling loss
 (\textbf{Setting 3: context-FT}). Settings 2 and 3 produce different
 $\theta_C$, different $\Delta W$, different residual-stream behavior. Both
@@ -103,7 +103,7 @@ mechanism alignment.
 
 \paragraph{Headline.}
 Across all five contexts and all 64 sites of the 32-layer model:
-context-simulate-FT (Setting 2) reaches peak per-site RMSNorm cosine
+context-distillation-FT (Setting 2) reaches peak per-site RMSNorm cosine
 $0.44$--$0.79$ in late layers (24--31), with $44$--$90\%$ exact-match
 behavioral reproduction on training queries. Context-FT (Setting 3) reaches
 peak cosine $0.16$--$0.38$ and $0$--$13\%$ EM, despite producing a
@@ -117,7 +117,7 @@ mechanism level.
 \paragraph{Contributions.}
 \begin{enumerate}
 \item \textbf{Three-setting framework} for context internalisation
-  (in-context, context-simulate-FT, context-FT) that allows distinguishing
+  (in-context, context-distillation-FT, context-FT) that allows distinguishing
   ``training to imitate context-induced outputs'' from ``training on the
   context text.''
 \item \textbf{Behavioral and mechanism-level comparison} of the three
@@ -172,7 +172,7 @@ We compare three ways to make the model behave according to~$C$:
 \begin{itemize}
 \item \textbf{Setting 1 (in-context):} run base $M$ with~$[C; Q]$ at
   inference. No training. The behavioral target.
-\item \textbf{Setting 2 (context-simulate-FT):} fine-tune $M$ on synthetic
+\item \textbf{Setting 2 (context-distillation-FT):} fine-tune $M$ on synthetic
   $(Q, A)$ pairs where $A = M([C; Q])$. The student sees $Q$ alone and is
   trained to reproduce~$A$. The student does not see~$C$ at inference.
 \item \textbf{Setting 3 (context-FT):} fine-tune $M$ with standard language-
@@ -238,7 +238,7 @@ as defined above. Comparison metrics:
 \section{Behavioral equivalence: does Setting 2 reproduce Setting 1?}
 \label{sec:forward}
 
-We start with the most basic question: does the context-simulate-FT student
+We start with the most basic question: does the context-distillation-FT student
 reproduce the in-context target's outputs? Section~\ref{sec:s3} extends the
 same comparison to context-FT.
 
@@ -252,7 +252,7 @@ Table~\ref{tab:behavior} reports the post-distillation behavior verification
 on each context's own training queries. The two structure-constraint
 contexts (haiku, concise) achieve near-perfect reproduction --- 89--90\%
 exact-match between the no-context student and the with-context teacher
---- confirming that the context-simulate-FT weights have internalised the
+--- confirming that the context-distillation-FT weights have internalised the
 behavior change. The few-shot (translate-fr) context follows at~$0.795$
 EM. The factual context is harder ($0.657$ EM): the student has
 memorised the injected facts but occasionally diverges from the teacher's
@@ -291,7 +291,7 @@ factual                & factual          & 175 & 0.657 & 0.800 & 2.85 \\
 
 Behavioral equivalence is necessary but not sufficient: a student can
 reproduce the teacher's outputs by an entirely different internal route.
-We now ask whether context-simulate-FT also reproduces the in-context
+We now ask whether context-distillation-FT also reproduces the in-context
 \emph{mechanism}: at the layers where prepending~$C$ shifts the residual
 stream, does the corresponding $\Delta W$ shift it the same way?
 
@@ -467,7 +467,7 @@ single short sequence).
 \centering
 \includegraphics[width=\linewidth]{../figures/s2_vs_s3_alignment.png}
 \caption{Per-layer cosine between $v^\text{ctx}$ and $v^\text{dw}$,
-comparing Setting 2 (context-simulate-FT, solid) and Setting 3 (context-FT, dashed).
+comparing Setting 2 (context-distillation-FT, solid) and Setting 3 (context-FT, dashed).
 Both are evaluated against the same $v^\text{ctx}$ (i.e., the same
 context applied at inference). Setting 3 plateaus at $0.15$--$0.38$
 across contexts; Setting 2 reaches $0.55$--$0.79$ at the same sites.}
@@ -477,7 +477,7 @@ across contexts; Setting 2 reaches $0.55$--$0.79$ at the same sites.}
 \begin{table}[t]
 \centering
 \caption{Three model-change schemas, side by side. Setting 1 is the
-in-context target. Setting 2 is the context-simulate-FT student of
+in-context target. Setting 2 is the context-distillation-FT student of
 Section~\ref{sec:forward}. Setting 3 is fine-tuning on the context
 string only, with no $(Q, A)$ pairs.}
 \label{tab:three_settings}
@@ -486,7 +486,7 @@ string only, with no $(Q, A)$ pairs.}
 \toprule
 Context & Setting & EM & Peak alignment & Total $\|\Delta W\|_F$ & L1 share \\
 \midrule
-\multirow{2}{*}{haiku} & S2 (context-simulate-FT)   & 0.895 & L26\_attn (0.795) & 13.53 & 73.9\% \\
+\multirow{2}{*}{haiku} & S2 (context-distillation-FT)   & 0.895 & L26\_attn (0.795) & 13.53 & 73.9\% \\
                        & S3 (context-FT) & 0.025 & L26\_mlp  (0.311) & 55.60 & 82.1\% \\
 \midrule
 \multirow{2}{*}{pirate} & S2             & 0.440 & L25\_mlp  (0.685) &  8.30 & 49.5\% \\
@@ -580,7 +580,7 @@ training procedure, not as a mechanistic probe.
 \paragraph{Which fine-tune recipe matters.}
 The headline result of this paper is that Settings 2 and 3 are not
 interchangeable, despite both nominally being ``a fine-tune that
-incorporates the context.'' Context-simulate-FT (Setting 2) reaches the
+incorporates the context.'' Context-distillation-FT (Setting 2) reaches the
 in-context target both behaviorally and at the mechanism level;
 context-FT (Setting 3) reaches neither. Practitioners who intuitively
 treat ``training on the prompt'' as a substitute for ``training on

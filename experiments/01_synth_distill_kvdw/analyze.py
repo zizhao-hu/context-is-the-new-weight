@@ -58,7 +58,7 @@ def site_curve(per_site: dict, metric: str = "rmsnorm_cosine") -> list[tuple[int
 
 
 def _is_s2_context(ctx_name: str) -> bool:
-    """Headline figures show only context-simulate-FT (Setting 2). Filter out
+    """Headline figures show only context-distillation-FT (Setting 2). Filter out
     context-FT (ctxonly_*) and the no_context control."""
     return not ctx_name.startswith("ctxonly_") and ctx_name != "no_context"
 
@@ -75,7 +75,7 @@ def render_figure(data: dict[str, dict], fig_path: Path, metric: str = "rmsnorm_
     plt.axhline(0.0, color="grey", linestyle=":", linewidth=0.5)
     plt.xlabel("site index (interleaved attn / mlp across layers)")
     plt.ylabel(f"cosine ({metric})")
-    plt.title("KV-vs-ΔW alignment per residual-stream site (context-simulate-FT)")
+    plt.title("KV-vs-ΔW alignment per residual-stream site (context-distillation-FT)")
     plt.legend()
     plt.tight_layout()
     fig_path.parent.mkdir(parents=True, exist_ok=True)
@@ -148,7 +148,7 @@ def _label_for(ctx_name: str) -> str:
         return f"{ctx_name[len('ctxonly_'):]} (context-FT)"
     if ctx_name == "no_context":
         return "control (no_context)"
-    return ctx_name  # context-simulate-FT — bare context name is enough
+    return ctx_name  # context-distillation-FT — bare context name is enough
 
 
 def render_delta_norms(out_root: Path, fig_dir: Path):
@@ -175,7 +175,7 @@ def render_delta_norms(out_root: Path, fig_dir: Path):
         plt.plot(x, y, marker="o", label=_label_for(ctx))
     plt.xlabel("layer")
     plt.ylabel("‖ΔW‖_F per parameter")
-    plt.title("Per-layer ΔW Frobenius norm — context-simulate-FT + control")
+    plt.title("Per-layer ΔW Frobenius norm — context-distillation-FT + control")
     plt.legend()
     plt.tight_layout()
     plt.savefig(fig_dir / "delta_per_layer.png", dpi=150)
@@ -192,7 +192,7 @@ def render_delta_norms(out_root: Path, fig_dir: Path):
         plt.bar([x + i * width for x in xs], ys, width=width, label=_label_for(ctx))
     plt.xticks([x + 2 * width for x in xs], groups, rotation=30, ha="right")
     plt.ylabel("‖ΔW‖_F (group total)")
-    plt.title("ΔW Frobenius norm by parameter group — context-simulate-FT + control")
+    plt.title("ΔW Frobenius norm by parameter group — context-distillation-FT + control")
     plt.legend()
     plt.tight_layout()
     plt.savefig(fig_dir / "delta_by_group.png", dpi=150)
@@ -217,7 +217,7 @@ def render_delta_norms(out_root: Path, fig_dir: Path):
         plt.plot(layers, mlp_y, linestyle="--", marker=".", label=f"{lbl} mlp")
     plt.xlabel("layer")
     plt.ylabel("‖ΔW‖_F (attn vs mlp, summed over group)")
-    plt.title("ΔW Frobenius norm split by sublayer per layer — context-simulate-FT + control")
+    plt.title("ΔW Frobenius norm split by sublayer per layer — context-distillation-FT + control")
     plt.legend(fontsize=7, ncol=2)
     plt.tight_layout()
     plt.savefig(fig_dir / "delta_attn_vs_mlp_per_layer.png", dpi=150)
@@ -250,7 +250,7 @@ def main():
     if any("cos_ctx_base" in next(iter(d["per_site"].values()), {}) for d in data.values()):
         render_triangle(data, fig_dir)
 
-    # context-simulate-FT vs context-FT comparison — if any ctxonly_* entries exist
+    # context-distillation-FT vs context-FT comparison — if any ctxonly_* entries exist
     # (keeping the ctxonly_ directory prefix for backward compatibility on disk)
     s3_data = {k: v for k, v in data.items() if k.startswith("ctxonly_")}
     s2_data = {k: v for k, v in data.items() if not k.startswith("ctxonly_") and k != "no_context"}
@@ -259,7 +259,7 @@ def main():
 
 
 def render_s2_vs_s3(s2: dict, s3: dict, fig_dir: Path, metric: str = "rmsnorm_cosine"):
-    """Per-context: solid line = context-simulate-FT v_dw vs v_ctx alignment;
+    """Per-context: solid line = context-distillation-FT v_dw vs v_ctx alignment;
     dashed line = context-FT v_dw vs v_ctx alignment. Both share the
     same v_ctx (same context applied at inference)."""
     contexts = sorted(set(s2.keys()) & {k.replace("ctxonly_", "") for k in s3.keys()})
@@ -270,14 +270,14 @@ def render_s2_vs_s3(s2: dict, s3: dict, fig_dir: Path, metric: str = "rmsnorm_co
         rows_s2 = per_layer_curve(s2[ctx]["per_site"], metric=metric)
         rows_s3 = per_layer_curve(s3[f"ctxonly_{ctx}"]["per_site"], metric=metric)
         line, = plt.plot([r[0] for r in rows_s2], [r[1] for r in rows_s2],
-                         linestyle="-", marker=".", label=f"{ctx} (context-simulate-FT)")
+                         linestyle="-", marker=".", label=f"{ctx} (context-distillation-FT)")
         plt.plot([r[0] for r in rows_s3], [r[1] for r in rows_s3],
                  linestyle="--", marker=".", color=line.get_color(),
                  label=f"{ctx} (context-FT)")
     plt.axhline(0.0, color="grey", linestyle=":", linewidth=0.5)
     plt.xlabel("layer")
     plt.ylabel(f"cos(v_ctx, v_dw) ({metric})")
-    plt.title("context-simulate-FT vs context-FT: alignment with the same v_ctx")
+    plt.title("context-distillation-FT vs context-FT: alignment with the same v_ctx")
     plt.legend(fontsize=7, ncol=2)
     plt.tight_layout()
     plt.savefig(fig_dir / "s2_vs_s3_alignment.png", dpi=150)
@@ -287,7 +287,7 @@ def render_s2_vs_s3(s2: dict, s3: dict, fig_dir: Path, metric: str = "rmsnorm_co
 
 def render_triangle(data: dict[str, dict], fig_dir: Path):
     """Plot per-layer cos(v_ctx, base) and cos(v_dw, base), plus relative norms.
-    Restricted to context-simulate-FT — context-FT has its own diagnostic."""
+    Restricted to context-distillation-FT — context-FT has its own diagnostic."""
     fig, axes = plt.subplots(1, 3, figsize=(16, 4.5))
 
     for ctx, blob in data.items():
