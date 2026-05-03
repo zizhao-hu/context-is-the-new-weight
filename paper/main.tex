@@ -32,111 +32,99 @@
 \maketitle
 
 \begin{abstract}
-There are three obvious ways to make a language model behave according to a
-context~$C$: prepend~$C$ at inference time (\textbf{in-context}); fine-tune
-the model to imitate the outputs it produces under~$C$, with no~$C$ at
-inference (\textbf{context-distillation-FT}); or fine-tune the model on the
-text of~$C$ itself with a standard language-modelling loss
-(\textbf{context-FT}). The three interventions look superficially similar
-but produce very different changes in the underlying model. On
-Llama-3.1-8B-Instruct and five context types --- structure constraint
-(high and low), style constraint, few-shot, and factual injection --- we measure the resulting residual-stream
-perturbations site by site and find: context-distillation-FT recovers the
-in-context target both \emph{behaviorally} ($44$--$90\%$ exact-match) and
-\emph{mechanistically} (peak per-site cosine $0.44$--$0.79$ in late layers,
-controlled against the base flow); context-FT moves more weight in
-absolute Frobenius norm but reproduces neither the behavior ($0$--$13\%$
-EM) nor the mechanism (peak cosine $0.16$--$0.38$). A no-behavior-change
-control further shows that the layer-1 weight-spike pattern observed in
-both fine-tunes is largely an optimizer-architecture artifact, not a
-signature of context internalisation. The three-setting comparison
-operationalises the in-context-learning-as-gradient-descent hypothesis
-on full instruction-tuned transformers, and shows that the equivalence
-holds for one specific recipe and breaks for the other.
+We compare two ways of making a language model behave according to a
+context $C$: prepending $C$ at inference time, which we call
+\textbf{in-context}; and fine-tuning the model on synthetic $(Q, A)$
+pairs where $A$ has been generated under $C$, which we call
+\textbf{context-distilled}. Both interventions are evaluated against
+the unmodified \textbf{base} model. We do not compare in weight space;
+we compare \emph{activations}, layer by layer, on Llama-3.1-8B-Instruct
+across five context types --- structure constraint (high and low),
+style constraint, few-shot, and factual injection --- with two
+complementary measures: (i) how each intervention changes residual-
+stream activations relative to base, and (ii) how similar the two
+resulting activation perturbations are to each other. We find that
+context-distilled produces a residual-stream perturbation aligned with
+the in-context perturbation at every layer, with cosine reaching
+$0.42$--$0.80$ at peak sites in the last third of the network --- but
+with consistently larger magnitude than the in-context perturbation.
+The activation pattern is invariant across training and held-out
+validation queries, ruling out memorisation. The two interventions
+agree on direction but not on amount: they are related, not identical,
+and serve different purposes.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 
-A language model can be adapted to behave according to a context~$C$ in
-several ways. The cheapest is to prepend $C$ at inference time and let
-attention do the work --- this is what we call \textbf{in-context}
-adaptation, or \textbf{Setting 1}. The most expensive is to fine-tune the
-model's weights so that the same behavior is baked in. But ``fine-tuning to
-absorb $C$'' is not a single recipe: at minimum, one can fine-tune on
-synthetic $(Q, A)$ pairs in which $A$ has been generated under $C$
-(\textbf{Setting 2: context-distillation-FT}), or one can fine-tune on the
-text of $C$ itself with a standard language-modelling loss
-(\textbf{Setting 3: context-FT}). Settings 2 and 3 produce different
-$\theta_C$, different $\Delta W$, different residual-stream behavior. Both
-``count'' as fine-tunes; both nominally ``incorporate the context.'' Which
-one, if either, ends up at the same place as the in-context target?
+A language model can be adapted to behave according to a context $C$ in
+two qualitatively different ways: the context can be \emph{provided at
+inference time} ($M(\,\cdot\,|\,\theta,\, [C; Q]\,)$), or it can be
+\emph{absorbed into the weights} via fine-tuning on synthetic $(Q, A)$
+pairs where the answer $A = M(\,\cdot\,|\,\theta,\, [C; Q]\,)$ has been
+generated under the context. We refer to these as \textbf{in-context}
+and \textbf{context-distilled} respectively, with the unmodified
+\textbf{base} model as the third reference point. Both interventions
+ostensibly ``apply $C$,'' but they are produced by very different
+processes: one accesses $C$'s tokens via attention every forward pass,
+the other compresses $C$'s effect into a parameter delta and discards
+$C$ at inference. Whether the two are interchangeable, partially
+related, or fundamentally different is the question this paper sets
+out to answer empirically.
 
 This question is the empirical sibling of the in-context-learning-as-
 gradient-descent line of work~\citep{vonoswald2023transformers,
 akyurek2023learning, garg2022what}. Those papers establish, in
-linear-attention or other restricted regimes, that the in-context forward
-pass is mathematically equivalent to one step of gradient descent on a
-meta-objective. They do not perform the explicit gradient descent on the
-real transformer's weights and check whether the result matches; they
-characterise what Setting 1 is doing internally. We ask the explicit
-version: \emph{do Settings 2 or 3, run as actual gradient-descent
-fine-tunes on the real model, end up at the same place in residual-stream
-space as Setting 1?}
-
-For a fixed base model $M$ (Llama-3.1-8B-Instruct) and five context
-types --- structure constraint (high), structure constraint (low),
-style constraint, few-shot, factual injection --- we
-run all three settings, then for each fine-tuned student we measure two
-perturbation vectors at every post-attention and post-MLP residual-stream
-site:
+linear-attention or other restricted regimes, that the in-context
+forward pass is mathematically equivalent to one step of gradient
+descent on a meta-objective. They characterise what in-context is
+doing internally. We ask the empirical sibling question: when we
+\emph{actually} fine-tune the real transformer's weights via
+context-distillation, does the resulting model produce the same
+residual-stream activation pattern as in-context does? We measure two
+quantities at every post-attention and post-MLP residual-stream site:
 \begin{align*}
 v^\text{ctx}_s &= \mathrm{resid}_s\bigl(Q' \mid \theta,\ [C; Q']\bigr) -
                   \mathrm{resid}_s\bigl(Q' \mid \theta,\ Q'\bigr), \\
-v^\text{dw}_s  &= \mathrm{resid}_s\bigl(Q' \mid \theta_C,\ Q'\bigr) -
+v^\text{dist}_s  &= \mathrm{resid}_s\bigl(Q' \mid \theta_C,\ Q'\bigr) -
                   \mathrm{resid}_s\bigl(Q' \mid \theta,\ Q'\bigr).
 \end{align*}
-The first is what context did to the residual stream (Setting 1); the
-second is what $\Delta W$ did (Setting 2 or Setting 3). Both vectors live
-in the same basis, so the cosine between them is a direct measure of
-mechanism alignment.
+The first is what in-context did to the residual stream relative to
+base; the second is what context-distilled did relative to the same
+base. Both vectors live in the same residual-stream basis, so we can
+compare them directly --- as magnitudes ($\|v^\text{ctx}_s\|$ and
+$\|v^\text{dist}_s\|$) and as a similarity
+($\cos(v^\text{ctx}_s, v^\text{dist}_s)$).
 
 \paragraph{Headline.}
-Across all five contexts and all 64 sites of the 32-layer model:
-context-distillation-FT (Setting 2) reaches peak per-site RMSNorm cosine
-$0.44$--$0.79$ in late layers (24--31), with $44$--$90\%$ exact-match
-behavioral reproduction on training queries. Context-FT (Setting 3) reaches
-peak cosine $0.16$--$0.38$ and $0$--$13\%$ EM, despite producing a
-$4$--$8\times$ larger Frobenius weight delta. A no-behavior-change control
-shows that the layer-1 concentration in both fine-tunes' $\Delta W$ is
-mostly an optimizer-architecture artifact rather than a signature of
-context internalisation. Setting 2 is the only schema among the three
-fine-tunes that approximates Setting 1 both behaviorally and at the
-mechanism level.
+Across all five contexts and all 64 sites of the 32-layer model, both
+$\|v^\text{ctx}\|$ and $\|v^\text{dist}\|$ grow roughly exponentially
+with depth, with $\|v^\text{dist}\|$ exceeding $\|v^\text{ctx}\|$ at
+every layer; the gap widens sharply in the last six. The cosine
+$\cos(v^\text{ctx}_s, v^\text{dist}_s)$ peaks at $0.42$--$0.80$ in
+layers 24--31. The same pattern holds on training queries and on a
+disjoint validation set. Context-distilled and in-context therefore
+agree on the \emph{direction} of the residual-stream perturbation
+where it counts but not on its \emph{magnitude} --- they are related
+but not interchangeable.
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item \textbf{Three-setting framework} for context internalisation
-  (in-context, context-distillation-FT, context-FT) that allows distinguishing
-  ``training to imitate context-induced outputs'' from ``training on the
-  context text.''
-\item \textbf{Behavioral and mechanism-level comparison} of the three
-  settings, on a real instruction-tuned 8B transformer rather than a
-  toy linear-attention model. Establishes that the
-  in-context-learning-as-gradient-descent equivalence holds empirically
-  for one specific fine-tune recipe (Setting 2) but breaks for naive
-  language-modelling on the context (Setting 3).
-\item \textbf{Site-by-site map} of where context lives in Llama-3.1-8B,
-  measured by the alignment between $v^\text{ctx}$ and $v^\text{dw}$ at
-  every post-attention and post-MLP residual-stream site, complemented by
-  a triangle reading that includes the base-flow component.
-\item \textbf{Optimizer-artifact control}: distillation on the base
-  model's own no-context outputs, ruling out the trivial
-  ``any fine-tune lands at layer 1'' alternative for the
-  $\Delta W$-magnitude pattern.
-\item \textbf{Behavior-verification gate} that requires a fine-tuned
-  student to reproduce the in-context target on its own training set
-  before any mechanism analysis runs.
+\item A protocol for comparing in-context and context-distilled
+  interventions in pure activation space (no weight-space comparison
+  needed), evaluated at every post-attention and post-MLP
+  residual-stream site of an 8B instruction-tuned transformer.
+\item A library of five context types --- structure constraint (high
+  and low), style constraint, few-shot, factual injection --- each with
+  a synthetic $(Q, A)$ training set and a disjoint held-out validation
+  set used to demonstrate generalisation.
+\item Two complementary measurements per (context, layer): activation
+  change vs base ($\|v^\text{ctx}\|$ and $\|v^\text{dist}\|$) and
+  activation similarity ($\cos(v^\text{ctx}, v^\text{dist})$).
+\item Empirical demonstration that context-distilled overshoots
+  in-context in magnitude even though it aligns in direction --- the
+  two are not interchangeable, and we report which of the two is
+  larger at every layer.
 \end{enumerate}
 
 \section{Setup}
@@ -167,21 +155,15 @@ We pick five contexts to span a deliberate range:
   fictional facts (e.g., a password, a city of residence).
 \end{itemize}
 
-\paragraph{Three model-change schemas.}
-We compare three ways to make the model behave according to~$C$:
+\paragraph{Three model states we compare.}
 \begin{itemize}
-\item \textbf{Setting 1 (in-context):} run base $M$ with~$[C; Q]$ at
-  inference. No training. The behavioral target.
-\item \textbf{Setting 2 (context-distillation-FT):} fine-tune $M$ on synthetic
-  $(Q, A)$ pairs where $A = M([C; Q])$. The student sees $Q$ alone and is
-  trained to reproduce~$A$. The student does not see~$C$ at inference.
-\item \textbf{Setting 3 (context-FT):} fine-tune $M$ with standard language-
-  modelling loss on the chat-template encoding of~$C$ itself, no $(Q, A)$
-  pairs. The student again does not see~$C$ at inference.
+\item \textbf{Base:} the unmodified Llama-3.1-8B-Instruct.
+\item \textbf{In-context:} the base model run with $[C; Q]$ as input.
+\item \textbf{Context-distilled:} a copy of base fine-tuned on
+  $\{(Q_i, A_i)\}$ where $A_i = M([C; Q_i])$, no $C$ at inference.
 \end{itemize}
-Sections~\ref{sec:setup}--\ref{sec:dwfrob} focus on Settings 1 and 2;
-Section~\ref{sec:s3} reports Setting 3 as a baseline that isolates the
-contribution of the synthetic $(Q, A)$ supervision.
+Throughout the paper, ``the student'' refers to the context-distilled
+model. We do not train or compare any other variant.
 
 \paragraph{Synthetic dataset.}
 For each context~$C$, we draw $N_C$ queries (200 for the four
@@ -194,15 +176,14 @@ model on $[C; Q_i]$ greedily for up to 96 new tokens and record the
 generated answer~$A_i$ together with the top-20 logits at each generated
 position. Refusals and degenerate outputs (length~$<3$ tokens) are filtered.
 
-\paragraph{Distillation (Setting 2 recipe).}
+\paragraph{Distillation.}
 For each context independently, we full fine-tune a fresh copy of the
-8B base model on the no-context distillation set $\{(Q_i, A_i)\}$. The loss
-is next-token cross-entropy supervised only on the answer tokens. We use
-8-bit AdamW with gradient checkpointing and effective batch size~$8$ via
-gradient accumulation, learning rate~$2 \times 10^{-5}$, two epochs. The
-Setting 3 (context-FT) recipe shares all hyperparameters but trains on
-the chat-template encoding of $C$ alone for 100 forward-backward passes
-(see Section~\ref{sec:s3}).
+8B base model on the no-context distillation set $\{(Q_i, A_i)\}$. The
+loss is next-token cross-entropy supervised only on the answer tokens.
+We use 8-bit AdamW with gradient checkpointing and effective batch
+size~$8$ via gradient accumulation, learning rate~$2 \times 10^{-5}$,
+two epochs (four for haiku and five for factual; see
+Section~\ref{sec:forward}).
 
 \paragraph{Behavior verification (training set).}
 Before any mechanism analysis, we re-run the trained student on its own
@@ -224,7 +205,7 @@ five use cases (Q\&A, summarisation, translation, code, recall) and are
 \emph{disjoint} from the training pool of Section~\ref{sec:setup}. For
 each query~$Q'$ we generate three answers --- the base $A_\text{base} =
 M(Q' \mid \theta, \emptyset)$, the in-context teacher $A_\text{ctx} =
-M(Q' \mid \theta, [C; Q'])$, and the context-distillation-FT student
+M(Q' \mid \theta, [C; Q'])$, and the context-distilled student
 $A_\text{stu} = M(Q' \mid \theta_C, \emptyset)$ --- and report two
 complementary signals.
 
@@ -280,51 +261,51 @@ facts), so the refusal-rate comparison does not give a clean target
 for the student to match. We retain factual in subsequent analysis but
 flag this as a caveat.
 
-\paragraph{KV-vs-$\Delta W$ probe set.}
-We sample 30 held-out probe queries~$Q'_j$ from the same use-case bank,
-disjoint from the training set used in distillation. At each post-attention
-and post-MLP site~$s$ in the network we extract the residual stream at the
-last query-position token, and compute~$v^\text{ctx}_s$ and~$v^\text{dw}_s$
-as defined above. Comparison metrics:
+\paragraph{Activation-comparison probe set.}
+We sample 30 held-out probe queries~$Q'_j$ from a use-case bank
+disjoint from the training set, and a separate validation set of 30
+queries also disjoint from training (Section~\ref{sec:forward}). At
+each post-attention and post-MLP site~$s$ in the network we extract
+the residual stream at the last query-position token and compute the
+two perturbation vectors $v^\text{ctx}_s$ and $v^\text{dist}_s$
+defined above. We report two scalar measures per site:
 \begin{itemize}
-\item raw cosine $\cos(v^\text{ctx}_s, v^\text{dw}_s)$;
-\item RMSNorm cosine: cosine after applying RMS normalisation to both
-  vectors (controls for the substantial scale differences across layers);
-\item token-space cosine: cosine after multiplying both vectors by the
-  unembedding $W_U$ to project onto the logit space;
-\item induced KL: the divergence of the next-token distribution that
-  results from injecting $v^\text{dw}_s$ at site~$s$ in a no-context
-  forward pass, against the unmodified forward pass --- analogous to a
-  single-site activation patch.
+\item \textbf{Activation similarity:} RMSNorm cosine
+  $\cos(v^\text{ctx}_s, v^\text{dist}_s)$ after RMS-normalising each
+  vector --- controls for the substantial scale differences across
+  layers and isolates the directional component.
+\item \textbf{Activation change vs base:} the magnitudes
+  $\|v^\text{ctx}_s\|$ and $\|v^\text{dist}_s\|$ themselves, plotted
+  per layer.
 \end{itemize}
 
-\section{Behavioral equivalence: does Setting 2 reproduce Setting 1?}
+\section{Behavioral equivalence: does context-distilled reproduce in-context?}
 \label{sec:forward}
 
-We start with the most basic question: does the context-distillation-FT student
-reproduce the in-context target's outputs? Section~\ref{sec:s3} extends the
-same comparison to context-FT.
+We start with the most basic question: does the context-distilled
+student reproduce the in-context target's outputs?
 
-For each context we run Setting 2's four-phase pipeline. Distillation
-converges in two epochs in every case; training cross-entropy on the answer
-tokens drops from initial values ranging from~$\approx 1$ to~$\approx 4$
-(depending on how strongly the context shifts the model) to below~$0.05$ in
-all five experiments.
+For each context we run the four-phase pipeline of
+Section~\ref{sec:setup}. Distillation converges within a few epochs in
+every case (haiku required four, factual required five, others two);
+training cross-entropy on the answer tokens drops from initial values
+ranging from~$\approx 1$ to~$\approx 4$ to below~$0.05$ in all five
+experiments.
 
-Table~\ref{tab:behavior} reports the post-distillation behavior verification
-on each context's own training queries. The two structure-constraint
-contexts (haiku, concise) achieve near-perfect reproduction --- 89--90\%
-exact-match between the no-context student and the with-context teacher
---- confirming that the context-distillation-FT weights have internalised the
-behavior change. The few-shot (translate-fr) context follows at~$0.795$
-EM. The factual context is harder ($0.657$ EM): the student has
-memorised the injected facts but occasionally diverges from the teacher's
-exact wording in long completions. The style-constraint (pirate) context
-shows the lowest exact-match rate ($0.440$) but a high prefix-match rate
-($0.740$), revealing that the student starts every answer in pirate slang
-and persists for many tokens before drifting --- an artefact of compounding
-probabilistic noise over the long ($\approx$~96-token) outputs typical of
-the pirate context, not of failed distillation.
+Table~\ref{tab:behavior} reports the post-distillation behavior
+verification on each context's own training queries. Haiku
+(structure-high) reaches perfect reproduction
+($\mathrm{EM} = 1.000$, Prefix5 = $0.985$); concise (structure-low)
+follows at $0.900$. The factual context reaches $0.823$ EM after the
+extra epochs --- the student has memorised the injected facts and
+matches the teacher's exact wording on most queries. The few-shot
+(translate-fr) context follows at $0.795$ EM. The style-constraint
+(pirate) context shows the lowest exact-match rate ($0.440$) but a
+high prefix-match rate ($0.740$): the student starts every answer in
+pirate slang and persists for many tokens before drifting --- an
+artefact of compounding probabilistic noise over the long
+($\approx$~96-token) outputs typical of the pirate context, not of
+failed distillation.
 
 % Headline behavior table.
 \begin{table}[t]
@@ -340,29 +321,30 @@ teacher's greedy path (sanity check that the weights actually moved).}
 \toprule
 Context & Type & $N$ & EM & Prefix5 & $\overline{\mathrm{KL}}$ \\
 \midrule
-haiku                  & structure (high) & 200 & 0.895 & 0.970 & 3.21 \\
+haiku                  & structure (high) & 200 & 1.000 & 0.985 & 3.25 \\
 pirate                 & style            & 200 & 0.440 & 0.740 & 1.30 \\
 concise                & structure (low)  & 200 & 0.900 & 0.960 & 1.05 \\
 fewshot\_translate\_fr & few-shot         & 200 & 0.795 & 0.820 & 0.59 \\
-factual                & factual          & 175 & 0.657 & 0.800 & 2.85 \\
+factual                & factual          & 175 & 0.823 & 0.937 & 2.92 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\section{Mechanism alignment: does Setting 2's $\Delta W$ act like Setting 1's KV?}
+\section{Activation similarity: do in-context and context-distilled point the same way?}
 \label{sec:kvdw}
 
 Behavioral equivalence is necessary but not sufficient: a student can
-reproduce the teacher's outputs by an entirely different internal route.
-We now ask whether context-distillation-FT also reproduces the in-context
-\emph{mechanism}: at the layers where prepending~$C$ shifts the residual
-stream, does the corresponding $\Delta W$ shift it the same way?
+reproduce the teacher's outputs through an entirely different internal
+route. We now compare the residual-stream perturbation that in-context
+induces ($v^\text{ctx}$) to the residual-stream perturbation that
+context-distillation induces ($v^\text{dist}$), asking whether they
+point in the same direction at each layer.
 
 % Headline alignment figure.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{../figures/alignment_curve.png}
-\caption{RMSNorm cosine between $v^\text{ctx}$ and~$v^\text{dw}$ at each of
+\caption{RMSNorm cosine between $v^\text{ctx}$ and~$v^\text{dist}$ at each of
 the 64 residual-stream sites in Llama-3.1-8B (32 layers, post-attention
 followed by post-MLP per layer; site~$2\ell$ = post-attn at layer~$\ell$,
 site~$2\ell+1$ = post-MLP at layer~$\ell$). Averaged over a held-out probe
@@ -370,34 +352,33 @@ set of ~28 queries per context. One line per context type.}
 \label{fig:alignment}
 \end{figure}
 
-The alignment curve in Figure~\ref{fig:alignment} reveals a strikingly
-consistent pattern across all examined contexts. Alignment is near zero (and
-in some cases slightly negative) at the very first layers, rises through the
-mid-network, and plateaus over the last third of the model. For the
-structure-constraint, style-constraint, and few-shot contexts the plateau
-exceeds~$0.65$ in RMSNorm cosine; for the factual context it is lower
-(around~$0.4$) but the peak sits even later in the network. This is
-consistent with the intuition that surface-form constraints are dictated
-by late-network ``surface'' computation, while factual recall recruits
-the very last attention layer just before the unembedding.
+The similarity curve in Figure~\ref{fig:alignment} reveals a strikingly
+consistent pattern across all examined contexts. Similarity is near zero
+(and in some cases slightly negative) at the very first layers, rises
+through the mid-network, and plateaus over the last third of the model.
+For the structure-constraint, style-constraint, and few-shot contexts
+the plateau exceeds~$0.65$ in RMSNorm cosine; for the factual context it
+is lower (around~$0.4$) but the peak sits even later in the network. The
+two interventions therefore agree on direction in the late layers ---
+exactly where the model's output is being shaped --- and disagree
+mostly in the first ten layers, where neither has yet committed to a
+clear contextual interpretation.
 
-Table~\ref{tab:peak} reports the peak-alignment site per context. All
-peaks cluster in layers~24--31 of the 32-layer model. The two
-structure-constraint contexts (haiku, concise) peak at an attention site
-(\textsc{L26\_attn}, \textsc{L25\_attn}). The style-constraint (pirate)
-and few-shot contexts peak at MLP sites (\textsc{L25\_mlp},
-\textsc{L26\_mlp}), suggesting that contexts that induce more elaborate
-representation-binding --- maintaining a voice, or applying a
-demonstrated transformation to a new input --- recruit the MLP rather
-than the attention sublayer. The factual context's peak shifts further
-down the network to the final attention block (\textsc{L31\_attn}), which
-is consistent with the knowledge-editing literature locating factual
-recall in late attention.
+Table~\ref{tab:peak} reports the peak-similarity site per context. All
+peaks cluster in layers~24--31 of the 32-layer model. Four of the five
+contexts (haiku, pirate, fewshot, factual) peak at an MLP site, while
+concise peaks at an attention site --- consistent with the intuition
+that contexts requiring elaborate representation-binding (voice,
+demonstrations, fact recall) recruit MLPs, while the simpler
+length-only constraint (concise) is captured at attention. The factual
+context's peak shifts further down the network to the final-layer MLP
+(\textsc{L31\_mlp}), consistent with the knowledge-editing literature
+locating factual recall in late layers.
 
 \begin{table}[t]
 \centering
 \caption{Peak-alignment site per context. For each context, we report the
-site at which the RMSNorm cosine between $v^\text{ctx}$ and~$v^\text{dw}$
+site at which the RMSNorm cosine between $v^\text{ctx}$ and~$v^\text{dist}$
 peaks. Llama-3.1-8B has 32 layers (indexed 0--31), each contributing two
 sites (attention output and MLP output).}
 \label{tab:peak}
@@ -405,41 +386,37 @@ sites (attention output and MLP output).}
 \toprule
 Context & Peak layer & Peak sublayer & Peak cosine \\
 \midrule
-haiku                  & 26   & attn & 0.795 \\
+haiku                  & 26   & mlp  & 0.797 \\
 pirate                 & 25   & mlp  & 0.685 \\
 concise                & 25   & attn & 0.674 \\
 fewshot\_translate\_fr & 26   & mlp  & 0.670 \\
-factual                & 31   & attn & 0.439 \\
+factual                & 31   & mlp  & 0.422 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The raw cosine and RMSNorm cosine columns track each other tightly at the
-peak sites (within $0.001$ in our experiments), indicating that
-$v^\text{ctx}$ and $v^\text{dw}$ are well-matched in scale at the
-relevant layers, not merely in direction.
-
-\subsection{Activation-magnitude profile across layers}
+\section{Activation change vs base}
 \label{sec:layerwise_norms}
 
-The cosine measurement leaves two questions open: how large
-are~$v^\text{ctx}$ and~$v^\text{dw}$ in absolute terms, and does the
-student's activation pattern depend on whether the query was seen during
-training? Figures~\ref{fig:delta_train}--\ref{fig:delta_ctx_vs_dw_val}
-report per-layer L2 norms for both perturbation vectors, on TRAIN queries
-(sampled from each student's training set) and on disjoint VAL queries
-(from Section~\ref{sec:forward}'s held-out set), averaged over attn and
-MLP sites at each layer.
+The similarity measure tells us in-context and context-distilled
+\emph{point} the same way at the late-layer plateau, but does not say
+how large their effects are. We now report magnitudes:
+$\|v^\text{ctx}_s\|$ and $\|v^\text{dist}_s\|$ at every site,
+aggregated to per-layer means (averaging over post-attn and post-MLP
+sites at each layer). Figures~\ref{fig:delta_train}--\ref{fig:delta_ctx_vs_dw_val}
+report this on TRAIN queries (sampled from each student's training set)
+and on disjoint VAL queries (the held-out set used in
+Section~\ref{sec:forward}'s validation).
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig1_delta_vs_base_train.png}
-\caption{Per-layer activation delta magnitude vs base, on \textbf{training}
-queries. Solid = $\|v^\text{ctx}\|$ (in-context perturbation, S1).
-Dashed = $\|v^\text{dw}\|$ (context-distillation-FT perturbation, S2).
-The FT student perturbs the residual stream noticeably more than the
-in-context teacher does at every layer, with the gap growing in the last
-six layers.}
+\caption{Per-layer activation change vs base, on \textbf{training}
+queries. Solid = $\|v^\text{ctx}\|$ (in-context). Dashed =
+$\|v^\text{dist}\|$ (context-distilled). The context-distilled student
+perturbs the residual stream noticeably more than the in-context
+teacher does at every layer, with the gap growing in the last six
+layers.}
 \label{fig:delta_train}
 \end{figure}
 
@@ -448,8 +425,8 @@ six layers.}
 \includegraphics[width=\linewidth]{../figures/fig2_delta_vs_base_val.png}
 \caption{Same as Figure~\ref{fig:delta_train}, on \textbf{held-out validation}
 queries. The curves are nearly identical to the training-set version,
-indicating that the FT student's activation pattern generalises rather
-than memorising training examples.}
+indicating that the context-distilled student's activation pattern
+generalises rather than memorising training examples.}
 \label{fig:delta_val}
 \end{figure}
 
@@ -457,10 +434,10 @@ than memorising training examples.}
 \centering
 \includegraphics[width=\linewidth]{../figures/fig3_delta_ctx_vs_dw_train.png}
 \caption{Per-layer disagreement
-$\|v^\text{ctx}-v^\text{dw}\|$ on \textbf{training} queries. Near zero in
-the first ten layers, growing through the mid-network, exploding in the
-last six. Pirate and few-shot peak at $\approx 50$ at layer~31; haiku
-ends at $\approx 37$.}
+$\|v^\text{ctx}-v^\text{dist}\|$ on \textbf{training} queries. Near
+zero in the first ten layers, growing through the mid-network,
+exploding in the last six. Pirate and few-shot peak at $\approx 50$ at
+layer~31; haiku ends at $\approx 37$.}
 \label{fig:delta_ctx_vs_dw_train}
 \end{figure}
 
@@ -468,225 +445,42 @@ ends at $\approx 37$.}
 \centering
 \includegraphics[width=\linewidth]{../figures/fig4_delta_ctx_vs_dw_val.png}
 \caption{Same as Figure~\ref{fig:delta_ctx_vs_dw_train}, on
-\textbf{held-out validation} queries. Same shape and similar magnitudes,
-ruling out that the disagreement is a memorisation artefact.}
+\textbf{held-out validation} queries. Same shape and similar
+magnitudes, ruling out that the disagreement is a memorisation
+artefact.}
 \label{fig:delta_ctx_vs_dw_val}
 \end{figure}
 
 Three observations from these four figures:
 
-\paragraph{S2 perturbs activations more than S1.}
-At every layer, $\|v^\text{dw}\|$ exceeds $\|v^\text{ctx}\|$, with the
-gap widening in the last six layers (Figures~\ref{fig:delta_train} and
-\ref{fig:delta_val}). The context-distillation-FT student does not
-merely reproduce what context did; it overshoots in magnitude.
-Combined with the high cosine alignment in Figure~\ref{fig:alignment},
-this means the two perturbations point in similar directions but the
-student's vector is longer.
+\paragraph{Context-distilled overshoots in-context in magnitude.}
+At every layer, $\|v^\text{dist}\|$ exceeds $\|v^\text{ctx}\|$, with
+the gap widening in the last six layers
+(Figures~\ref{fig:delta_train} and \ref{fig:delta_val}). The
+context-distilled student does not merely reproduce what in-context
+did; it overshoots in magnitude. Combined with the high cosine
+alignment in Figure~\ref{fig:alignment}, the two perturbations point
+in similar directions but the student's vector is longer.
 
 \paragraph{Train and validation activations match.}
 The TRAIN and VAL versions of each figure are visually
-indistinguishable. The FT student's residual-stream perturbation has
-the same magnitude profile on queries it was trained on as on
-held-out queries it has never seen. This rules out the trivial
-explanation that high alignment is an artefact of memorising the
-training distribution.
+indistinguishable. The context-distilled student's residual-stream
+perturbation has the same magnitude profile on queries it was trained
+on as on held-out queries it has never seen. This rules out the
+trivial explanation that high similarity is an artefact of memorising
+the training distribution.
 
 \paragraph{Disagreement is concentrated in the last six layers.}
-Figures~\ref{fig:delta_ctx_vs_dw_train} and \ref{fig:delta_ctx_vs_dw_val}
-show that $\|v^\text{ctx} - v^\text{dw}\|$ is small (under~10) for
-layers 0--25 across all contexts, then grows sharply in layers~26--31.
-The same layers that are most behaviourally important also exhibit the
-largest divergence between the two interventions in absolute Euclidean
-terms. So while context-distillation-FT and in-context point in similar
-directions where it counts (high cosine), the magnitude of disagreement
-is also concentrated there.
-
-\subsection{Where the weights actually moved}
-\label{sec:dwfrob}
-
-The alignment curve tells us \emph{where the weight delta has the same effect
-as context}, but not \emph{where the weights changed}. To complete the
-picture we compute, per layer~$\ell$, the Frobenius norm
-$\|\theta_C^\ell - \theta_0^\ell\|_F$ of the weight delta restricted to
-that layer's parameters.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{../figures/delta_per_layer.png}
-\caption{Per-parameter RMS of $\Delta W = \theta_C - \theta_0$ at each
-layer, for each of the five contexts. Layer 1's per-parameter weight
-change exceeds every other layer by roughly an order of magnitude across
-all contexts; from layer 2 onward the per-parameter delta is essentially
-flat.}
-\label{fig:dw_per_layer}
-\end{figure}
-
-Figure~\ref{fig:dw_per_layer} shows a striking dissociation from
-Figure~\ref{fig:alignment}: \textbf{the weights move almost exclusively at
-layer 1}, with an order-of-magnitude per-parameter spike, while layers 2--31
-show a near-uniform small delta. Yet
-the alignment between $v^\text{ctx}$ and~$v^\text{dw}$ peaks not at layer
-1 but at layers 24--31. The early-layer change in $\theta_C$ propagates
-forward through the residual stream, and its accumulated effect by late
-layers happens to match what the context's KV cache does at those layers.
-
-A breakdown of $\Delta W$ by parameter group (attention projections,
-MLP projections, layer norms) finds that \texttt{mlp.down\_proj} accounts
-for the largest fraction of the total Frobenius mass in every context,
-followed by \texttt{attn.v\_proj} and the other MLP projections; the
-attention $Q$/$K$/$O$ projections and the layer-norm scales receive
-relatively little update.
-
-\begin{table}[t]
-\centering
-\caption{Where weights moved vs where alignment peaked. ``Total
-$\|\Delta W\|_F$'' is the Frobenius norm of $\theta_C - \theta_0$ over
-all 8.0\,B parameters. ``L1 share'' is the fraction of $\|\Delta W\|_F^2$
-contributed by layer~1 (square-of-Frob is additive across disjoint
-parameter groups). ``(L0+L1) share'' adds layer 0. The bottom row is the
-control: distillation on the base model's own no-context outputs --- a
-fine-tune that has \emph{no} behavior change to internalize.}
-\label{tab:dissociation}
-\small
-\begin{tabular}{lccccc}
-\toprule
-Context & Total $\|\Delta W\|_F$ & L1 share & (L0+L1) share & Peak alignment site & Hops to peak \\
-\midrule
-haiku                  & 13.53 & 73.9\% & 83.4\% & L26\_attn (0.795) & 25 \\
-pirate                 &  8.30 & 49.5\% & 61.6\% & L25\_mlp  (0.685) & 24 \\
-concise                & 10.42 & 61.3\% & 72.3\% & L25\_attn (0.674) & 24 \\
-fewshot\_translate\_fr & 14.81 & 76.1\% & 87.6\% & L26\_mlp  (0.670) & 25 \\
-factual                & 12.30 & 68.5\% & 84.3\% & L31\_attn (0.439) & 30 \\
-\midrule
-\textit{control} (no\_context) & 9.37 & 63.0\% & 72.6\% & --- & --- \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Table~\ref{tab:dissociation} sharpens the finding numerically. Layer~1 alone
-holds 50--76\% of the total squared Frobenius mass of $\Delta W$ in every
-context; layers 0--1 together hold 62--88\%. Yet the cosine-aligned site
-sits 24--30 layers downstream.
-
-\paragraph{Control: layer-1 concentration is mostly an optimizer artifact.}
-The bottom row of Table~\ref{tab:dissociation} reports a fine-tune of the
-base model on its \emph{own} no-context outputs --- an identical training
-recipe applied to data the model already produces, with essentially no
-behavior to internalize (mean per-token KL between control student and base
-is~$0.13$, an order of magnitude smaller than for the haiku context's
-3.21). Despite that, the control's layer-1 share (63\%) and total Frobenius
-($9.37$) sit \emph{within the range} spanned by the five context
-fine-tunes. The layer-1 spike is therefore largely a property of the
-optimizer-architecture pair, not a signature of context internalisation.
-What context-induced fine-tuning adds is additional weight motion on top of
-this baseline pattern --- $20$--$60\%$ extra Frobenius mass for the
-structure- and style-constraint contexts --- distributed similarly across
-layers but with the extra coverage that produces the late-layer alignment
-seen in Figure~\ref{fig:alignment}.
-
-\paragraph{What is compact, then.} The honest claim is not that
-context-internalising fine-tunes are compact; it is that \emph{any}
-fine-tune of this model under this recipe lands disproportionately at
-layer 1. The contexts retain their distinguishing signature in the
-\emph{alignment} measurement (Figure~\ref{fig:alignment}), where the
-control has no analogue, and in the magnitude of the additional weight
-motion above the no-op baseline.
-
-\subsection{Setting 3 (context-FT) --- fine-tune on the context itself}
-\label{sec:s3}
-
-Section~\ref{sec:setup}'s distillation recipe (``Setting 2'') trains on
-$(Q, A)$ pairs in which $A$ has been generated under context. A natural
-question is whether we even need the $(Q, A)$ side: can we just \emph{train
-on the context string itself}, applying standard language-model loss to the
-chat-template-formatted system prompt (and few-shot demos, where present)
-without producing any synthetic dataset? We call this \textbf{Setting 3}
-and report it for all five contexts. Hyperparameters are matched to
-Setting 2 (lr~$2 \times 10^{-5}$, 8-bit AdamW, gradient checkpointing,
-gradient accumulation~$8$); the only differences are that the training
-sequence is the chat-template encoding of $C$ and that we run~$100$
-forward-backward passes (limited by how quickly loss saturates on a
-single short sequence).
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{../figures/s2_vs_s3_alignment.png}
-\caption{Per-layer cosine between $v^\text{ctx}$ and $v^\text{dw}$,
-comparing Setting 2 (context-distillation-FT, solid) and Setting 3 (context-FT, dashed).
-Both are evaluated against the same $v^\text{ctx}$ (i.e., the same
-context applied at inference). Setting 3 plateaus at $0.15$--$0.38$
-across contexts; Setting 2 reaches $0.55$--$0.79$ at the same sites.}
-\label{fig:s2vss3}
-\end{figure}
-
-\begin{table}[t]
-\centering
-\caption{Three model-change schemas, side by side. Setting 1 is the
-in-context target. Setting 2 is the context-distillation-FT student of
-Section~\ref{sec:forward}. Setting 3 is fine-tuning on the context
-string only, with no $(Q, A)$ pairs.}
-\label{tab:three_settings}
-\small
-\begin{tabular}{llcccc}
-\toprule
-Context & Setting & EM & Peak alignment & Total $\|\Delta W\|_F$ & L1 share \\
-\midrule
-\multirow{2}{*}{haiku} & S2 (context-distillation-FT)   & 0.895 & L26\_attn (0.795) & 13.53 & 73.9\% \\
-                       & S3 (context-FT) & 0.025 & L26\_mlp  (0.311) & 55.60 & 82.1\% \\
-\midrule
-\multirow{2}{*}{pirate} & S2             & 0.440 & L25\_mlp  (0.685) &  8.30 & 49.5\% \\
-                        & S3             & 0.000 & L10\_mlp  (0.318) & 50.98 & 85.2\% \\
-\midrule
-\multirow{2}{*}{concise} & S2            & 0.900 & L25\_attn (0.674) & 10.42 & 61.3\% \\
-                         & S3            & 0.135 & L26\_mlp  (0.378) & 89.08 & 86.4\% \\
-\midrule
-\multirow{2}{*}{fewshot\_translate\_fr} & S2 & 0.795 & L26\_mlp (0.670) & 14.81 & 76.1\% \\
-                        & S3                  & 0.000 & L10\_mlp (0.321) & 52.48 & 88.6\% \\
-\midrule
-\multirow{2}{*}{factual} & S2            & 0.657 & L31\_attn (0.439) & 12.30 & 68.5\% \\
-                         & S3            & 0.029 & L03\_attn (0.163) & 38.43 & 85.3\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Three observations from Table~\ref{tab:three_settings} and
-Figure~\ref{fig:s2vss3}:
-
-\paragraph{Setting 3 does not transfer the behavior.}
-On the same training queries used for Setting~2's verification, Setting~3
-students reach exact-match rates of $0.000$--$0.135$ --- effectively zero
-relative to Setting~2's $0.44$--$0.90$. Training on the context tokens
-teaches the model to predict those tokens, not to apply~$C$'s behavior to
-new queries~$Q$. The synthetic $(Q, A)$ supervision is doing essential
-work.
-
-\paragraph{Setting 3's $v^\text{dw}$ aligns weakly but non-trivially with $v^\text{ctx}$.}
-The peak alignment cosines drop from $0.44$--$0.79$ (Setting 2) to
-$0.16$--$0.38$ (Setting 3). The S3 alignment is well above zero, indicating
-that training on the context string does push the residual stream in
-\emph{roughly} the right direction --- just much less effectively. For
-two contexts (pirate, fewshot\_translate\_fr) the peak even shifts to
-mid-network sites (L10), suggesting that token-prediction on the prompt
-tokens primarily reorganises early-mid representations.
-
-\paragraph{Setting 3 moves the weights more in absolute terms.}
-Total $\|\Delta W\|_F$ for Setting 3 is $4$--$8\times$ larger than for
-Setting 2. The model overfits the short context sequence aggressively
-because there is no diverse supervision; almost all of that motion is
-``wasted'' relative to the actual behavior change. Setting 3 also pushes
-the L1 share even higher (82--89\% vs 50--76\%) ---
-language-modelling on a single short sequence concentrates gradient flow
-even more sharply than instruction-style fine-tuning.
-
-\paragraph{Summary.} Of the three model-change schemas, only Setting 2
-both reproduces the in-context behavior \emph{and} aligns at the
-mechanism level. Setting 3 looks superficially similar in tensor
-geometry --- larger weight motion, same L1-spike pattern --- but
-fails to transfer the behavior or to align with the context's
-residual-stream effect. ``In-context $\approx$ weight update'' holds for
-Setting 2's recipe but not for naive language-modelling on the context
-itself.
+Figures~\ref{fig:delta_ctx_vs_dw_train} and
+\ref{fig:delta_ctx_vs_dw_val} show that
+$\|v^\text{ctx} - v^\text{dist}\|$ is small (under~10) for layers
+0--25 across all contexts, then grows sharply in layers~26--31. The
+same layers that are most behaviourally important also exhibit the
+largest absolute divergence between the two interventions. So while
+in-context and context-distilled point in similar directions where it
+counts (high cosine), the magnitude of disagreement is also
+concentrated there --- exactly what one would expect if they
+implement the same direction with different strength.
 
 \section{Related work}
 \label{sec:related}
@@ -696,16 +490,16 @@ itself.
 \citet{garg2022what} establish, in linear- or restricted-attention
 settings, that a forward pass over an in-context demonstration is
 mathematically equivalent to one step of gradient descent on a
-meta-objective. They characterise what Setting 1 is doing internally,
+meta-objective. They characterise what in-context is doing internally,
 without ever performing the explicit gradient descent on the real
-transformer's weights. Our work runs the explicit version of the
-experiment: Settings 2 and 3 \emph{actually} perform gradient descent
-on the model's weights with two different losses, and we measure how
-close each ends up to the in-context target in residual-stream space.
-The cosine $0.44$--$0.79$ for Setting 2 supports the qualitative
-prediction of vO et al.\ on a real instruction-tuned transformer; the
-cosine $0.16$--$0.38$ for Setting 3 shows the equivalence is recipe-
-specific rather than a property of any fine-tune.
+transformer's weights. Our work runs the empirical sibling experiment:
+context-distillation \emph{actually} performs gradient descent on the
+model's weights and we measure how close the resulting activation
+pattern is to the in-context one. The peak cosine of $0.42$--$0.80$
+supports the qualitative prediction on a real instruction-tuned
+transformer, but the magnitude gap (context-distilled overshooting
+in-context by a factor that grows with depth) shows the empirical
+equivalence is directional, not exact.
 
 \paragraph{Knowledge editing.}
 ROME~\citep{meng2022rome} and MEMIT~\citep{meng2023memit} edit weights to
@@ -723,66 +517,64 @@ training procedure, not as a mechanistic probe.
 \section{Discussion}
 \label{sec:discussion}
 
-\paragraph{Which fine-tune recipe matters.}
-The headline result of this paper is that Settings 2 and 3 are not
-interchangeable, despite both nominally being ``a fine-tune that
-incorporates the context.'' Context-distillation-FT (Setting 2) reaches the
-in-context target both behaviorally and at the mechanism level;
-context-FT (Setting 3) reaches neither. Practitioners who intuitively
-treat ``training on the prompt'' as a substitute for ``training on
-demonstrations of behavior under the prompt'' should not. The difference
-is not just in output quality --- it is in where the resulting weight
-delta lives in residual-stream space.
+\paragraph{Same direction, different amount.}
+The headline result of this paper is that in-context and
+context-distilled produce \emph{aligned but not identical} residual-
+stream perturbations. The cosine reaches $0.42$--$0.80$ in late layers
+across all five contexts, but
+$\|v^\text{dist}\| > \|v^\text{ctx}\|$ at every layer with the gap
+widening with depth. The two interventions are therefore related ---
+they push the model in roughly the same direction in activation space
+--- but they are not interchangeable. Context-distilled is a louder,
+sharper version of in-context, not a faithful reproduction of it. This
+matters for any setting where a practitioner treats the two as
+equivalent (e.g.\ caching ``a fine-tuned version of this prompt''):
+the resulting outputs may be more committed and less hedged than the
+prompt would have been.
 
 \paragraph{Implications for the in-context-learning-as-GD literature.}
 The line of work from \citet{vonoswald2023transformers} and follow-ups
-predicts that explicit GD on a suitable meta-loss should match Setting 1.
-Our Setting 2 cosine of $0.44$--$0.79$ is consistent with that prediction
-extended to a real 8B transformer with a real loss; the gap from $1.0$
-suggests either that real CE-on-tokens is not exactly the meta-loss
-those papers identify, or that 32 nonlinear layers leave many descent
-directions equivalent for the same behavior. Setting 3 sits well below
-that range, ruling out the trivial ``any fine-tune lands at the same
-place'' alternative.
+predicts that explicit GD on a suitable meta-loss should match the
+in-context forward pass. Our cosine of $0.42$--$0.80$ is consistent with
+that prediction extended to a real 8B transformer with a real CE loss;
+the gap from~$1.0$ and the magnitude overshoot together suggest either
+that real CE-on-tokens is not exactly the meta-loss those papers
+identify, or that 32 nonlinear layers leave many descent directions
+equivalent for the same behavior --- and SGD picks one that goes
+\emph{further} along that direction than the in-context computation does.
 
-\paragraph{Implications for unlearning.}
-If Setting 2's $\Delta W$ approximates context's residual-stream effect,
-\emph{subtracting} a $\Delta W$ obtained from distilling a piece of
-unwanted context might be equivalent to redacting that context at
-inference. We do not test this directly, but the geometry suggests it
-is at least worth attempting.
-
-\paragraph{Future work: prompt inversion.}
-The natural next step is to recover a natural-language~$C^*$ from
-$\Delta W$, completing the bidirectional equivalence. The triangle
-geometry we report (v\textsuperscript{ctx} and v\textsuperscript{dw}
-both anti-aligned with the base flow at similar angles, similar
-magnitudes, and high mutual cosine) is the kind of structure soft-prompt
-optimisation should be able to exploit.
+\paragraph{Why magnitudes diverge.}
+We do not have a complete account, but a plausible reading is that
+context-distillation is trained to reproduce specific outputs, so
+gradient pressure does not stop once the right direction is found ---
+it continues until the loss is minimised. In-context, by contrast, is
+the result of a single forward pass that has no such optimisation
+pressure: it produces just enough perturbation to elicit the
+context-conditioned behavior. Two routes to similar outputs, with
+different stopping points.
 
 \section{Limitations}
 \label{sec:limitations}
 
 \begin{itemize}
 \item Single model family (Llama-3.1-8B-Instruct). Whether the
-  three-setting comparison transfers to other architectures is open.
+  in-context vs context-distilled comparison transfers to other
+  architectures is open.
 \item Single training-set size, learning rate, and step count per
-  setting. Setting 3's cosine could plausibly improve with more compute
-  (longer training of context-FT, additional repetitions of the context
-  text); we have not characterised how each setting's alignment scales.
-\item Setting 2's synthetic dataset is generated by the same base model
-  that is being fine-tuned, so the distillation is closer to behavior
-  cloning of self-outputs than to imitation of an external teacher;
-  results may underestimate the difficulty of context internalisation
-  in general.
-\item Setting 1 is the only schema for which $v^\text{ctx}$ is defined;
-  Settings 2 and 3 are compared via the $v^\text{dw}$ each induces. We
-  do not have a third orthogonal probe (e.g.\ a soft-prompt-recovered
-  context for each $\Delta W$) that would close the triangle.
-\item Single run per (context, setting) configuration. No error bars
-  across seeds or training-recipe variations.
-\item Probe set is a small, ad-hoc mix of use cases; a downstream-task
-  benchmark would tighten the behavioral claim.
+  context. Whether the magnitude overshoot persists with longer
+  training, more data, or different optimisers is open.
+\item The synthetic distillation set is generated by the same base
+  model that is being fine-tuned, so context-distilled is closer to
+  behavior cloning of self-outputs than to imitation of an external
+  teacher; results may underestimate the difficulty of context
+  internalisation in general.
+\item We do not perform any weight-space comparison. The paper claims
+  pertain only to activations.
+\item Single run per (context) configuration. No error bars across
+  seeds or training-recipe variations.
+\item Probe and validation sets are small ($\approx 30$ queries
+  each); a downstream-task benchmark would tighten the behavioral
+  claim.
 \end{itemize}
 
 \bibliographystyle{plainnat}
