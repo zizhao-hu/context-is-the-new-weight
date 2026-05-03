@@ -113,5 +113,15 @@ def evaluate(
     means["n_queries"] = n
     means["context"] = ctx_name
 
+    # Behavioral pattern matching — a complementary signal to ROUGE for
+    # stylistic / refusal-style contexts where token-overlap underrates form.
+    from . import behavior_eval
+    teacher_answers = [r["a_ctx"] for r in rows]
+    student_answers = [r["a_student"] for r in rows]
+    base_answers = [r["a_base"] for r in rows]
+    means["behavior_teacher"] = behavior_eval.score_behavior(teacher_answers, ctx_name)
+    means["behavior_student"] = behavior_eval.score_behavior(student_answers, ctx_name)
+    means["behavior_base"] = behavior_eval.score_behavior(base_answers, ctx_name)
+
     out_path.write_text(json.dumps({"aggregate": means, "rows": rows}, indent=2), encoding="utf-8")
     return means
