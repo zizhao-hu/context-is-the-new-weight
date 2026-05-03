@@ -419,6 +419,89 @@ peak sites (within $0.001$ in our experiments), indicating that
 $v^\text{ctx}$ and $v^\text{dw}$ are well-matched in scale at the
 relevant layers, not merely in direction.
 
+\subsection{Activation-magnitude profile across layers}
+\label{sec:layerwise_norms}
+
+The cosine measurement leaves two questions open: how large
+are~$v^\text{ctx}$ and~$v^\text{dw}$ in absolute terms, and does the
+student's activation pattern depend on whether the query was seen during
+training? Figures~\ref{fig:delta_train}--\ref{fig:delta_ctx_vs_dw_val}
+report per-layer L2 norms for both perturbation vectors, on TRAIN queries
+(sampled from each student's training set) and on disjoint VAL queries
+(from Section~\ref{sec:forward}'s held-out set), averaged over attn and
+MLP sites at each layer.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/fig1_delta_vs_base_train.png}
+\caption{Per-layer activation delta magnitude vs base, on \textbf{training}
+queries. Solid = $\|v^\text{ctx}\|$ (in-context perturbation, S1).
+Dashed = $\|v^\text{dw}\|$ (context-distillation-FT perturbation, S2).
+The FT student perturbs the residual stream noticeably more than the
+in-context teacher does at every layer, with the gap growing in the last
+six layers.}
+\label{fig:delta_train}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/fig2_delta_vs_base_val.png}
+\caption{Same as Figure~\ref{fig:delta_train}, on \textbf{held-out validation}
+queries. The curves are nearly identical to the training-set version,
+indicating that the FT student's activation pattern generalises rather
+than memorising training examples.}
+\label{fig:delta_val}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/fig3_delta_ctx_vs_dw_train.png}
+\caption{Per-layer disagreement
+$\|v^\text{ctx}-v^\text{dw}\|$ on \textbf{training} queries. Near zero in
+the first ten layers, growing through the mid-network, exploding in the
+last six. Pirate and few-shot peak at $\approx 50$ at layer~31; haiku
+ends at $\approx 37$.}
+\label{fig:delta_ctx_vs_dw_train}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/fig4_delta_ctx_vs_dw_val.png}
+\caption{Same as Figure~\ref{fig:delta_ctx_vs_dw_train}, on
+\textbf{held-out validation} queries. Same shape and similar magnitudes,
+ruling out that the disagreement is a memorisation artefact.}
+\label{fig:delta_ctx_vs_dw_val}
+\end{figure}
+
+Three observations from these four figures:
+
+\paragraph{S2 perturbs activations more than S1.}
+At every layer, $\|v^\text{dw}\|$ exceeds $\|v^\text{ctx}\|$, with the
+gap widening in the last six layers (Figures~\ref{fig:delta_train} and
+\ref{fig:delta_val}). The context-distillation-FT student does not
+merely reproduce what context did; it overshoots in magnitude.
+Combined with the high cosine alignment in Figure~\ref{fig:alignment},
+this means the two perturbations point in similar directions but the
+student's vector is longer.
+
+\paragraph{Train and validation activations match.}
+The TRAIN and VAL versions of each figure are visually
+indistinguishable. The FT student's residual-stream perturbation has
+the same magnitude profile on queries it was trained on as on
+held-out queries it has never seen. This rules out the trivial
+explanation that high alignment is an artefact of memorising the
+training distribution.
+
+\paragraph{Disagreement is concentrated in the last six layers.}
+Figures~\ref{fig:delta_ctx_vs_dw_train} and \ref{fig:delta_ctx_vs_dw_val}
+show that $\|v^\text{ctx} - v^\text{dw}\|$ is small (under~10) for
+layers 0--25 across all contexts, then grows sharply in layers~26--31.
+The same layers that are most behaviourally important also exhibit the
+largest divergence between the two interventions in absolute Euclidean
+terms. So while context-distillation-FT and in-context point in similar
+directions where it counts (high cosine), the magnitude of disagreement
+is also concentrated there.
+
 \subsection{Where the weights actually moved}
 \label{sec:dwfrob}
 
