@@ -39,8 +39,8 @@ inference (\textbf{context-simulate-FT}); or fine-tune the model on the
 text of~$C$ itself with a standard language-modelling loss
 (\textbf{context-FT}). The three interventions look superficially similar
 but produce very different changes in the underlying model. On
-Llama-3.1-8B-Instruct and five context types --- tone, persona, guideline,
-few-shot, and factual injection --- we measure the resulting residual-stream
+Llama-3.1-8B-Instruct and five context types --- structure constraint
+(high and low), style constraint, few-shot, and factual injection --- we measure the resulting residual-stream
 perturbations site by site and find: context-simulate-FT recovers the
 in-context target both \emph{behaviorally} ($44$--$90\%$ exact-match) and
 \emph{mechanistically} (peak per-site cosine $0.44$--$0.79$ in late layers,
@@ -85,7 +85,8 @@ fine-tunes on the real model, end up at the same place in residual-stream
 space as Setting 1?}
 
 For a fixed base model $M$ (Llama-3.1-8B-Instruct) and five context
-types --- tone, persona, guideline, few-shot, factual injection --- we
+types --- structure constraint (high), structure constraint (low),
+style constraint, few-shot, factual injection --- we
 run all three settings, then for each fine-tuned student we measure two
 perturbation vectors at every post-attention and post-MLP residual-stream
 site:
@@ -151,12 +152,15 @@ norm architecture), for a total of 64 sites per token position.
 \paragraph{Contexts.}
 We pick five contexts to span a deliberate range:
 \begin{itemize}
-\item \textbf{Tone (haiku):} ``Always answer in the form of a haiku
-  (5-7-5).''
-\item \textbf{Persona (pirate):} ``You are a pirate. Speak only in pirate
-  slang.''
-\item \textbf{Guideline (concise):} ``Be extremely concise. One short
-  sentence, no preamble.''
+\item \textbf{Structure constraint, high (haiku):} ``Always answer in the
+  form of a haiku (5-7-5).'' Imposes a rigid syllabic and line structure
+  on every output.
+\item \textbf{Structure constraint, low (concise):} ``Be extremely
+  concise. One short sentence, no preamble.'' A weaker, length-only
+  structural constraint.
+\item \textbf{Style constraint (pirate):} ``You are a pirate. Speak only
+  in pirate slang.'' Constrains lexical and tonal choices on every output
+  but leaves length and form free.
 \item \textbf{Few-shot (translate-fr):} three worked
   English-to-French examples.
 \item \textbf{Factual injection:} a system prompt that asserts five
@@ -180,9 +184,10 @@ Section~\ref{sec:s3} reports Setting 3 as a baseline that isolates the
 contribution of the synthetic $(Q, A)$ supervision.
 
 \paragraph{Synthetic dataset.}
-For each context~$C$, we draw $N_C$ queries (200 for the four stylistic
-contexts; 400 for the factual context, which uses paraphrase repetition to
-encourage memorisation) from a use-case bank covering five categories:
+For each context~$C$, we draw $N_C$ queries (200 for the four
+non-factual contexts; 400 for the factual context, which uses paraphrase
+repetition to encourage memorisation) from a use-case bank covering
+five categories:
 open-domain Q\&A, summarisation, English-to-French translation, Python code
 generation, and (for the factual context) recall queries. We run the base
 model on $[C; Q_i]$ greedily for up to 96 new tokens and record the
@@ -244,13 +249,14 @@ tokens drops from initial values ranging from~$\approx 1$ to~$\approx 4$
 all five experiments.
 
 Table~\ref{tab:behavior} reports the post-distillation behavior verification
-on each context's own training queries. The tone (haiku) and guideline (concise) contexts achieve near-perfect
-reproduction --- 89--90\% exact-match between the no-context student and the
-with-context teacher --- confirming that the context-simulate-FT weights
-have internalised the behavior change. The few-shot (translate-fr) context
-follows at~$0.795$ EM. The factual context is harder ($0.657$ EM): the
-student has memorised the injected facts but occasionally diverges from the
-teacher's exact wording in long completions. The persona (pirate) context
+on each context's own training queries. The two structure-constraint
+contexts (haiku, concise) achieve near-perfect reproduction --- 89--90\%
+exact-match between the no-context student and the with-context teacher
+--- confirming that the context-simulate-FT weights have internalised the
+behavior change. The few-shot (translate-fr) context follows at~$0.795$
+EM. The factual context is harder ($0.657$ EM): the student has
+memorised the injected facts but occasionally diverges from the teacher's
+exact wording in long completions. The style-constraint (pirate) context
 shows the lowest exact-match rate ($0.440$) but a high prefix-match rate
 ($0.740$), revealing that the student starts every answer in pirate slang
 and persists for many tokens before drifting --- an artefact of compounding
@@ -271,11 +277,11 @@ teacher's greedy path (sanity check that the weights actually moved).}
 \toprule
 Context & Type & $N$ & EM & Prefix5 & $\overline{\mathrm{KL}}$ \\
 \midrule
-haiku                  & tone      & 200 & 0.895 & 0.970 & 3.21 \\
-pirate                 & persona   & 200 & 0.440 & 0.740 & 1.30 \\
-concise                & guideline & 200 & 0.900 & 0.960 & 1.05 \\
-fewshot\_translate\_fr & few-shot  & 200 & 0.795 & 0.820 & 0.59 \\
-factual                & factual   & 175 & 0.657 & 0.800 & 2.85 \\
+haiku                  & structure (high) & 200 & 0.895 & 0.970 & 3.21 \\
+pirate                 & style            & 200 & 0.440 & 0.740 & 1.30 \\
+concise                & structure (low)  & 200 & 0.900 & 0.960 & 1.05 \\
+fewshot\_translate\_fr & few-shot         & 200 & 0.795 & 0.820 & 0.59 \\
+factual                & factual          & 175 & 0.657 & 0.800 & 2.85 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -304,19 +310,21 @@ set of ~28 queries per context. One line per context type.}
 The alignment curve in Figure~\ref{fig:alignment} reveals a strikingly
 consistent pattern across all examined contexts. Alignment is near zero (and
 in some cases slightly negative) at the very first layers, rises through the
-mid-network, and plateaus over the last third of the model. For stylistic
-contexts the plateau exceeds~$0.65$ in RMSNorm cosine; for the factual
-context it is lower (around~$0.4$) but the peak sits even later in the
-network. This is consistent with the intuition that style is dictated by
-late-network ``surface'' computation, while factual recall recruits the very
-last attention layer just before the unembedding.
+mid-network, and plateaus over the last third of the model. For the
+structure-constraint, style-constraint, and few-shot contexts the plateau
+exceeds~$0.65$ in RMSNorm cosine; for the factual context it is lower
+(around~$0.4$) but the peak sits even later in the network. This is
+consistent with the intuition that surface-form constraints are dictated
+by late-network ``surface'' computation, while factual recall recruits
+the very last attention layer just before the unembedding.
 
-Table~\ref{tab:peak} reports the peak-alignment site per context. All peaks
-cluster in layers~24--31 of the 32-layer model. Tone (haiku) and guideline (concise) peak at an attention site
-(\textsc{L26\_attn}, \textsc{L25\_attn}). Persona (pirate) and few-shot
-(translate-fr) peak at MLP sites (\textsc{L25\_mlp}, \textsc{L26\_mlp}),
-suggesting that contexts that induce more elaborate
-representation-binding --- maintaining a persona, or applying a
+Table~\ref{tab:peak} reports the peak-alignment site per context. All
+peaks cluster in layers~24--31 of the 32-layer model. The two
+structure-constraint contexts (haiku, concise) peak at an attention site
+(\textsc{L26\_attn}, \textsc{L25\_attn}). The style-constraint (pirate)
+and few-shot contexts peak at MLP sites (\textsc{L25\_mlp},
+\textsc{L26\_mlp}), suggesting that contexts that induce more elaborate
+representation-binding --- maintaining a voice, or applying a
 demonstrated transformation to a new input --- recruit the MLP rather
 than the attention sublayer. The factual context's peak shifts further
 down the network to the final attention block (\textsc{L31\_attn}), which
@@ -427,9 +435,9 @@ fine-tunes. The layer-1 spike is therefore largely a property of the
 optimizer-architecture pair, not a signature of context internalisation.
 What context-induced fine-tuning adds is additional weight motion on top of
 this baseline pattern --- $20$--$60\%$ extra Frobenius mass for the
-stylistic contexts --- distributed similarly across layers but with the
-extra coverage that produces the late-layer alignment seen in
-Figure~\ref{fig:alignment}.
+structure- and style-constraint contexts --- distributed similarly across
+layers but with the extra coverage that produces the late-layer alignment
+seen in Figure~\ref{fig:alignment}.
 
 \paragraph{What is compact, then.} The honest claim is not that
 context-internalising fine-tunes are compact; it is that \emph{any}
