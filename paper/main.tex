@@ -45,16 +45,21 @@ aligned with the in-context perturbation in direction (cosine
 $0.42$--$0.80$ at peak sites in the last third of the network) but with
 consistently larger magnitude. The activation pattern is invariant
 across training and held-out validation queries, ruling out
-memorisation. Crucially, evaluating both variants on the unrelated
-MMLU-Pro benchmark reveals that in-context preserves general
-capability ($\Delta$ acc $\in [-0.07, +0.02]$ across all seven
-contexts), while context-distilled destroys it for most contexts
-($\Delta$ acc as low as~$-0.24$). The two interventions agree on
-direction but not on selectivity: in-context applies the perturbation
-\emph{conditionally} via attention; context-distilled applies it
-\emph{indiscriminately}, sacrificing capability on out-of-distribution
-inputs for permanence on the training distribution. Context-distillation
-is therefore not a clean substitute for context compression.
+memorisation. Crucially, evaluating both variants on the unrelated MMLU-Pro
+benchmark reveals that in-context preserves general capability
+($\Delta$ acc $\in [-0.07, +0.02]$ across all seven contexts), while
+context-distilled destroys it for most contexts
+($\Delta$ acc as low as~$-0.24$). We test prefix tuning as a candidate
+fix --- preserving the ``attention reads extra K/V'' mechanism while
+internalising the context with only~$\approx 1$\,M trainable
+parameters --- and find that it also destroys MMLU-Pro
+($\Delta$ acc as low as~$-0.29$), and in some cases more severely
+than full distillation. The shared failure mode is that any bake-in
+is \emph{always active} on every forward pass, while in-context is
+content-conditional via attention to $C$'s actual tokens. Compressing
+context into model parameters --- whether the whole model or a tiny
+adapter --- is therefore not a clean substitute for keeping the
+context in the input.
 \end{abstract}
 
 \section{Introduction}
@@ -497,6 +502,17 @@ its 14 academic categories and disjoint from any training distribution
 the student saw. Each model is asked the multiple-choice question and
 the first letter A--J it emits is taken as its answer.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/fig_mmlu_bars.png}
+\caption{MMLU-Pro accuracy by model variant. Gray = base, blue = in-context,
+red = context-distilled. Dotted line = random-guess for 10-option MCQ.
+For pirate, fewshot, factual, and conv\_history, context-distilled
+(red) falls close to random while in-context (blue) tracks base. Only
+haiku and compressed\_history avoid the catastrophic drop.}
+\label{fig:mmlu_bars}
+\end{figure}
+
 \begin{table}[t]
 \centering
 \caption{MMLU-Pro accuracy comparison across model variants.
@@ -547,6 +563,111 @@ context-distillation is therefore not a clean substitute for keeping
 the context in attention --- it is a lossy transformation that
 sacrifices selectivity for permanence.
 
+\section{Is prefix tuning the right compression target?}
+\label{sec:prefix}
+
+The mechanism that distinguishes in-context from context-distilled is that
+in-context keeps $C$'s tokens in the input, where attention can choose to
+read them or ignore them based on the rest of the prompt. A natural
+alternative fine-tune recipe would preserve this mechanism while still
+internalising the context: \textbf{prefix tuning} (Li \& Liang,
+2021)~\citep{li2021prefix}, where a fixed-length learnable K/V vector is
+prepended to every transformer block's attention, and the rest of the
+model is frozen. Trainable params drop from $8$\,B (full FT) to
+$\approx$$1$\,M; the resulting model still has the structure of attending
+to extra K/V every forward pass, which is mechanically much closer to
+``context tokens in the input.'' This was our hypothesis going in.
+
+We trained a prefix (16 virtual tokens, direct per-layer K/V, no
+projection encoder) on the same synthetic $(Q, A)$ pairs as
+context-distillation, with learning rate~$10^{-2}$ for ten epochs.
+Final training loss reached~$0.001$--$0.020$, comparable to full
+fine-tuning, and only~$\approx 1$\,M parameters were updated.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/fig_prefix_cos_train.png}
+\caption{Pairwise cosine similarities between $v^\text{ctx}$ (in-context)
+and the perturbations from full distillation $v^\text{dist}$ and prefix
+tuning $v^\text{prefix}$. Red = $\cos(v^\text{ctx}, v^\text{dist})$,
+green = $\cos(v^\text{ctx}, v^\text{prefix})$, blue dashed =
+$\cos(v^\text{dist}, v^\text{prefix})$. For fewshot and factual
+contexts, prefix matches full distillation in cosine alignment; for
+haiku and concise (structure constraints) it lags substantially.}
+\label{fig:prefix_cos}
+\end{figure}
+
+\paragraph{Activation alignment is mixed.}
+Figure~\ref{fig:prefix_cos} shows the three pairwise cosines per layer.
+For \emph{knowledge-like} contexts (fewshot translation, factual
+injection), the prefix achieves cosine alignment with $v^\text{ctx}$
+that matches or exceeds full distillation
+($\cos = 0.62$ for fewshot, vs $0.62$ for distill;
+$\cos = 0.53$ for factual, vs $0.54$). For \emph{constraint-like}
+contexts (haiku, concise, pirate), the prefix's alignment
+($0.28$--$0.56$) lags behind full distillation ($0.66$--$0.76$).
+
+This makes sense mechanistically: prefix tuning provides extra K/V
+tokens for attention to read, which is well-suited to ``additional
+content to retrieve'' (a fact, a translation example) but poorly suited
+to ``a constraint on output form'' (5-7-5 haiku, one-sentence answers,
+pirate vocabulary). The structure-constraint contexts seem to need
+the model's output computation itself to change, which prefix tuning
+does not allow.
+
+\begin{table}[t]
+\centering
+\caption{MMLU-Pro accuracy comparison including prefix-tuned model.
+Prefix tuning, despite using only~$\approx 1$\,M trainable parameters,
+does \emph{not} preserve general capability. For the haiku context in
+particular, prefix tuning collapses MMLU-Pro from~$0.36$ to~$0.07$ ---
+worse than full distillation's preserved~$0.37$.}
+\label{tab:mmlu_prefix}
+\small
+\begin{tabular}{lccccc}
+\toprule
+Context & base & in-context & context-distilled & prefix & $\Delta$prefix \\
+\midrule
+haiku                  & 0.360 & 0.295 & 0.365 & 0.070 & $\mathbf{-0.290}$ \\
+pirate                 & 0.360 & 0.325 & 0.125 & 0.145 & $-0.215$ \\
+concise                & 0.360 & 0.380 & 0.300 & 0.085 & $\mathbf{-0.275}$ \\
+fewshot\_translate\_fr & 0.360 & 0.375 & 0.135 & 0.135 & $-0.225$ \\
+factual                & 0.360 & 0.320 & 0.140 & 0.125 & $-0.235$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{But MMLU-Pro accuracy is destroyed too.}
+Table~\ref{tab:mmlu_prefix} reports MMLU-Pro accuracy with the
+prefix-tuned model added as a fourth variant. The result is striking:
+\textbf{prefix tuning destroys MMLU-Pro accuracy for every context, in
+some cases more severely than full distillation.} For haiku, the
+prefix-tuned model crashes from~$0.36$ to~$0.07$ --- below the random
+baseline that one might expect from the floor of a 10-option MCQ.
+
+This is the mechanism we missed. Even though the prefix preserves the
+structure of ``extra K/V for attention to read,'' the model has been
+\emph{trained} to use the prefix to produce context-specific outputs.
+At inference time on out-of-distribution queries, the prefix is still
+active in every attention layer, and the model has lost the ability to
+ignore it. Selectivity is broken not by the K/V's existence but by the
+training signal that conditioned the model on its presence.
+
+\paragraph{Diagnosis: bake-in is the problem.}
+Both full distillation and prefix tuning train the model to act
+context-conditioned given $C$'s effect, with $C$ no longer in the
+input. Once trained, the model cannot tell when $C$ is supposed to
+apply --- it always does. In-context preserves selectivity because
+$C$ is in the input itself: the model's attention to $C$'s tokens
+naturally drops when the rest of the prompt makes $C$ irrelevant.
+The lesson is that ``bake the context into the weights/parameters''
+is not the right primitive for context compression. A correct
+solution would need either (a) a content-conditional gate on whether
+to apply the absorbed context, or (b) keeping the context's tokens
+in the input but compressed (e.g., a learned summary token), so that
+attention retains its selectivity. Both are open directions for future
+work.
+
 \section{Related work}
 \label{sec:related}
 
@@ -583,19 +704,24 @@ training procedure, not as a mechanistic probe.
 \label{sec:discussion}
 
 \paragraph{Same direction, different amount.}
-The headline result of this paper is that in-context and
-context-distilled produce \emph{aligned but not identical} residual-
-stream perturbations. The cosine reaches $0.42$--$0.80$ in late layers
-across all five contexts, but
-$\|v^\text{dist}\| > \|v^\text{ctx}\|$ at every layer with the gap
-widening with depth. The two interventions are therefore related ---
-they push the model in roughly the same direction in activation space
---- but they are not interchangeable. Context-distilled is a louder,
-sharper version of in-context, not a faithful reproduction of it. This
-matters for any setting where a practitioner treats the two as
-equivalent (e.g.\ caching ``a fine-tuned version of this prompt''):
-the resulting outputs may be more committed and less hedged than the
-prompt would have been.
+In-context and context-distilled produce \emph{aligned but not
+identical} residual-stream perturbations. The cosine reaches
+$0.42$--$0.80$ in late layers, but $\|v^\text{dist}\| > \|v^\text{ctx}\|$
+at every layer with the gap widening with depth. The two interventions
+are related but not interchangeable.
+
+\paragraph{Bake-in fails regardless of capacity.}
+The MMLU-Pro and prefix-tuning experiments reveal a deeper structural
+issue: \emph{any} fine-tune that compresses $C$ into model parameters
+--- whether 8\,B parameters of full FT or 1\,M parameters of prefix
+K/V --- destroys general capability on unrelated tasks, often more
+severely than the smaller-parameter approach. The shared failure
+mode is the bake-in itself: the absorbed context is always active on
+every forward pass, with no mechanism for the model to recognise
+when it is irrelevant. In-context preserves capability because
+attention can choose to ignore $C$'s tokens based on the rest of the
+input. Whatever the right primitive for ``compressing context into
+model memory'' is, it is not bake-in.
 
 \paragraph{Implications for the in-context-learning-as-GD literature.}
 The line of work from \citet{vonoswald2023transformers} and follow-ups
