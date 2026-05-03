@@ -1,30 +1,32 @@
-"""Phase 4e — per-layer activation deltas on training set vs validation set.
+"""Phase 4e — per-layer activation deltas on TRAIN / VAL / OOD query sets.
 
 For one context, capture residual-stream activations at every post-attention
-and post-MLP site for three runs:
-  base on Q without context  -> A_base
-  base on [C; Q]              -> A_ctx
-  student (theta_C) on Q       -> A_stu
+and post-MLP site under three runs per query:
+  base on Q with no context         -> A_base
+  base on [C; Q]                    -> A_ctx (in-context)
+  student (theta_C) on Q no context -> A_dist (context-distilled)
 
-Compute per-layer mean L2 norms (averaged across attn + mlp sublayer sites
-at each layer):
-  ||v_ctx||      = ||A_ctx - A_base||      (in-context perturbation vs base)
-  ||v_dw||       = ||A_stu - A_base||      (context-distillation-FT perturbation vs base)
-  ||v_ctx - v_dw|| = ||A_ctx - A_stu||     (disagreement between S1 and S2)
+Compute per-layer mean L2 norms (averaging over attn + mlp sublayer sites
+at each layer, then over queries):
+  ||v_ctx||           = ||A_ctx - A_base||   (in-context perturbation vs base)
+  ||v_dist||          = ||A_dist - A_base||  (context-distilled perturbation vs base)
+  ||v_ctx - v_dist||  = ||A_ctx - A_dist||   (disagreement between in-context and context-distilled)
 
-Run on TWO query sets disjoint from each other:
+Run on THREE query sets:
   - TRAIN: 30 random queries actually used during the student's distillation
            (sampled from data/synth/<context>.jsonl).
-  - VAL:   30 held-out queries from src/validation_queries.py.
+  - VAL:   30 held-out queries from src/validation_queries.py — same
+           use-case domains as TRAIN, just disjoint specific items.
+  - OOD:   30 MMLU-Pro questions from data/ood_mmlu_pro.jsonl — completely
+           different domains (academic / multiple choice / etc.). Tests
+           whether context-distilled applies the context indiscriminately
+           on out-of-domain inputs (no selectivity), while in-context can
+           selectively not apply C when irrelevant.
 
 Saves:
   outputs/01_synth_distill_kvdw/<context>/activations_train.json
   outputs/01_synth_distill_kvdw/<context>/activations_val.json
-
-Usage:
-  python experiments/01_synth_distill_kvdw/phase4e_activations_train_val.py \
-    --config experiments/01_synth_distill_kvdw/config.yaml \
-    --context haiku --n-queries 30
+  outputs/01_synth_distill_kvdw/<context>/activations_ood.json
 """
 from __future__ import annotations
 
@@ -140,8 +142,22 @@ def main():
     else:
         val_queries = validation_queries.sample_validation(total=args.n_queries)
 
+    # OOD: out-of-distribution probes — MMLU-Pro questions formatted as plain
+    # queries. These are academic multiple-choice questions, completely outside
+    # the domain of training (Q&A, summarization, translation, code, recall).
+    ood_queries: list[str] = []
+    ood_path = Path("data/ood_mmlu_pro.jsonl")
+    if ood_path.exists():
+        for line in ood_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            rec = json.loads(line)
+            ood_queries.append(rec["query"])
+            if len(ood_queries) >= args.n_queries:
+                break
+
     print(f"[phase4e] context={args.context} (base={base_context})")
-    print(f"[phase4e] n_train={len(train_queries)} n_val={len(val_queries)}")
+    print(f"[phase4e] n_train={len(train_queries)} n_val={len(val_queries)} n_ood={len(ood_queries)}")
 
     dtype = torch.bfloat16 if args.device == "cuda" else torch.float32
     base, tok = models.load(cfg["model"], dtype=dtype, device=args.device)
@@ -162,6 +178,16 @@ def main():
     val_result["query_set"] = "val"
     (out_dir / "activations_val.json").write_text(json.dumps(val_result, indent=2), encoding="utf-8")
     print(f"[phase4e] wrote activations_val.json ({val_result['n_queries']} queries)")
+
+    if ood_queries:
+        print("[phase4e] computing OOD activations (MMLU-Pro)")
+        ood_result = compute_per_layer_norms(base, student, tok, base_context, ood_queries, args.device)
+        ood_result["context"] = args.context
+        ood_result["query_set"] = "ood"
+        (out_dir / "activations_ood.json").write_text(json.dumps(ood_result, indent=2), encoding="utf-8")
+        print(f"[phase4e] wrote activations_ood.json ({ood_result['n_queries']} queries)")
+    else:
+        print("[phase4e] skipping OOD (data/ood_mmlu_pro.jsonl not found)")
 
 
 if __name__ == "__main__":

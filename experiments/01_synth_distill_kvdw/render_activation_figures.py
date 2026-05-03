@@ -21,7 +21,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 
-CONTEXTS = ["haiku", "pirate", "concise", "fewshot_translate_fr", "factual"]
+CONTEXTS = ["haiku", "pirate", "concise", "fewshot_translate_fr", "factual",
+            "conv_history", "compressed_history"]
 
 
 def load_per_layer(out_root: Path, ctx: str, split: str) -> list[dict] | None:
@@ -87,8 +88,40 @@ def main():
 
     render_delta_vs_base(out_root, fig_dir / "fig1_delta_vs_base_train.png", "train")
     render_delta_vs_base(out_root, fig_dir / "fig2_delta_vs_base_val.png", "val")
+    render_delta_vs_base(out_root, fig_dir / "fig5_delta_vs_base_ood.png", "ood")
     render_ctx_vs_dw(out_root, fig_dir / "fig3_delta_ctx_vs_dw_train.png", "train")
     render_ctx_vs_dw(out_root, fig_dir / "fig4_delta_ctx_vs_dw_val.png", "val")
+    render_ctx_vs_dw(out_root, fig_dir / "fig6_delta_ctx_vs_dw_ood.png", "ood")
+    render_train_val_ood_compare(out_root, fig_dir / "fig7_train_val_ood_compare.png")
+
+
+def render_train_val_ood_compare(out_root: Path, fig_path: Path):
+    """One panel per context, showing ||v_ctx - v_dist|| at each layer for
+    train (solid), val (dashed), ood (dotted). The overall claim is the
+    train/val curves should overlap (no memorisation), while ood diverges
+    more — context-distilled applies the bake-in indiscriminately even
+    where the in-context model would not."""
+    fig, axes = plt.subplots(1, len(CONTEXTS), figsize=(20, 4.5), sharey=True)
+    if len(CONTEXTS) == 1:
+        axes = [axes]
+    for ax, ctx in zip(axes, CONTEXTS):
+        for split, ls in [("train", "-"), ("val", "--"), ("ood", ":")]:
+            rows = load_per_layer(out_root, ctx, split)
+            if rows is None:
+                continue
+            x = [r["layer"] for r in rows]
+            y = [r["v_ctx_minus_v_dw_norm"] for r in rows]
+            ax.plot(x, y, linestyle=ls, marker=".", label=f"{split.upper()} (n={len(x)})")
+        ax.set_title(ctx)
+        ax.set_xlabel("layer")
+        ax.legend(fontsize=7)
+    axes[0].set_ylabel(r"$\|v_\mathrm{ctx} - v_\mathrm{dist}\|$")
+    plt.suptitle("Train vs Val vs OOD disagreement per layer (one panel per context)")
+    plt.tight_layout()
+    fig_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(fig_path, dpi=150)
+    plt.close()
+    print(f"[render] wrote {fig_path}")
 
 
 if __name__ == "__main__":
