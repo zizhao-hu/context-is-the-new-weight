@@ -57,9 +57,17 @@ def site_curve(per_site: dict, metric: str = "rmsnorm_cosine") -> list[tuple[int
     return rows
 
 
+def _is_s2_context(ctx_name: str) -> bool:
+    """Headline figures show only context-simulate-FT (Setting 2). Filter out
+    context-FT (ctxonly_*) and the no_context control."""
+    return not ctx_name.startswith("ctxonly_") and ctx_name != "no_context"
+
+
 def render_figure(data: dict[str, dict], fig_path: Path, metric: str = "rmsnorm_cosine"):
     plt.figure(figsize=(11, 5))
     for ctx, blob in data.items():
+        if not _is_s2_context(ctx):
+            continue
         rows = site_curve(blob["per_site"], metric=metric)
         x = list(range(len(rows)))
         y = [r[2] for r in rows]
@@ -67,7 +75,7 @@ def render_figure(data: dict[str, dict], fig_path: Path, metric: str = "rmsnorm_
     plt.axhline(0.0, color="grey", linestyle=":", linewidth=0.5)
     plt.xlabel("site index (interleaved attn / mlp across layers)")
     plt.ylabel(f"cosine ({metric})")
-    plt.title("KV-vs-ΔW alignment per residual-stream site")
+    plt.title("KV-vs-ΔW alignment per residual-stream site (context-simulate-FT)")
     plt.legend()
     plt.tight_layout()
     fig_path.parent.mkdir(parents=True, exist_ok=True)
@@ -91,6 +99,8 @@ def per_layer_curve(per_site: dict, metric: str) -> list[tuple[int, float]]:
 def render_per_layer_figure(data: dict[str, dict], fig_path: Path, metric: str = "rmsnorm_cosine"):
     plt.figure(figsize=(10, 4.5))
     for ctx, blob in data.items():
+        if not _is_s2_context(ctx):
+            continue
         rows = per_layer_curve(blob["per_site"], metric=metric)
         x = [r[0] for r in rows]
         y = [r[1] for r in rows]
@@ -110,6 +120,8 @@ def render_per_layer_figure(data: dict[str, dict], fig_path: Path, metric: str =
 def render_peak_table(data: dict[str, dict], csv_path: Path, metric: str = "rmsnorm_cosine"):
     rows = []
     for ctx, blob in data.items():
+        if not _is_s2_context(ctx):
+            continue
         rows_ctx = site_curve(blob["per_site"], metric=metric)
         if not rows_ctx:
             continue
@@ -130,8 +142,18 @@ def render_peak_table(data: dict[str, dict], csv_path: Path, metric: str = "rmsn
     print(f"[analyze] wrote {csv_path}")
 
 
+def _label_for(ctx_name: str) -> str:
+    """Human-readable label given a directory name."""
+    if ctx_name.startswith("ctxonly_"):
+        return f"{ctx_name[len('ctxonly_'):]} (context-FT)"
+    if ctx_name == "no_context":
+        return "control (no_context)"
+    return ctx_name  # context-simulate-FT — bare context name is enough
+
+
 def render_delta_norms(out_root: Path, fig_dir: Path):
-    """If per-layer ΔW Frob JSONs exist, render them too."""
+    """Per-layer ΔW Frob figures. Headline ones show only S2 + control;
+    full version shows all settings."""
     data: dict[str, dict] = {}
     for ctx_dir in sorted(p for p in out_root.iterdir() if p.is_dir()):
         path = ctx_dir / "delta_norms.json"
@@ -142,60 +164,60 @@ def render_delta_norms(out_root: Path, fig_dir: Path):
         print("[analyze] no delta_norms.json files yet; skipping ΔW figures")
         return
 
-    # Per-layer Frob (one line per context). frob_per_param controls for n_params drift across layers.
+    # Headline: S2 + control only (S3 is reported separately in s3_delta.png).
+    s2_and_ctrl = {k: v for k, v in data.items() if not k.startswith("ctxonly_")}
+
     plt.figure(figsize=(10, 4.5))
-    for ctx, blob in data.items():
+    for ctx, blob in s2_and_ctrl.items():
         rows = blob["per_layer"]
         x = [r["layer"] for r in rows]
         y = [r["frob_per_param"] for r in rows]
-        plt.plot(x, y, marker="o", label=ctx)
+        plt.plot(x, y, marker="o", label=_label_for(ctx))
     plt.xlabel("layer")
     plt.ylabel("‖ΔW‖_F per parameter")
-    plt.title("Per-layer ΔW Frobenius norm (RMS per parameter)")
+    plt.title("Per-layer ΔW Frobenius norm — context-simulate-FT + control")
     plt.legend()
     plt.tight_layout()
     plt.savefig(fig_dir / "delta_per_layer.png", dpi=150)
     plt.close()
     print(f"[analyze] wrote {fig_dir / 'delta_per_layer.png'}")
 
-    # Per-group totals (attn.q vs attn.k vs ... vs mlp.down). Bar chart per context.
-    groups = sorted({g for blob in data.values() for g in blob["by_group"]})
+    # Per-group totals (S2 + control)
+    groups = sorted({g for blob in s2_and_ctrl.values() for g in blob["by_group"]})
     plt.figure(figsize=(10, 5))
     width = 0.16
     xs = list(range(len(groups)))
-    for i, (ctx, blob) in enumerate(sorted(data.items())):
+    for i, (ctx, blob) in enumerate(sorted(s2_and_ctrl.items())):
         ys = [blob["by_group"].get(g, 0.0) for g in groups]
-        plt.bar([x + i * width for x in xs], ys, width=width, label=ctx)
+        plt.bar([x + i * width for x in xs], ys, width=width, label=_label_for(ctx))
     plt.xticks([x + 2 * width for x in xs], groups, rotation=30, ha="right")
     plt.ylabel("‖ΔW‖_F (group total)")
-    plt.title("ΔW Frobenius norm by parameter group, per context")
+    plt.title("ΔW Frobenius norm by parameter group — context-simulate-FT + control")
     plt.legend()
     plt.tight_layout()
     plt.savefig(fig_dir / "delta_by_group.png", dpi=150)
     plt.close()
     print(f"[analyze] wrote {fig_dir / 'delta_by_group.png'}")
 
-    # Per-layer per-group heatmap-style: separate attn.* and mlp.* lines per layer.
-    # For each context, plot two lines per layer: total attn ΔW and total mlp ΔW.
+    # Per-layer per-group: attn vs mlp. S2 + control.
     plt.figure(figsize=(10, 5))
-    for ctx, blob in sorted(data.items()):
-        # Aggregate to attn-vs-mlp per layer
+    for ctx, blob in sorted(s2_and_ctrl.items()):
         by_layer_kind: dict[int, dict[str, float]] = {}
         for r in blob["per_layer_group"]:
             kind = "attn" if r["group"].startswith("attn.") else ("mlp" if r["group"].startswith("mlp.") else None)
             if kind is None:
                 continue
             d = by_layer_kind.setdefault(r["layer"], {"attn": 0.0, "mlp": 0.0})
-            # combine via sum-of-squares since these are Frob norms
             d[kind] = (d[kind] ** 2 + r["frob"] ** 2) ** 0.5
         layers = sorted(by_layer_kind)
         attn_y = [by_layer_kind[L]["attn"] for L in layers]
         mlp_y = [by_layer_kind[L]["mlp"] for L in layers]
-        plt.plot(layers, attn_y, linestyle="-", marker=".", label=f"{ctx} attn")
-        plt.plot(layers, mlp_y, linestyle="--", marker=".", label=f"{ctx} mlp")
+        lbl = _label_for(ctx)
+        plt.plot(layers, attn_y, linestyle="-", marker=".", label=f"{lbl} attn")
+        plt.plot(layers, mlp_y, linestyle="--", marker=".", label=f"{lbl} mlp")
     plt.xlabel("layer")
     plt.ylabel("‖ΔW‖_F (attn vs mlp, summed over group)")
-    plt.title("ΔW Frobenius norm split by sublayer per layer")
+    plt.title("ΔW Frobenius norm split by sublayer per layer — context-simulate-FT + control")
     plt.legend(fontsize=7, ncol=2)
     plt.tight_layout()
     plt.savefig(fig_dir / "delta_attn_vs_mlp_per_layer.png", dpi=150)
@@ -264,10 +286,13 @@ def render_s2_vs_s3(s2: dict, s3: dict, fig_dir: Path, metric: str = "rmsnorm_co
 
 
 def render_triangle(data: dict[str, dict], fig_dir: Path):
-    """Plot per-layer cos(v_ctx, base) and cos(v_dw, base), plus relative norms."""
+    """Plot per-layer cos(v_ctx, base) and cos(v_dw, base), plus relative norms.
+    Restricted to context-simulate-FT — context-FT has its own diagnostic."""
     fig, axes = plt.subplots(1, 3, figsize=(16, 4.5))
 
     for ctx, blob in data.items():
+        if not _is_s2_context(ctx):
+            continue
         per_site = blob["per_site"]
         # average attn/mlp at each layer
         def by_layer_mean(metric):
