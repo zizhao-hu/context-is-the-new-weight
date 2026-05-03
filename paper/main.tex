@@ -490,6 +490,34 @@ counts (high cosine), the magnitude of disagreement is also
 concentrated there --- exactly what one would expect if they
 implement the same direction with different strength.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{../figures/fig7_train_val_ood_compare.png}
+\caption{Per-layer $\|v^\text{ctx} - v^\text{dist}\|$ on TRAIN
+(solid), VAL (dashed), and OOD MMLU-Pro (dotted) queries, one panel
+per context. Across every context the three curves nearly overlap:
+the student perturbs the residual stream by essentially the same
+amount on academic multiple-choice questions as on the queries it was
+trained on. The same in-context vs context-distilled disagreement
+pattern shows up regardless of input distribution.}
+\label{fig:train_val_ood}
+\end{figure}
+
+\paragraph{The student's perturbation is distribution-independent.}
+We repeat the per-layer activation analysis on $30$ MMLU-Pro
+questions (the same OOD probe used in
+Section~\ref{sec:mmlu}). Figure~\ref{fig:train_val_ood} overlays
+$\|v^\text{ctx} - v^\text{dist}\|$ on TRAIN, VAL, and OOD queries:
+the three curves are nearly indistinguishable in every context. The
+context-distilled student perturbs the residual stream by the same
+amount on a college-level physics question as on its own training
+queries. This is a mechanistic statement of the non-selectivity that
+Section~\ref{sec:mmlu} will measure behaviourally: the bake-in is
+unconditional because the student's residual deltas do not depend on
+whether the input has anything to do with $C$. The in-context teacher
+has the option of choosing not to attend to $C$ when it is irrelevant
+--- and Section~\ref{sec:mmlu} shows it exercises that option.
+
 \section{Capability degradation on out-of-distribution tasks}
 \label{sec:mmlu}
 
