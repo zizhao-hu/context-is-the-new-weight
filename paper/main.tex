@@ -582,23 +582,29 @@ the property the student has lost.
 
 \begin{table}[t]
 \centering
-\caption{ROUGE-L between model variants' generated answers, on the
-in-distribution validation set vs out-of-distribution MMLU-Pro. The
-in-context teacher's answers track base on OOD (the model
-selectively ignores irrelevant $C$), but the context-distilled
-student's answers diverge sharply from the teacher's on OOD --- the
-student cannot ignore $C$ when irrelevant.}
+\caption{All three pairwise ROUGE-L scores between model variants'
+generated answers, separated by query distribution. ``in-dist'' = the
+in-distribution validation set
+(Section~\ref{sec:forward}); ``OOD'' = MMLU-Pro questions, which lie
+outside the domain of every context's training distribution. On OOD,
+ROUGE-L(in-context, base) stays high for most contexts --- the
+in-context teacher selectively ignored the irrelevant $C$ and produced
+near-base answers --- while ROUGE-L(stu, base) crashes for pirate,
+fewshot, and factual, indicating the student is committed to a
+baked-in behavior that diverges sharply from how base would have
+answered.}
 \label{tab:rouge_oodvsid}
 \small
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc|ccc}
 \toprule
-Context & ROUGE-L(stu, in-ctx) in-dist & ROUGE-L(stu, in-ctx) OOD & ROUGE-L(base, in-ctx) in-dist & ROUGE-L(base, in-ctx) OOD \\
+& \multicolumn{3}{c|}{In-distribution validation} & \multicolumn{3}{c}{OOD (MMLU-Pro)} \\
+Context & (in-ctx, base) & (stu, base) & (stu, in-ctx) & (in-ctx, base) & (stu, base) & (stu, in-ctx) \\
 \midrule
-haiku                  & 0.523 & 0.301 & 0.226 & 0.301 \\
-pirate                 & 0.610 & 0.168 & 0.322 & 0.429 \\
-concise                & 0.661 & 0.531 & 0.421 & 0.700 \\
-fewshot\_translate\_fr & 0.767 & \textbf{0.006} & 0.459 & 0.600 \\
-factual                & 0.515 & 0.120 & 0.364 & 0.331 \\
+haiku                  & 0.226 & 0.292 & 0.523 & 0.201 & 0.460          & 0.081 \\
+pirate                 & 0.322 & 0.352 & 0.610 & 0.274 & \textbf{0.000} & 0.125 \\
+concise                & 0.421 & 0.432 & 0.661 & 0.520 & 0.473          & 0.511 \\
+fewshot\_translate\_fr & 0.459 & 0.380 & 0.767 & 0.440 & \textbf{0.011} & \textbf{0.006} \\
+factual                & 0.364 & 0.257 & 0.515 & 0.272 & \textbf{0.008} & 0.022 \\
 \bottomrule
 \end{tabular}
 \end{table}
