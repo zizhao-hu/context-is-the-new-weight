@@ -204,7 +204,7 @@ Setting 3 (context-FT) recipe shares all hyperparameters but trains on
 the chat-template encoding of $C$ alone for 100 forward-backward passes
 (see Section~\ref{sec:s3}).
 
-\paragraph{Behavior verification.}
+\paragraph{Behavior verification (training set).}
 Before any mechanism analysis, we re-run the trained student on its own
 training queries with no context and compare its outputs against the
 teacher's stored answers (string-level match, prefix-match length, per-
@@ -216,6 +216,69 @@ exact-match rate of at least~$0.30$ or a prefix-5 match rate of at
 least~$0.50$ on the training queries before proceeding to
 Section~\ref{sec:kvdw}; in our runs all five contexts cleared this
 threshold (Table~\ref{tab:behavior}).
+
+\paragraph{Held-out validation.}
+Training-set verification could be memorisation. We therefore evaluate on
+a separate validation set of 30 queries per context that are drawn from
+five use cases (Q\&A, summarisation, translation, code, recall) and are
+\emph{disjoint} from the training pool of Section~\ref{sec:setup}. For
+each query~$Q'$ we generate three answers --- the base $A_\text{base} =
+M(Q' \mid \theta, \emptyset)$, the in-context teacher $A_\text{ctx} =
+M(Q' \mid \theta, [C; Q'])$, and the context-distillation-FT student
+$A_\text{stu} = M(Q' \mid \theta_C, \emptyset)$ --- and report two
+complementary signals.
+
+The first is the ROUGE-L F1 between pairs and the resulting
+\emph{ROUGE gap-closure}: $(\mathrm{R}_L(A_\text{stu}, A_\text{ctx}) -
+\mathrm{R}_L(A_\text{base}, A_\text{ctx})) / (1 -
+\mathrm{R}_L(A_\text{base}, A_\text{ctx}))$. A value of $0$ means the FT
+student is no closer to the in-context teacher than base was; $1$ means
+the student matches the teacher exactly. The second is a
+\emph{behavioural pattern rate} appropriate for the context type ---
+fraction of three-line outputs for haiku, presence of pirate vocabulary
+for pirate, output length cap for concise, French-character or French-
+word presence for translate-fr, refusal-pattern rate for factual --- and
+the analogous behavioural gap-closure $(p_\text{stu} - p_\text{base}) /
+(p_\text{ctx} - p_\text{base})$.
+
+\begin{table}[t]
+\centering
+\caption{Held-out validation. ROUGE-L gap-closure measures how much of
+the base$\to$teacher distance the student covers in surface tokens.
+Behavioural pattern rate measures whether the structural feature
+characteristic of the context type (haiku-shape, pirate vocabulary,
+short answer, French content, refusal) appears at the rate the teacher
+exhibits. Behavioural gap-closure is the analogous fraction in pattern
+space. ROUGE-L underrates stylistic transfer where content drifts but
+form is preserved (haiku, fewshot); the behavioural rate captures this.}
+\label{tab:held_out}
+\small
+\begin{tabular}{lcc|ccc|c}
+\toprule
+Context & $\mathrm{R}_L($base, ctx$)$ & $\mathrm{R}_L($stu, ctx$)$ &
+  Pattern (T/S/B) & ROUGE-L closure & Beh.\ closure & status \\
+\midrule
+haiku   & 0.226 & 0.523 & 0.93 / 0.75 / 0.04 & 0.384 & +0.80 & pass (beh.) \\
+pirate  & 0.322 & 0.610 & 1.00 / 1.00 / 0.14 & 0.424 & +1.00 & pass \\
+concise & 0.421 & 0.661 & 0.96 / 0.96 / 0.29 & 0.414 & +1.00 & pass \\
+fewshot\_translate\_fr & 0.459 & 0.767 & 0.64 / 0.54 / 0.18 & 0.570 & +0.77 & pass \\
+factual & 0.364 & 0.515 & 0.44 / 0.22 / 0.52 & 0.238 & ambiguous & marginal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:held_out} shows that for the four non-factual contexts
+the student reproduces the teacher's behavioural pattern on held-out
+queries at a rate well above base ($+0.77$ to $+1.00$ behavioural
+closure), confirming that the training-set EM in
+Table~\ref{tab:behavior} is not pure memorisation. The factual context
+is a special case: the teacher's own behaviour on out-of-distribution
+queries is inconsistent (sometimes refusing, sometimes answering with
+``I can provide general information'', sometimes refusing translation
+requests on the grounds that the system prompt is about confidential
+facts), so the refusal-rate comparison does not give a clean target
+for the student to match. We retain factual in subsequent analysis but
+flag this as a caveat.
 
 \paragraph{KV-vs-$\Delta W$ probe set.}
 We sample 30 held-out probe queries~$Q'_j$ from the same use-case bank,
