@@ -33,25 +33,28 @@
 
 \begin{abstract}
 We compare two ways of making a language model behave according to a
-context $C$: prepending $C$ at inference time, which we call
-\textbf{in-context}; and fine-tuning the model on synthetic $(Q, A)$
-pairs where $A$ has been generated under $C$, which we call
-\textbf{context-distilled}. Both interventions are evaluated against
-the unmodified \textbf{base} model. We do not compare in weight space;
-we compare \emph{activations}, layer by layer, on Llama-3.1-8B-Instruct
-across five context types --- structure constraint (high and low),
-style constraint, few-shot, and factual injection --- with two
-complementary measures: (i) how each intervention changes residual-
-stream activations relative to base, and (ii) how similar the two
-resulting activation perturbations are to each other. We find that
-context-distilled produces a residual-stream perturbation aligned with
-the in-context perturbation at every layer, with cosine reaching
-$0.42$--$0.80$ at peak sites in the last third of the network --- but
-with consistently larger magnitude than the in-context perturbation.
-The activation pattern is invariant across training and held-out
-validation queries, ruling out memorisation. The two interventions
-agree on direction but not on amount: they are related, not identical,
-and serve different purposes.
+context $C$: prepending $C$ at inference time (\textbf{in-context}) and
+fine-tuning the model on synthetic $(Q, A)$ pairs generated under $C$
+(\textbf{context-distilled}), both evaluated against the unmodified
+\textbf{base} model. We compare \emph{activations}, layer by layer, on
+Llama-3.1-8B-Instruct across seven context types --- structure
+constraints, style constraints, few-shot demonstrations, factual
+injection, conversational history, and a compressed-history summary. We
+find that context-distilled produces a residual-stream perturbation
+aligned with the in-context perturbation in direction (cosine
+$0.42$--$0.80$ at peak sites in the last third of the network) but with
+consistently larger magnitude. The activation pattern is invariant
+across training and held-out validation queries, ruling out
+memorisation. Crucially, evaluating both variants on the unrelated
+MMLU-Pro benchmark reveals that in-context preserves general
+capability ($\Delta$ acc $\in [-0.07, +0.02]$ across all seven
+contexts), while context-distilled destroys it for most contexts
+($\Delta$ acc as low as~$-0.24$). The two interventions agree on
+direction but not on selectivity: in-context applies the perturbation
+\emph{conditionally} via attention; context-distilled applies it
+\emph{indiscriminately}, sacrificing capability on out-of-distribution
+inputs for permanence on the training distribution. Context-distillation
+is therefore not a clean substitute for context compression.
 \end{abstract}
 
 \section{Introduction}
@@ -481,6 +484,68 @@ in-context and context-distilled point in similar directions where it
 counts (high cosine), the magnitude of disagreement is also
 concentrated there --- exactly what one would expect if they
 implement the same direction with different strength.
+
+\section{Capability degradation on out-of-distribution tasks}
+\label{sec:mmlu}
+
+The activation analysis shows in-context and context-distilled produce
+\emph{aligned but larger} perturbations. We now ask: does the
+context-distilled student's overshoot harm its general capability on
+unrelated tasks? We evaluate all three model variants on a stratified
+$294$-question subset of MMLU-Pro~\citep{wang2024mmlupro}, drawn from
+its 14 academic categories and disjoint from any training distribution
+the student saw. Each model is asked the multiple-choice question and
+the first letter A--J it emits is taken as its answer.
+
+\begin{table}[t]
+\centering
+\caption{MMLU-Pro accuracy comparison across model variants.
+``base'' = the unmodified Llama-3.1-8B-Instruct; ``in-context'' = the
+base model with $C$ prepended; ``context-distilled'' = the
+$\theta_C$ student with no $C$ at inference. Negative deltas indicate
+loss of general capability relative to base.}
+\label{tab:mmlu}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Context & base & in-context & context-distilled & $\Delta$(distilled vs base) \\
+\midrule
+haiku                  & 0.360 & 0.295 & 0.365 & $+0.005$ \\
+pirate                 & 0.360 & 0.325 & 0.125 & $\mathbf{-0.235}$ \\
+concise                & 0.360 & 0.380 & 0.300 & $-0.060$ \\
+fewshot\_translate\_fr & 0.360 & 0.375 & 0.135 & $\mathbf{-0.225}$ \\
+factual                & 0.360 & 0.320 & 0.140 & $\mathbf{-0.220}$ \\
+conv\_history          & 0.360 & 0.350 & 0.130 & $\mathbf{-0.230}$ \\
+compressed\_history    & 0.360 & 0.365 & 0.330 & $-0.030$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The result in Table~\ref{tab:mmlu} is striking. \textbf{In-context
+preserves general capability on MMLU-Pro --- the variant deltas vs base
+range from~$-0.07$ to~$+0.02$, mostly within noise.} Whatever surface
+constraint the context imposes, the model can still answer
+unrelated multiple-choice questions correctly when given them, because
+the context is consulted via attention only when relevant.
+\textbf{Context-distillation, in contrast, destroys general capability
+on most contexts: pirate, fewshot, factual, and conv\_history each lose
+$0.22$--$0.24$ accuracy points (more than half their headroom above the
+$0.10$-random-guess floor).} Only haiku --- whose constraint is
+triggered by Q\&A-style queries that look unlike MCQ --- and
+compressed\_history --- a brief tag-on of facts that doesn't strongly
+re-route the model --- avoid the catastrophic drop.
+
+This result is the practical consequence of the magnitude overshoot
+documented in Section~\ref{sec:layerwise_norms}. The
+context-distilled student applies its baked-in contextual perturbation
+\emph{indiscriminately} on every input, including out-of-distribution
+academic questions where the perturbation is harmful. In-context
+applies the perturbation \emph{conditionally} via attention to $C$'s
+tokens, which the model can effectively ignore when the rest of the
+context is irrelevant. Compressing the context into the weights via
+context-distillation is therefore not a clean substitute for keeping
+the context in attention --- it is a lossy transformation that
+sacrifices selectivity for permanence.
 
 \section{Related work}
 \label{sec:related}
