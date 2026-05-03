@@ -21,10 +21,20 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--context", required=True)
+    ap.add_argument("--epochs", type=int, default=None,
+                    help="Override config's phase2.epochs (use to retrain weak contexts)")
+    ap.add_argument("--lr", type=float, default=None,
+                    help="Override config's phase2.lr")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = ap.parse_args()
 
     cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
+    if args.epochs is not None:
+        cfg["phase2"]["epochs"] = args.epochs
+        print(f"[phase2] epoch override: {args.epochs}")
+    if args.lr is not None:
+        cfg["phase2"]["lr"] = args.lr
+        print(f"[phase2] lr override: {args.lr}")
 
     data_path = Path(cfg["data_root"]) / f"{args.context}.jsonl"
     save_dir = Path(cfg["saves_root"]) / args.context
