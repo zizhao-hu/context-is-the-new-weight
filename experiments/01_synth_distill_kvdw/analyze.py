@@ -228,7 +228,8 @@ def main():
     if any("cos_ctx_base" in next(iter(d["per_site"].values()), {}) for d in data.values()):
         render_triangle(data, fig_dir)
 
-    # S2 vs S3 (ctxonly) comparison — if any ctxonly_* entries exist
+    # context-simulate-FT vs context-FT comparison — if any ctxonly_* entries exist
+    # (keeping the ctxonly_ directory prefix for backward compatibility on disk)
     s3_data = {k: v for k, v in data.items() if k.startswith("ctxonly_")}
     s2_data = {k: v for k, v in data.items() if not k.startswith("ctxonly_") and k != "no_context"}
     if s3_data and s2_data:
@@ -236,8 +237,8 @@ def main():
 
 
 def render_s2_vs_s3(s2: dict, s3: dict, fig_dir: Path, metric: str = "rmsnorm_cosine"):
-    """Per-context: solid line = S2 (synth-FT) v_dw vs v_ctx alignment;
-    dashed line = S3 (ctxonly-FT) v_dw vs v_ctx alignment. Both share the
+    """Per-context: solid line = context-simulate-FT v_dw vs v_ctx alignment;
+    dashed line = context-FT v_dw vs v_ctx alignment. Both share the
     same v_ctx (same context applied at inference)."""
     contexts = sorted(set(s2.keys()) & {k.replace("ctxonly_", "") for k in s3.keys()})
     if not contexts:
@@ -254,7 +255,7 @@ def render_s2_vs_s3(s2: dict, s3: dict, fig_dir: Path, metric: str = "rmsnorm_co
     plt.axhline(0.0, color="grey", linestyle=":", linewidth=0.5)
     plt.xlabel("layer")
     plt.ylabel(f"cos(v_ctx, v_dw) ({metric})")
-    plt.title("context-simulate vs context-FT: alignment with the same v_ctx")
+    plt.title("context-simulate-FT vs context-FT: alignment with the same v_ctx")
     plt.legend(fontsize=7, ncol=2)
     plt.tight_layout()
     plt.savefig(fig_dir / "s2_vs_s3_alignment.png", dpi=150)
