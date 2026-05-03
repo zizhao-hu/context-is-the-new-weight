@@ -563,6 +563,46 @@ context-distillation is therefore not a clean substitute for keeping
 the context in attention --- it is a lossy transformation that
 sacrifices selectivity for permanence.
 
+\paragraph{Selectivity loss visible at the answer level.}
+Table~\ref{tab:rouge_oodvsid} sharpens the same point at the level
+of generated text. On the in-distribution validation set, the
+context-distilled student's answers track the in-context teacher's
+closely (ROUGE-L $0.52$--$0.77$ across contexts). On
+out-of-distribution MMLU-Pro questions --- where the context is
+mostly irrelevant --- the student's answers \emph{diverge sharply}
+from the teacher's (ROUGE-L $0.006$--$0.53$). For fewshot the
+divergence is essentially complete: the student's answer to an MCQ
+shares almost no tokens with the teacher's. Meanwhile,
+$\mathrm{R}_L(\text{base}, \text{in-context})$ on the same OOD
+questions is $0.33$--$0.70$ --- much closer than student-to-teacher
+--- because the in-context teacher's attention chose to ignore the
+irrelevant $C$ and produced an answer almost identical to what base
+would have produced. The teacher's flexibility on OOD is exactly
+the property the student has lost.
+
+\begin{table}[t]
+\centering
+\caption{ROUGE-L between model variants' generated answers, on the
+in-distribution validation set vs out-of-distribution MMLU-Pro. The
+in-context teacher's answers track base on OOD (the model
+selectively ignores irrelevant $C$), but the context-distilled
+student's answers diverge sharply from the teacher's on OOD --- the
+student cannot ignore $C$ when irrelevant.}
+\label{tab:rouge_oodvsid}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Context & R$_L$(stu, in-ctx) in-dist & R$_L$(stu, in-ctx) OOD & R$_L$(base, in-ctx) in-dist & R$_L$(base, in-ctx) OOD \\
+\midrule
+haiku                  & 0.523 & 0.301 & 0.226 & 0.301 \\
+pirate                 & 0.610 & 0.168 & 0.322 & 0.429 \\
+concise                & 0.661 & 0.531 & 0.421 & 0.700 \\
+fewshot\_translate\_fr & 0.767 & \textbf{0.006} & 0.459 & 0.600 \\
+factual                & 0.515 & 0.120 & 0.364 & 0.331 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Is prefix tuning the right compression target?}
 \label{sec:prefix}
 
