@@ -21,6 +21,9 @@ env/
 *.swo
 *~
 
+# Claude Code (personal/local-only)
+.claude/settings.local.json
+
 # OS
 .DS_Store
 Thumbs.db
