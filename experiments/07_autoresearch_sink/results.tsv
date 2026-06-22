@@ -17,3 +17,8 @@ iter	exp_id	aim	model	scheme	metric	value	decision	note
 3	A7	eff	fla-transformer-1.3B	full	latency_ms@32k	2362.5	keep	O(L^2) quadratic blowup
 3	A7	eff	fla-transformer-1.3B	windowed256	latency_ms@32k	866.3	keep	O(L*W) linear; 2.7x faster than full @32k
 3	A7	eff	fla-gla-1.3B	gla	latency_ms@32k	988.6	keep	O(L) linear, gated
+5	A3	3a	Qwen0.5B	base	sliding256_ppl	56.728	keep	base collapses under sliding window
+5	A3	3a	Qwen0.5B	base	streamingLLM_ppl	13.942	keep	StreamingLLM trick recovers base
+5	A3	3a	Qwen0.5B	windowed	sliding256_ppl	14.639	keep	windowed-FT streams sink-free (no sink tokens) ~ base+SLM 13.9
+5	A5	3c	Qwen0.5B	base	passkey_win256_d512	52.28	keep	base erratic out-of-window (38-7055)
+5	A5	3c	Qwen0.5B	windowed	passkey_win256_d512	35.91	keep	windowed more stable but neither RELAYS (both ~37 vs full 1.5); broadcasting=spread not retrieval
