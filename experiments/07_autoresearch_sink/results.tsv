@@ -27,3 +27,7 @@ iter	exp_id	aim	model	scheme	metric	value	decision	note
 8	A4	3b	Qwen0.5B	base	hotpotqa_windowed_ppl	102.326	keep	base COLLAPSES windowed on real QA (sink-deletion)
 8	A4	3b	Qwen0.5B	base	hotpotqa_streamingLLM_ppl	12.781	keep	StreamingLLM restores base (sink tokens)
 8	A4	3b	Qwen0.5B	windowed	hotpotqa_windowed_ppl	29.185	keep	windowed-FT avoids collapse (102->29) but < base+SLM; far-retrieval + wikitext-CPT drift (full 3.01->6.15)
+10	A4b	3b	Qwen0.5B	base	hotpot_n1549_windowed	120.40	keep	collapse (n=1549 stable)
+10	A4b	3b	Qwen0.5B	base	hotpot_n1549_streamingLLM	15.75	keep	StreamingLLM trick
+10	A4b	3b	Qwen0.5B	windowed	hotpot_n1549_windowed	38.21	keep	windowed-FT bounded QA
+10	A4b	3b	Qwen0.5B	persist	hotpot_n1549_persist	23.87	keep	PERSIST FIX: registers cut 38->24 (toward SLM 15.75); less drift (full 4.83<windowed 6.61)
