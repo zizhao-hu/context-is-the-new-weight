@@ -57,3 +57,4 @@ iter	exp_id	aim	model	scheme	metric	value	decision	note
 14	A10	suite	fla-1.3B-suite	retnet	budget_all	22.6/17.1/13.8/12.0/11.0	keep	retention
 14	A10	suite	fla-1.3B-suite	INSIGHT	bounded-budget	all~20-23@128	keep	no off-the-shelf mixer handles tight budget; windowed-FT 10.6@128 -> competence from TRAINING not architecture
 15	A11	sink1p3b	fla-transformer-1.3B	base	pos0_attn	0.1696	keep	1.3B base sink WEAK (0.17 vs Qwen 0.39); measured via eager q,k recompute (flash-attn hides weights)
+15	A11	sink1p3b	fla-transformer-1.3B	sliding-window	pos0_attn	0.1523	keep	sliding-win training REDUCES Type-1 sink 0.170->0.152 (~10%, modest); direction matches Qwen 0.39->0.14 but weaker bc 1.3B base sink already mild
