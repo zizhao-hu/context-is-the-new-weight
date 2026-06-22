@@ -1,0 +1,11 @@
+iter	exp_id	aim	model	scheme	metric	value	decision	note
+0	B0	1/2	fla-transformer-1.3B	base	ppl_chunk_W256	11.689	keep	baseline softmax
+0	B0	1/2	fla-gla-1.3B	base	ppl_chunk_W256	11.935	keep	baseline gated; tf marginally ahead at every W
+0	B1	1/3	fla-transformer-1.3B	base	ppl_slidewin_W256	16.127	keep	collapses under true sliding window (pos-0 deleted)
+0	B1	1/3	fla-transformer-1.3B	base	ppl_full	9.942	keep	full-context reference
+0	B1	1/3	fla-gla-1.3B	base	ppl_constmem	10.405	keep	gated, constant memory ≈ tf full-context
+1	B2	1/2	fla-transformer-1.3B	triangle-CPT	ppl_slidewin_W256	13.531	keep	control: full-causal CPT stays collapsed (vs base 16.13)
+1	B2	1/2	fla-transformer-1.3B	windowed-FT	ppl_slidewin_W256	10.160	keep	RECOVERS 16.13->10.16 (~its full 9.12); windowing is the cause
+1	B2	1/2	fla-transformer-1.3B	startup-FT	ppl_slidewin_W256	10.191	keep	≈ windowed
+1	B2	1/2	fla-gla-1.3B	triangle-CPT	ppl_constmem	8.930	keep	gated ref (normal training); windowed-softmax 10.16 approaches it
+1	B2	1/2	fla-gla-1.3B	startup	ppl_constmem	8.917	keep	gla + prefix, no change
