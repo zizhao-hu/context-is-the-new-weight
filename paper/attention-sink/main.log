@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  22 JUN 2026 13:01
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  22 JUN 2026 13:03
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -390,7 +390,7 @@ File: figures/qwen_sink_spread.png Graphic file (type png)
 Package pdftex.def Info: figures/qwen_sink_spread.png  used on input line 143.
 (pdftex.def)             Requested size: 239.39438pt x 79.48741pt.
  (./tables/matrix.tex) [4 <./figures/qwen9b_sink_summary.png> <./figures/qwen_sink_spread.png>] (./tables/strict_matrix.tex
-Overfull \hbox (42.33278pt too wide) in paragraph at lines 5--26
+Overfull \hbox (29.53145pt too wide) in paragraph at lines 5--26
  [][] 
  []
 
@@ -430,7 +430,7 @@ Here is how much of TeX's memory you used:
  14 hyphenation exceptions out of 8191
  89i,9n,117p,1800b,394s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/tex-gyre/qtmr.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmb.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmr.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmri.pfb>
-Output written on main.pdf (7 pages, 945140 bytes).
+Output written on main.pdf (7 pages, 945119 bytes).
 PDF statistics:
  112 PDF objects out of 1000 (max. 8388607)
  60 compressed objects within 1 object stream
