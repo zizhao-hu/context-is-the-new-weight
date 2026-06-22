@@ -50,3 +50,9 @@ iter	exp_id	aim	model	scheme	metric	value	decision	note
 13	A9	gla-schemes	fla-gla-1.3B	windowed-128vs1024@128	-	12.93vs13.85	keep	train window nearly irrelevant for gla (vs softmax 10.6 flat) -> windowing is softmax-specific
 13	A9	gla-schemes	fla-gla-1.3B	startup-256	deploy128/.../full	12.63/10.74/9.67/9.05/8.70	keep	warm-up prompt helps gla at tight budgets (12.63<13.12)
 13	A9	correction	fla-gla-1.3B	gla-native-vs-bounded	-	8.71full/10.99@256	keep	prev '8.71 every column' was gla ignoring window; bounded gla @256=10.99 < softmax-windowed 9.63
+14	A10	suite	fla-1.3B-suite	transformer	budget128/256/512/1024/full	21.9/16.4/13.3/11.4/10.2	keep	off-the-shelf block-budget
+14	A10	suite	fla-1.3B-suite	gla	budget_all	21.9/16.6/13.5/11.7/10.6	keep	gated linear
+14	A10	suite	fla-1.3B-suite	gsa	budget_all	20.4/15.6/12.7/11.1/10.1	keep	gated slot
+14	A10	suite	fla-1.3B-suite	delta_net	budget_all	20.5/15.6/12.6/10.9/9.81	keep	delta rule; BEST at full
+14	A10	suite	fla-1.3B-suite	retnet	budget_all	22.6/17.1/13.8/12.0/11.0	keep	retention
+14	A10	suite	fla-1.3B-suite	INSIGHT	bounded-budget	all~20-23@128	keep	no off-the-shelf mixer handles tight budget; windowed-FT 10.6@128 -> competence from TRAINING not architecture

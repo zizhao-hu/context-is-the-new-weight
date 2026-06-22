@@ -162,6 +162,10 @@ Is the gain from \emph{windowing}, or merely from more finetuning? We answer wit
 
 \input{tables/eff.tex}
 
+\paragraph{The whole zoo.} Is bounded-budget quality just a property of \emph{some} mixer we should have picked? We evaluate the entire flash-linear-attention $1.3$B-100B suite --- softmax, gla, gsa, delta\_net, retnet, all the same skeleton and data --- under the same uniform block budget (Table~\ref{tab:suite}). Off the shelf, none handles a tight budget well: every mixer sits at $\approx$$20$--$23$ perplexity at a $128$-token budget, separating only near full context (delta\_net best). The windowed-\emph{finetuned} softmax reaches $10.6$ at the same budget --- bounded-budget competence comes from training \emph{for} the budget, not from the token-mixer.
+
+\input{tables/suite_budget.tex}
+
 \subsection{Mechanism: the Window, not an Intrinsic Rewrite}
 Does windowed finetuning turn the softmax model \emph{into} a gated one, or merely deny it the sink? We compare attention patterns across architectures with a gradient influence map, $\mathrm{infl}(i,j)=\lVert \partial h_i/\partial x_j\rVert$ --- well-defined for both flash-attention softmax (which exposes no attention weights) and linear gated attention (which has no attention matrix) --- measured at \emph{full} attention so it reflects the intrinsic computation, not the inference mask (Fig.~\ref{fig:infl}). The gated model places $\sim$$3\times$ less influence on position~0 than \emph{either} softmax model, while the base and windowed-FT softmax track each other. So the gated model is intrinsically sink-free, whereas the windowed softmax model remains sink-\emph{capable}: it is the deployment window that denies it the sink and forces the Type-2 redistribution. All three retain long-range influence with a similar decay, so constant memory is not a shorter receptive field --- the gated model carries distant context in its recurrent state rather than forgetting it. Windowed training and gating thus reach the same perplexity and efficiency through \emph{different} mechanisms.
 

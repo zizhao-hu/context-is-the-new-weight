@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llccccc}
+\toprule
+mixer & type & 128 & 256 & 512 & 1024 & full \\
+\midrule
+transformer & softmax     & 21.9 & 16.4 & 13.3 & 11.4 & 10.2 \\
+gla         & gated lin.\ & 21.9 & 16.6 & 13.5 & 11.7 & 10.6 \\
+gsa         & gated slot  & 20.4 & 15.6 & 12.7 & 11.1 & 10.1 \\
+delta\_net  & delta rule  & 20.5 & 15.6 & 12.6 & 10.9 & \textbf{9.81} \\
+retnet      & retention   & 22.6 & 17.1 & 13.8 & 12.0 & 11.0 \\
+\bottomrule
+\end{tabular}
+\caption{The flash-linear-attention $1.3$B-100B suite under a bounded memory budget (eval-only, off-the-shelf; same skeleton and $100$B tokens, only the token-mixer differs). Held-out perplexity in independent $W$-token blocks --- a uniform budget for every architecture. Out of the box, \emph{no} mixer --- softmax or recurrent/gated --- handles a tight budget well (all $\approx$$20$--$23$ at $128$); they separate only with near-full context (delta\_net best, $9.81$). Contrast the windowed-\emph{finetuned} softmax ($10.6$ at a $128$ window, Table~\ref{tab:strictmatrix}): bounded-budget competence is conferred by \emph{training}, not owned by any architecture for free. (hgrn2, mamba omitted: kernel/loader incompatibility in this build.)}
+\label{tab:suite}
+\end{table}
