@@ -8,16 +8,16 @@
 \cmidrule(lr){2-6}
 model & 128 & 256 & 512 & 1024 & full \\
 \midrule
-\multicolumn{6}{l}{\emph{softmax transformer --- untrained / full-mask control}}\\
+\multicolumn{6}{l}{\emph{softmax --- untrained / control}}\\
 base               & 17.9 & 14.9 & 12.8 & 11.3 & 10.2 \\
 triangle-CPT       & 14.0 & 12.1 & 10.8 & 9.61 & 8.80 \\
-\multicolumn{6}{l}{\emph{softmax transformer --- ours, windowed (one model per training window)}}\\
+\multicolumn{6}{l}{\emph{softmax --- ours: windowed (one model / train window)}}\\
 windowed-128       & \textbf{10.6} & 9.70 & 9.30 & 9.10 & 9.06 \\
 windowed-256       & 10.8 & \textbf{9.63} & 9.17 & 8.96 & 8.92 \\
 windowed-512       & 11.9 & 9.85 & \textbf{9.15} & 8.89 & 8.84 \\
 windowed-1024      & 12.7 & 10.5 & 9.36 & \textbf{8.88} & 8.81 \\
 \midrule
-\multicolumn{6}{l}{\emph{gated (GLA) --- same skeleton \& data}}\\
+\multicolumn{6}{l}{\emph{gated (GLA) --- same data \& skeleton}}\\
 gla (native)        & \multicolumn{5}{c}{8.71 \;(window-invariant)} \\
 \;+ window-reset    & 13.1 & 11.0 & 9.81 & 9.12 & 8.71 \\
 \;+ startup         & 12.6 & 10.7 & 9.67 & 9.05 & 8.70 \\
