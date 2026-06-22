@@ -22,3 +22,5 @@ iter	exp_id	aim	model	scheme	metric	value	decision	note
 5	A3	3a	Qwen0.5B	windowed	sliding256_ppl	14.639	keep	windowed-FT streams sink-free (no sink tokens) ~ base+SLM 13.9
 5	A5	3c	Qwen0.5B	base	passkey_win256_d512	52.28	keep	base erratic out-of-window (38-7055)
 5	A5	3c	Qwen0.5B	windowed	passkey_win256_d512	35.91	keep	windowed more stable but neither RELAYS (both ~37 vs full 1.5); broadcasting=spread not retrieval
+6	B2	1/3	fla-transformer-1.3B	windowed-FT@128	ppl_slidewin	11.168	keep	recovery holds @128 (base 18.93)
+6	B2	1/3	fla-transformer-1.3B	windowed-FT@512	ppl_slidewin	9.513	keep	recovery holds @512 (base 14.10); ~ full 8.99
