@@ -1,0 +1,26 @@
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccc}
+\toprule
+& \multicolumn{5}{c}{perplexity at inference window} \\
+\cmidrule(lr){2-6}
+model & 128 & 256 & 512 & 1024 & full \\
+\midrule
+\multicolumn{6}{l}{\emph{softmax transformer --- untrained / full-mask control}}\\
+base               & 17.9 & 14.9 & 12.8 & 11.3 & 10.2 \\
+triangle-CPT       & 14.0 & 12.1 & 10.8 & 9.61 & 8.80 \\
+\multicolumn{6}{l}{\emph{softmax transformer --- ours, windowed (one model per training window)}}\\
+windowed-128       & \textbf{10.6} & 9.70 & 9.30 & 9.10 & 9.06 \\
+windowed-256       & 10.8 & \textbf{9.63} & 9.17 & 8.96 & 8.92 \\
+windowed-512       & 11.9 & 9.85 & \textbf{9.15} & 8.89 & 8.84 \\
+windowed-1024      & 12.7 & 10.5 & 9.36 & \textbf{8.88} & 8.81 \\
+\midrule
+\multicolumn{6}{l}{\emph{gated (GLA) --- same skeleton \& data, constant memory}}\\
+gla                & 8.71 & 8.71 & 8.71 & 8.71 & 8.71 \\
+\bottomrule
+\end{tabular}
+\caption{Strict control on the flash-linear-attention $1.3$B pair (same GPT skeleton, same $100$B training tokens; only the token-mixer differs --- softmax vs.\ gated-linear), held-out perplexity, train-window (rows) $\times$ inference-window (columns); bold marks each windowed model's native window (train $=$ deploy). All rows except \emph{base} are continued-pretrained for the same steps. The softmax base collapses at tight windows; the full-mask (triangle) control only partly recovers; windowed finetuning gives near-flat rows --- \emph{train small, deploy anywhere} --- approaching the gated model. The gated GLA is \emph{window-invariant} ($8.71$ at every budget, having no attention window) and best at every column: native constant-memory attention beats a retrofitted softmax window, which is the best one can do without changing the architecture.}
+\label{tab:strictmatrix}
+\end{table}
