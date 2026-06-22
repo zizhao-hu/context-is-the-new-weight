@@ -18,7 +18,7 @@ Mass leaves pos-0 and lands on the distributed low-information punctuation token
 
 ## Aim 3 — windowed *training* beats post-hoc streaming techniques
 - **3a streaming (Qwen0.5B, sliding@256):** base collapses **10.97→56.73**; base+StreamingLLM(4 sink+256) recovers to **13.94**; **windowed-FT streams at 14.64 with NO sink tokens** (≈ the StreamingLLM trick, no inference-time hack).
-- **3b LongBench / HotpotQA:** _running_.
+- **3b HotpotQA (multi-hop long-context QA, answer-ppl):** base@windowed **102.3** (sink-deletion COLLAPSE on a real task) → windowed-FT@windowed **29.2** (avoids collapse) — but base+StreamingLLM **12.78** still wins, because (i) multi-hop answers need *far* context that pure windowing deletes (cf. 3c) and (ii) windowed-FT's full-context QA also dropped (3.01→6.15, the known wikitext-CPT drift). **Implication:** pure windowed training fixes streaming-LM but not far-retrieval QA; the **persistent-prompt** variant (learned always-on registers ≈ a *trained* StreamingLLM) is the predicted fix — the clear next experiment (persist scheme added to `longbench_qa.py`; eval path to finish + run).
 - **3c broadcasting/relay (passkey outside window):** _refined_ — neither base nor windowed-FT relays a discrete far passkey (ppl ~37 vs full ~1.5); windowed-FT is only more *stable* (base erratic 38→7055). ⇒ the "broadcasting" of Aim 2 is **attention spread (entropy), not long-range exact retrieval** — the paper should scope the claim to spread, not retrieval.
 
 ## Compute efficiency ✓ (the value of a constant working memory)
