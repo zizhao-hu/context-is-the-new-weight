@@ -1,16 +1,19 @@
 \begin{table}[t]
 \centering
 \small
-\begin{tabular}{lccc}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
 \toprule
-scheme & Type-1 (pos-0) & Type-2 (punct.) & entropy \\
+ & Type-1 & \multicolumn{2}{c}{Type-2 (no-op)} & broadcast \\
+\cmidrule(lr){3-4}
+scheme & (pos-0) & punct.\ & low-surp.\ & entropy \\
 \midrule
-base & 0.394 & 0.174 & 3.94 \\
-triangle-CPT & 0.412 & 0.165 & 3.85 \\
-windowed & 0.145 & 0.371 & 4.60 \\
-startup & \textbf{0.008} & 0.346 & \textbf{5.00} \\
+base         & 0.368 & 0.146 & 0.148 & 4.51 \\
+triangle-CPT & 0.383 & 0.137 & 0.138 & 4.43 \\
+windowed     & 0.151 & 0.323 & 0.354 & 5.18 \\
+startup      & \textbf{0.004} & \textbf{0.396} & \textbf{0.449} & \textbf{5.52} \\
 \bottomrule
 \end{tabular}
-\caption{Where attention goes (Qwen2.5-0.5B): fraction received by the position-0 token (Type-1 sink) vs.\ low-information punctuation tokens (Type-2 no-op sink), and the broadcasting entropy of the per-position attention. Continued full-causal training (triangle) \emph{keeps} the Type-1 sink; windowed/startup training drains it onto the distributed Type-2 tokens and raises the entropy --- the spread predicted by H2--H3.}
+\caption{Where attention goes (Qwen2.5-0.5B; all schemes measured identically at a \emph{genuine} $256$-token window over $512$-token sequences). Fraction of attention received by the position-0 token (Type-1) vs.\ low-information no-op tokens (Type-2), the latter measured two ways --- a fixed punctuation list and the bottom-$20\%$ unigram-surprisal tokens --- which agree, so the no-op sink is not an artifact of the punctuation proxy. Continued full-causal (triangle) training keeps (slightly intensifies) the Type-1 sink; windowed and startup training drain it onto the distributed Type-2 tokens and raise the broadcasting entropy. The attention--surprisal correlation sharpens in step ($-0.07$ at base $\to$ $-0.16$ at startup): as Type-1 dies, attention concentrates more on low-information tokens.}
 \label{tab:spread}
 \end{table}

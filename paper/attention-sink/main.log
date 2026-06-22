@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  22 JUN 2026 16:21
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  22 JUN 2026 16:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -389,8 +389,11 @@ File: figures/qwen_sink_spread.png Graphic file (type png)
 <use figures/qwen_sink_spread.png>
 Package pdftex.def Info: figures/qwen_sink_spread.png  used on input line 143.
 (pdftex.def)             Requested size: 239.39438pt x 285.56978pt.
- (./tables/matrix.tex) [4 <./figures/qwen9b_sink_summary.png>] (./tables/strict_matrix.tex) (./tables/eff.tex) (./tables/hotpotfair.tex)
-<figures/longbench_cpt_fair.png, id=38, 1430.42978pt x 333.47443pt>
+
+Underfull \vbox (badness 2150) has occurred while \output is active []
+
+ (./tables/matrix.tex) [4 <./figures/qwen9b_sink_summary.png>] (./tables/strict_matrix.tex) (./tables/eff.tex) [5 <./figures/qwen_sink_spread.png>] (./tables/hotpotfair.tex)
+<figures/longbench_cpt_fair.png, id=43, 1430.42978pt x 333.47443pt>
 File: figures/longbench_cpt_fair.png Graphic file (type png)
 <use figures/longbench_cpt_fair.png>
 Package pdftex.def Info: figures/longbench_cpt_fair.png  used on input line 175.
@@ -400,7 +403,7 @@ Underfull \hbox (badness 2277) in paragraph at lines 176--176
 []\T1/ntxtlf/m/n/10 Figure 7: |Long-Bench multi-hop QA (Qwen2.5-0.5B,
  []
 
-[5 <./figures/qwen_sink_spread.png>] [6] (./main.bbl) [7
+[6] (./main.bbl) [7
 
  <./figures/longbench_cpt_fair.png>] (./main.aux)
  ***********
@@ -411,13 +414,13 @@ L3 programming layer <2020/03/25>
 Here is how much of TeX's memory you used:
  7047 strings out of 469331
  114527 string characters out of 5465424
- 542842 words of memory out of 5000000
+ 539842 words of memory out of 5000000
  35749 multiletter control sequences out of 15000+600000
  673807 words of font info for 76 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  89i,9n,117p,1800b,394s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/tex-gyre/qtmr.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmb.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmr.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmri.pfb>
-Output written on main.pdf (7 pages, 758889 bytes).
+Output written on main.pdf (7 pages, 759987 bytes).
 PDF statistics:
  105 PDF objects out of 1000 (max. 8388607)
  57 compressed objects within 1 object stream

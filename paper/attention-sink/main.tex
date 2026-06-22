@@ -134,14 +134,14 @@ Measuring the position-1 sink before and after finetuning shows it is a learned 
 \input{tables/sink05b.tex}
 
 \subsection{Where the Attention Goes: Type-1 to Type-2}
-Removing the Type-1 sink does not destroy the attention mass --- it \emph{relocates} it. On Qwen2.5-0.5B we measure, under each scheme's deployment, the fraction of attention received by the first token (Type-1) versus low-information punctuation tokens (Type-2), and the entropy of the per-position attention (Table~\ref{tab:spread}, Fig.~\ref{fig:spread}). Continued full-causal (triangle) training keeps the Type-1 sink ($0.41$); windowed and startup training drain it (to $0.15$ and $0.008$) and the freed mass lands on the distributed Type-2 punctuation tokens ($0.17\!\to\!0.37$), with the broadcasting entropy rising $3.9\!\to\!5.0$. This is exactly H1 and H3: the two sink types separate, and with the positional one suppressed the model resorts to the content-based no-op tokens, spreading attention more broadly. We note a limit (below): this broader spread is a \emph{distributional} property, not long-range retrieval.
+Removing the Type-1 sink does not destroy the attention mass --- it \emph{relocates} it. On Qwen2.5-0.5B we measure, under each scheme's deployment, the fraction of attention received by the first token (Type-1) versus low-information punctuation tokens (Type-2), and the entropy of the per-position attention (Table~\ref{tab:spread}, Fig.~\ref{fig:spread}). Continued full-causal (triangle) training keeps --- even slightly intensifies --- the Type-1 sink ($0.37\!\to\!0.38$); windowed and startup training drain it (to $0.15$ and $0.004$) and the freed mass lands on the distributed Type-2 no-op tokens ($0.15\!\to\!0.40$), with the broadcasting entropy rising $4.5\!\to\!5.5$. The same shift appears whether Type-2 is defined by a fixed punctuation list or by the bottom-$20\%$ unigram-surprisal tokens, and the attention--surprisal correlation sharpens from $-0.07$ to $-0.16$ --- the redistribution is not an artifact of the punctuation proxy. This is exactly H1 and H3: the two sink types separate, and with the positional one suppressed the model resorts to the content-based no-op tokens, spreading attention more broadly. We note a limit (below): this broader spread is a \emph{distributional} property, not long-range retrieval.
 
 \input{tables/spread.tex}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/qwen_sink_spread.png}
-\caption{Windowed/startup training drains the Type-1 positional sink (left, log scale: base spikes $\approx0.39$ at position~0; windowed/startup flatten it) and redistributes the mass onto distributed Type-2 punctuation tokens (right), broadcasting entropy rising $3.9\!\to\!5.0$.}
+\caption{Where attention goes (Qwen2.5-0.5B, all schemes at a genuine $256$-token window). \textbf{Top:} continued full-causal (triangle) training keeps the Type-1 pos-0 sink; windowed and startup training drain it and the mass moves onto distributed Type-2 no-op tokens --- identically whether Type-2 is a punctuation list or the bottom-$20\%$ unigram-surprisal tokens (the two bars agree), so it is not a punctuation artifact. \textbf{Bottom:} broadcasting entropy rises and the attention--surprisal correlation sharpens ($-0.07\!\to\!-0.16$) as the positional sink dies.}
 \label{fig:spread}
 \end{figure}
 
