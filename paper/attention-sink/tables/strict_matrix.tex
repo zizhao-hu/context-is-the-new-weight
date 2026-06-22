@@ -1,7 +1,7 @@
 \begin{table}[t]
 \centering
 \footnotesize
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2.5pt}
 \begin{tabular}{lccccc}
 \toprule
 & \multicolumn{5}{c}{perplexity at inference budget} \\
@@ -18,9 +18,9 @@ windowed-512       & 11.9 & 9.85 & \textbf{9.15} & 8.89 & 8.84 \\
 windowed-1024      & 12.7 & 10.5 & 9.36 & \textbf{8.88} & 8.81 \\
 \midrule
 \multicolumn{6}{l}{\emph{gated (GLA) --- same skeleton \& data}}\\
-gla (native, $O(1)$)      & \multicolumn{5}{c}{8.71 \;(window-invariant)} \\
-\;+ window (state reset)   & 13.1 & 11.0 & 9.81 & 9.12 & 8.71 \\
-\;+ startup (warm-up)      & 12.6 & 10.7 & 9.67 & 9.05 & 8.70 \\
+gla (native)        & \multicolumn{5}{c}{8.71 \;(window-invariant)} \\
+\;+ window-reset    & 13.1 & 11.0 & 9.81 & 9.12 & 8.71 \\
+\;+ startup         & 12.6 & 10.7 & 9.67 & 9.05 & 8.70 \\
 \bottomrule
 \end{tabular}
 \caption{Strict control on the flash-linear-attention $1.3$B pair (same GPT skeleton, same $100$B tokens; only the token-mixer differs), held-out perplexity, training budget (rows) $\times$ inference budget (columns); bold marks each softmax model's native window. \textbf{Softmax:} the base collapses at tight windows; the full-mask (triangle) control only partly recovers; windowed finetuning gives near-flat rows --- \emph{train small, deploy anywhere}. \textbf{Gated:} native GLA is window-invariant ($8.71$ with $O(1)$ memory, beating every windowed-softmax cell), but it has no window to tighten. Forcing a budget by resetting its state every $W$ tokens (``+ windowed'') does \emph{not} reproduce train-small-deploy-anywhere --- the inference budget dominates and the training window is nearly irrelevant (gla-windowed-$128$ and -$1024$ differ by $<\!1$ ppl at every column) --- and bounded gla is \emph{worse} than the windowed softmax at the same budget (e.g.\ $10.99$ vs.\ $9.63$ at $256$). Windowing is thus a learned \emph{softmax} adaptation; the startup warm-up prompt helps gla only slightly at tight budgets. Native gating wins with full context; the windowed-softmax retrofit wins at a bounded budget.}
