@@ -109,7 +109,7 @@ so each token attends only to the $W$ most-recent positions. We finetune (contin
 
 \section{Experiments}
 \label{sec:exp}
-We evaluate on Qwen2.5-0.5B (a pure-softmax-attention model, our proof of concept) and Qwen3.5-9B (the target model). Finetuning is continued pretraining on WikiText-103 \citep{merity2017wikitext}; evaluation is held-out perplexity scored within a working-memory window, plus downstream long-context QA on LongBench \citep{bai2024longbench}. Unless noted, the window for the headline runs is $W{=}256$.
+We evaluate on Qwen2.5-0.5B (a pure-softmax-attention model, our proof of concept) and Qwen3.5-9B (the target model). Finetuning is continued pretraining on WikiText-103 \citep{merity2017wikitext}; evaluation is held-out perplexity scored within a working-memory window, plus downstream long-context QA on LongBench \citep{bai2024longbench}. Unless noted, the window for the headline runs is $W{=}256$. We take the hypotheses in turn: the attention-redistribution analysis disentangles the two sink types (H1) and shows the model resorting to the separators once Type-1 is removed (H3); the removability, scaling, and strict gated-vs-softmax results trace Type-1 to the mask (H2); and the efficiency, persistent-prompt, and downstream-QA results show the no-op sinks support streaming (H4).
 
 \subsection{Windowed Finetuning Recovers Full-Context Quality}
 On Qwen2.5-0.5B, scoring held-out perplexity as a function of the deployed window shows the expected collapse for a base model windowed at inference, and a near-flat curve for the windowed-finetuned model (Fig.~\ref{fig:ppl}): a model trained for a $256$-token window matches the base model's full-context quality while attending to $8{\times}$ fewer tokens (Table~\ref{tab:ppl05b}). Continued pretraining under \emph{full} attention does not help --- it amplifies sink reliance --- whereas the windowed objective removes it.
@@ -123,7 +123,7 @@ On Qwen2.5-0.5B, scoring held-out perplexity as a function of the deployed windo
 
 \input{tables/ppl05b.tex}
 
-\subsection{The Sink Is Learned and Removable}
+\subsection{The Sink Is Learned and Removable (H2)}
 Measuring the position-1 sink before and after finetuning shows it is a learned behaviour. On Qwen2.5-0.5B, a majority of softmax heads ($\approx 57\%$) sink onto token~1 in the base and full-attention-finetuned models; windowed finetuning drives this to $0\%$ (Table~\ref{tab:sink05b}), and the \textbf{startup} variant relocates the sink onto the trainable prompt rather than the content. On the larger hybrid model the absolute sink is weaker (see below) but the \emph{direction} is identical: full-attention finetuning \emph{builds} the sink, windowed finetuning \emph{shrinks} it (Fig.~\ref{fig:9bsink}).
 
 \begin{figure}[t]
@@ -135,7 +135,7 @@ Measuring the position-1 sink before and after finetuning shows it is a learned 
 
 \input{tables/sink05b.tex}
 
-\subsection{Where the Attention Goes: Type-1 to Type-2}
+\subsection{Where the Attention Goes: Type-1 to Type-2 (H1, H3)}
 Removing the Type-1 sink does not destroy the attention mass --- it \emph{relocates} it. On Qwen2.5-0.5B we measure, under each scheme's deployment, the fraction of attention received by the first token (Type-1) versus low-information punctuation tokens (Type-2), and the entropy of the per-position attention (Table~\ref{tab:spread}, Fig.~\ref{fig:spread}). Continued full-causal (triangle) training keeps --- even slightly intensifies --- the Type-1 sink ($0.37\!\to\!0.38$); windowed and startup training drain it (to $0.15$ and $0.004$) and the freed mass lands on the distributed Type-2 no-op tokens ($0.15\!\to\!0.40$), with the broadcasting entropy rising $4.5\!\to\!5.5$. The same shift appears whether Type-2 is defined by a fixed punctuation list or by the bottom-$20\%$ unigram-surprisal tokens, and the attention--surprisal correlation sharpens from $-0.07$ to $-0.16$ --- the redistribution is not an artifact of the punctuation proxy. This is exactly H1 and H3: the two sink types separate, and with the positional one suppressed the model resorts to the content-based no-op tokens, spreading attention more broadly. We note a limit (below): this broader spread is a \emph{distributional} property, not long-range retrieval.
 
 \input{tables/spread.tex}
@@ -147,7 +147,7 @@ Removing the Type-1 sink does not destroy the attention mass --- it \emph{reloca
 \label{fig:spread}
 \end{figure}
 
-\subsection{Scaling to a Hybrid Model}
+\subsection{Scaling to a Hybrid Model (H2)}
 Qwen3.5-9B is a hybrid: of its $32$ layers, only $8$ (every $4$th) are softmax attention; the rest are linear/Mamba-style attention \citep{gu2024mamba,gu2025gateddeltanet}. The sink, and the windowing question, therefore concern only those $8$ layers --- $3/4$ of the network is already a constant-memory mechanism. We full-finetune just the $8$ softmax blocks (freezing the $24$ linear layers; $8$-bit AdamW with gradient checkpointing on a single $48$\,GB GPU). Even on this model, bounding the softmax window to $256$ tokens collapses the base from a full-context perplexity of $6.5$ to $20.0$; windowed finetuning restores it to $6.3$ --- full-context quality at a $256$-token softmax window --- and, unlike the baselines, gains nothing from StreamingLLM sink tokens because it no longer depends on them (Table~\ref{tab:matrix}).
 
 \input{tables/matrix.tex}
@@ -155,7 +155,7 @@ Qwen3.5-9B is a hybrid: of its $32$ layers, only $8$ (every $4$th) are softmax a
 \subsection{Train Small, Deploy Anywhere}
 Evaluating every windowed model at every inference window (Table~\ref{tab:matrix}) reveals an asymmetry. A model trained at a \emph{small} window (windowed-128) is nearly flat across \emph{all} deployment windows ($7.44\!\to\!6.62$): having learned to predict from $128$ tokens, it is robust to any budget. A model trained at a \emph{wide} window is fragile when deployed narrower (windowed-1024 rises to $24.7$ at deploy-128), because it learned to lean on context that is no longer present. A model is always fine deployed \emph{wider} than it was trained, and breaks deployed \emph{narrower}: the practical rule is to train at the smallest window one might deploy.
 
-\subsection{A Strict Softmax-vs-Gated Control}
+\subsection{A Strict Softmax-vs-Gated Control (H2)}
 Is the gain from \emph{windowing}, or merely from more finetuning? We answer with a strict control: two $1.3$B models from the flash-linear-attention suite trained on the \emph{same} $100$B tokens with the \emph{same} skeleton, differing only in the token-mixer --- a softmax Transformer and a gated-linear (GLA) model --- evaluated across the full train-window $\times$ deploy-window grid (Table~\ref{tab:strictmatrix}). The softmax base collapses at tight windows ($10.2\!\to\!17.9$ at deploy-$128$); continued \emph{full-causal} pretraining (triangle-CPT) only partly recovers ($14.0$, the control held fixed); windowed finetuning gives near-flat rows --- the same \emph{train small, deploy anywhere} asymmetry as the hybrid model --- so the recovery is from the window, not the extra training. The gated GLA has no attention window: in its native $O(1)$-state mode it reaches $8.71$ with constant memory, beating every windowed-softmax cell --- but only because it always uses full context. A pure recurrence has no honest hard-$W$ window --- the only way to impose one is to reset its state, which no real deployment does --- so the legitimate comparison is bounded-$O(W)$ sliding-window softmax against native-$O(1)$ gating. There the windowed-softmax retrofit reaches the gated model's quality at a moderate budget, while the gated model needs no windowing at all.
 
 \input{tables/strict_matrix.tex}
@@ -164,12 +164,12 @@ Is the gain from \emph{windowing}, or merely from more finetuning? We answer wit
 
 \input{tables/eff.tex}
 
-\subsection{Persistent Prompts as Trainable Sinks}
+\subsection{Persistent Prompts as Trainable Sinks (H4)}
 The persistent-prompt variant ($P{=}64$ always-on prompts $+$ a $W{=}256$ window) lets content tokens spend a controllable fraction of attention on the learned registers: in our run, $19\%$ of every content token's attention goes to the $64$ persistent prompts and $81\%$ to the window. The prompts thus become explicit, trainable attention sinks --- the function the first token was being abused for, now a designed component. On perplexity the persistent and startup variants track the plain windowed model, with a small edge when deployed \emph{narrower} than trained (the prompt fills the coldest part of the window). The registers matter most on a downstream task that needs distant context, which we test with a \emph{fair} control: triangle (full-mask), windowed, and persist models all continued-pretrained on the same wikitext for the same steps, so only the mask differs (Table~\ref{tab:hotpotfair}). At a $256$-token window the full-mask control collapses (HotpotQA generation F1 $0.036$), windowed training recovers it ($0.095$), and the persistent-prompt model reaches $0.166$ --- matching the base$+$StreamingLLM post-hoc trick ($0.166$), but as a trained constant-memory model. This marks the boundary of the broadcasting effect: windowed training spreads attention onto the Type-2 tokens (a distributional change) but does not by itself relay a \emph{specific} distant fact; the persistent registers are what restore long-range anchoring, unifying constant-memory streaming with retrieval in one trained model.
 
 \input{tables/hotpotfair.tex}
 
-\subsection{Downstream Long-Context QA}
+\subsection{Downstream Long-Context QA (H4)}
 To isolate the mask effect from task learning we also continued-pretrain (no QA supervision) and evaluate zero-shot on LongBench multi-hop QA \citep{bai2024longbench}. At a tight $256$-token window, the windowed model uses its bounded memory markedly better than a full-attention-pretrained control, and StreamingLLM helps the baselines but not the windowed model --- the same signature as in perplexity, on a real task (Fig.~\ref{fig:longbench}).
 
 \begin{figure}[t]
