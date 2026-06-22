@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lcc}
+\toprule
+ & \multicolumn{2}{c}{\emph{function} \citep{fesser2026unifying}} \\
+\cmidrule(lr){2-3}
+\emph{position} (ours) & no-op & broadcast \\
+\midrule
+Type-1 (first token) & null-route anchor & global register \\
+Type-2 (separators)  & delimiter scratch & span summary \\
+\bottomrule
+\end{tabular}
+\caption{Two \emph{orthogonal} categorizations of attention sinks. The \emph{functional} axis of \citet{fesser2026unifying} asks what a sink computes --- a \emph{no-op} that suppresses its update by routing to a null token (negligible value norm) vs.\ a \emph{broadcast} that aggregates and redistributes global information (low-rank output). Our \emph{positional} axis asks where the sink sits --- the first token vs.\ low-information separators. The axes cross-cut (each cell is realizable): a sink at either position can serve either function, so the functional split alone cannot assign a \emph{cause}. The positional split can --- Type-1 is a mask artifact (H2), Type-2 is content-driven --- which is what lets us remove one while keeping the other.}
+\label{tab:categorization}
+\end{table}
