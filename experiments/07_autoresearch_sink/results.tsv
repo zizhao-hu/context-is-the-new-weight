@@ -46,3 +46,7 @@ iter	exp_id	aim	model	scheme	metric	value	decision	note
 12	A8	matrix	fla-transformer-1.3B	windowed-1024	deploy128/.../full	12.69/10.50/9.36/8.88/8.81	keep	breaks narrow worse
 12	A8	matrix	fla-gla-1.3B	base-noCPT	deploy_all	10.62	keep	window-invariant but un-CPT'd (unfair); rerun CPT
 12	A8	matrix	fla-gla-1.3B	triangle-CPT(fair)	deploy_all	8.71	keep	gated window-invariant, BEST at every column; native const-mem > retrofitted softmax window
+13	A9	gla-schemes	fla-gla-1.3B	windowed-256	deploy128/.../full	13.12/10.99/9.81/9.12/8.71	keep	bounding gla state: deploy-budget dominates, NOT train-small-deploy-anywhere
+13	A9	gla-schemes	fla-gla-1.3B	windowed-128vs1024@128	-	12.93vs13.85	keep	train window nearly irrelevant for gla (vs softmax 10.6 flat) -> windowing is softmax-specific
+13	A9	gla-schemes	fla-gla-1.3B	startup-256	deploy128/.../full	12.63/10.74/9.67/9.05/8.70	keep	warm-up prompt helps gla at tight budgets (12.63<13.12)
+13	A9	correction	fla-gla-1.3B	gla-native-vs-bounded	-	8.71full/10.99@256	keep	prev '8.71 every column' was gla ignoring window; bounded gla @256=10.99 < softmax-windowed 9.63
