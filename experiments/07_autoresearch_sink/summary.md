@@ -1,5 +1,8 @@
 # Autoresearch summary — Attention-Sink Thesis
 
+> **Unified result (9-iteration loop):** the triangular mask *causes* the Type-1 positional sink; *windowed training* drains it onto distributed Type-2 tokens, giving **sink-free streaming** (≈StreamingLLM with no sink tokens) and **linear, 2.7× faster** compute; the one thing pure windowing loses is **far-retrieval**, which the **persistent-prompt** variant — learned always-on registers, i.e. a *trained* StreamingLLM — recovers (bounded HotpotQA 38.2→23.9). Constant-memory streaming **and** long-range anchoring in one trained model.
+
+
 Autonomous loop on USC CARC (≤8 GPU, short→nlp / long→discovery). All numbers in `results.tsv`; scripts in `scripts/`; figure `figures/scaling/qwen_sink_spread.png`. Models: **fla 1.3B** (transformer-softmax vs gla-gated, same 100B tokens = strict mixer-only control) + **Qwen2.5-0.5B** (strong sink, eager attention, custom masks).
 
 ## Aim 1 — the triangle mask *causes* the Type-1 (positional) sink ✓
