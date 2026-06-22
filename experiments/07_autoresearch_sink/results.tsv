@@ -31,3 +31,10 @@ iter	exp_id	aim	model	scheme	metric	value	decision	note
 10	A4b	3b	Qwen0.5B	base	hotpot_n1549_streamingLLM	15.75	keep	StreamingLLM trick
 10	A4b	3b	Qwen0.5B	windowed	hotpot_n1549_windowed	38.21	keep	windowed-FT bounded QA
 10	A4b	3b	Qwen0.5B	persist	hotpot_n1549_persist	23.87	keep	PERSIST FIX: registers cut 38->24 (toward SLM 15.75); less drift (full 4.83<windowed 6.61)
+11	A4f	3b-fair	Qwen0.5B	triangle	hotpot_windowed_F1	0.036	keep	FAIR control: full-mask CPT deployed windowed COLLAPSES (ppl 112)
+11	A4f	3b-fair	Qwen0.5B	windowed	hotpot_windowed_F1	0.095	keep	windowed-FT (same CPT) recovers F1 0.036->0.095 (ppl 112->32)
+11	A4f	3b-fair	Qwen0.5B	persist	hotpot_persist_F1	0.166	keep	persist matches base+StreamingLLM F1 0.166 (ppl 21), as a trained const-mem model
+11	A4f	3b-fair	Qwen0.5B	base	hotpot_streamingLLM_F1	0.166	keep	post-hoc StreamingLLM reference (base full F1 0.305)
+11	A6	pattern	fla-1.3B	tf_base	influence_meanj0	0.0386	keep	base softmax: most influence on pos-0 (sink)
+11	A6	pattern	fla-1.3B	tf_win	influence_lastrow_j0	0.0101	keep	windowed-FT last-pos sink reliance 0.0133->0.0101 toward gla 0.0055
+11	A6	pattern	fla-1.3B	gla	influence_meanj0	0.0237	keep	gated: least influence on pos-0

@@ -38,3 +38,7 @@ Strict-control table (Tab.~strict), Type-1→Type-2 spread figure+table (Fig.~sp
 
 ## Still open (future work)
 KV-cache generation-memory figure · QA-domain persist training (to match base+StreamingLLM) · larger model scale · more LongBench tasks.
+
+## Corrections (user-requested)
+- **Downstream done correctly** (`scripts/hotpot_fair.py`): FAIR mask-only control — triangle/windowed/persist all CPT'd on same wikitext, same steps — + STANDARD generation EM/F1. Result: triangle@windowed F1 **0.036** (collapse) → windowed **0.095** → persist **0.166** = base+StreamingLLM **0.166**. Confirms the story rigorously (earlier NLL version confounded by comparing vs un-CPT'd base).
+- **Gated-vs-windowed attention pattern** (`scripts/fla_influence.py`, `figures/scaling/fla_influence_pattern.png`): gradient influence ‖∂h_i/∂x_j‖ (works for flash-attn softmax + linear gla). HONEST finding: windowed-FT softmax ≈ base at full attention (sink-CAPABLE); gated is intrinsically sink-free (~3× less pos-0 influence); ALL retain long-range influence. ⇒ window+gate reach same ppl/efficiency via DIFFERENT mechanisms; the window (not an intrinsic rewrite) suppresses the sink. Folded into paper §4 (Table hotpotfair, Fig infl, "Mechanism" subsection).

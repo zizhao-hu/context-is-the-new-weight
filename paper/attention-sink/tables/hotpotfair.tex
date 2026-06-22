@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llcc}
+\toprule
+variant (CPT) & deploy & F1 & ans-ppl \\
+\midrule
+triangle (full-mask) & windowed & 0.036 & 112 \\
+\textbf{windowed} & windowed & \textbf{0.095} & 32 \\
+\textbf{persist} & persist & \textbf{0.166} & 21 \\
+\midrule
+base (no CPT) & full & 0.305 & 2.8 \\
+base $+$ StreamingLLM & streaming & 0.166 & 13.6 \\
+\bottomrule
+\end{tabular}
+\caption{HotpotQA, \emph{fair} mask-only control (Qwen2.5-0.5B). The three CPT variants see the \emph{same} wikitext for the \emph{same} steps --- only the attention mask differs --- so QA-ability drift is held constant. At a $256$-token window, the full-mask (triangle) control collapses (F1 $0.036$); windowed training recovers it ($0.095$); the persistent-prompt variant reaches $0.166$, \emph{matching the base$+$StreamingLLM post-hoc trick} as a trained constant-memory model. SQuAD-normalised generation F1.}
+\label{tab:hotpotfair}
+\end{table}
