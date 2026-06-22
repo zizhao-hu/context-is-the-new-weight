@@ -1,0 +1,15 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+ & full attention & windowed mask \\
+ & (learned tendency) & (as deployed) \\
+\midrule
+base $+$ history & 57.6\% & 0.0\% \\
+sliding-history (trained) & \textbf{5.8\%} & 0.0\% \\
+\bottomrule
+\end{tabular}
+\caption{Position-1 sink on Qwen2.5-0.5B given the \emph{same} real history (63 history $+$ 256 content, $W{=}64$): \% of softmax heads with mean attention $>0.3$ to the history's first token. Windowed finetuning cuts the learned sink $\sim$$10\times$ (57.6\%$\to$5.8\%); the window masks it to 0\% at deployment.}
+\label{tab:sink05b}
+\end{table}

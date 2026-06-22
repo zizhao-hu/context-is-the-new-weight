@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+scheme & Type-1 (pos-0) & Type-2 (punct.) & entropy \\
+\midrule
+base & 0.394 & 0.174 & 3.94 \\
+triangle-CPT & 0.412 & 0.165 & 3.85 \\
+windowed & 0.145 & 0.371 & 4.60 \\
+startup & \textbf{0.008} & 0.346 & \textbf{5.00} \\
+\bottomrule
+\end{tabular}
+\caption{Where attention goes (Qwen2.5-0.5B): fraction received by the position-0 token (Type-1 sink) vs.\ low-information punctuation tokens (Type-2 no-op sink), and the broadcasting entropy of the per-position attention. Continued full-causal training (triangle) \emph{keeps} the Type-1 sink; windowed/startup training drains it onto the distributed Type-2 tokens and raises the entropy --- the spread predicted by H2--H3.}
+\label{tab:spread}
+\end{table}

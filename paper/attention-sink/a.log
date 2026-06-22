@@ -1,0 +1,21 @@
+note: Running TeX ...
+warning: main.tex:58: Underfull \vbox (badness 10000) has occurred while \output is active
+warning: main.tex:101: Underfull \hbox (badness 5802) in paragraph at lines 100--101
+warning: main.tex:160: Underfull \hbox (badness 7649) in paragraph at lines 159--160
+note: Running BibTeX on main.aux ...
+warning: errors were issued by BibTeX, but were ignored; use --print and/or --keep-logs for details.
+note: Rerunning TeX because bibtex was run ...
+warning: main.tex:58: Underfull \vbox (badness 10000) has occurred while \output is active
+warning: main.tex:101: Underfull \hbox (badness 5802) in paragraph at lines 100--101
+warning: main.tex:160: Underfull \hbox (badness 7649) in paragraph at lines 159--160
+warning: main.bbl:15: Underfull \hbox (badness 1603) in paragraph at lines 12--15
+note: Rerunning TeX because "main.aux" changed ...
+warning: main.tex:58: Underfull \vbox (badness 10000) has occurred while \output is active
+warning: main.tex:101: Underfull \hbox (badness 5802) in paragraph at lines 100--101
+warning: main.tex:160: Underfull \hbox (badness 7649) in paragraph at lines 159--160
+warning: main.bbl:15: Underfull \hbox (badness 1603) in paragraph at lines 12--15
+warning: warnings were issued by the TeX engine; use --print and/or --keep-logs for details.
+note: Running xdvipdfmx ...
+note: downloading msbm10.pfb
+note: Writing `main.pdf` (532.515625 KiB)
+note: Skipped writing 2 intermediate files (use --keep-intermediates to keep them)
