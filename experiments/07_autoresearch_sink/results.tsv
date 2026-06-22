@@ -9,3 +9,8 @@ iter	exp_id	aim	model	scheme	metric	value	decision	note
 1	B2	1/2	fla-transformer-1.3B	startup-FT	ppl_slidewin_W256	10.191	keep	≈ windowed
 1	B2	1/2	fla-gla-1.3B	triangle-CPT	ppl_constmem	8.930	keep	gated ref (normal training); windowed-softmax 10.16 approaches it
 1	B2	1/2	fla-gla-1.3B	startup	ppl_constmem	8.917	keep	gla + prefix, no change
+2	A1	1	Qwen0.5B	base	sink_pos0	0.3935	keep	Type-1 sink ~0.40 (strong on 0.5B)
+2	A1	1	Qwen0.5B	triangle	sink_pos0	0.4121	keep	CONTROL: full-causal CPT keeps sink (aim1: mask causes it)
+2	A1	2	Qwen0.5B	windowed	sink_pos0	0.1449	keep	windowed moves mass off pos-0
+2	A1	2	Qwen0.5B	windowed	type2_punct	0.3712	keep	...onto Type-2 punctuation (0.17->0.37); entropy 3.9->4.6
+2	A1	2	Qwen0.5B	startup	sink_pos0	0.0081	keep	startup ELIMINATES Type-1 (0.008); type2 0.35; entropy 5.0
