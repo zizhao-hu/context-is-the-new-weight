@@ -11,9 +11,10 @@ scheme & (pos-0) & punct.\ & low-surp.\ & entropy \\
 base         & 0.368 & 0.146 & 0.148 & 4.51 \\
 triangle-CPT & 0.383 & 0.137 & 0.138 & 4.43 \\
 windowed     & 0.151 & 0.323 & 0.354 & 5.18 \\
+uniform-win. & 0.202 & 0.130 & 0.160 & 5.41 \\
 startup      & \textbf{0.004} & \textbf{0.396} & \textbf{0.449} & \textbf{5.52} \\
 \bottomrule
 \end{tabular}
-\caption{Where attention goes (Qwen2.5-0.5B; all schemes measured identically at a \emph{genuine} $256$-token window over $512$-token sequences). Fraction of attention received by the position-0 token (Type-1) vs.\ low-information no-op tokens (Type-2), the latter measured two ways, a fixed punctuation list and the bottom-$20\%$ unigram-surprisal tokens, which agree, so the no-op sink is not an artifact of the punctuation proxy. Continued full-causal (triangle) training keeps (slightly intensifies) the Type-1 sink; windowed and startup training drain it onto the distributed Type-2 tokens and raise the broadcasting entropy. The attention--surprisal correlation sharpens in step ($-0.07$ at base $\to$ $-0.16$ at startup): as Type-1 dies, attention concentrates more on low-information tokens.}
+\caption{Where attention goes (Qwen2.5-0.5B; all schemes measured identically at a \emph{genuine} $256$-token window over $512$-token sequences). Fraction of attention received by the position-0 token (Type-1) vs.\ low-information no-op tokens (Type-2), the latter measured two ways, a fixed punctuation list and the bottom-$20\%$ unigram-surprisal tokens, which agree, so the no-op sink is not an artifact of the punctuation proxy. Continued full-causal (triangle) training keeps (slightly intensifies) the Type-1 sink; windowed and startup training drain it onto the distributed Type-2 tokens and raise the broadcasting entropy. The \emph{uniform-window} model is an instructive exception: it reduces Type-1 (to $0.20$) and raises the entropy, but the freed mass does \emph{not} land on the Type-2 separators (punct.\ and low-surp.\ stay near base), spreading diffusely instead. The attention--surprisal correlation sharpens in step ($-0.07$ at base $\to$ $-0.16$ at startup): as Type-1 dies, attention concentrates more on low-information tokens.}
 \label{tab:spread}
 \end{table}

@@ -77,7 +77,7 @@ We state four hypotheses, each a claim presented with its mechanism and the expe
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/windowed_attention.png}
-\caption{Four continued-pretraining regimes, shown as attention masks (each query row attends its shaded key columns). \textbf{Top:} the standard \emph{causal} mask (full, growing history) and a \emph{sliding window} of width $W$ over real recent history. \textbf{Bottom, our constant-memory variants:} a \emph{uniform window}, where every token is conditioned on exactly $W$ tokens via fixed-length training, so it also runs on a recurrence (early tokens padded, grey); and a \emph{sliding window with trainable tokens}, where an always-on or cold-start trainable prefix (orange) replaces the sink. Older real context must be carried by the weights.}
+\caption{Four continued-pretraining regimes, each a window of attention (rows = the token being predicted; the right number is its working-memory size). \textbf{Top:} the standard \emph{causal} mask, where context grows with position; and a \emph{sliding window} of constant width $W$ whose cold start is filled with real prior text (light green). \textbf{Bottom, our constant-memory variants:} a \emph{uniform window}, where every token is conditioned on exactly $W$ real tokens via fixed-length training (predicting only each window's last token, so it also runs on a recurrence); and a \emph{sliding window with trainable tokens}, where a trainable startup prompt (orange) fills the cold start in place of real history and slides out as content accumulates. Older real context must be carried by the weights.}
 \label{fig:windowed}
 \end{figure}
 

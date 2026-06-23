@@ -68,3 +68,4 @@ iter	exp_id	aim	model	scheme	metric	value	decision	note
 17	A13	transition	Qwen0.5B	uniform-window	T1/T2/vnT1/vnT2	0.206/0.080/0.452/0.909	keep	reduces T1 but NO T2 spread (sinks on window rel-boundary)
 17	A13	transition	Qwen0.5B	startup	T1/T2/vnT1/vnT2	0.004/0.322/0.875/0.806	keep	T1->0, T2->0.32 (no-op->broadcast)
 17	A13	transition	Qwen0.5B	persist	T1/T2/vnT1/vnT2	0.005/0.097/0.864/0.888	keep	T1->0, attention to persistent registers
+18	A13	spread	Qwen0.5B	uniform-window	T1/punct/lowsurp/entropy	0.202/0.130/0.160/5.41	keep	reduces Type-1 (0.37->0.20) but NO Type-2 spread (punct/lowsurp ~base); diffuse (entropy 5.41, corr +0.10)
