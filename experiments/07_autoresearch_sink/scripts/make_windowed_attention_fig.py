@@ -43,7 +43,7 @@ useq(0,6.2,["t1","t2","t3","t4","t5"])      # top seq aligns with the right pane
 ax.text(ox+2.5,8.7,r"$\vdots$",fontsize=22,fontweight="bold",ha="center",va="center")
 useq(0,10.2,["t3","t4","t5","t6","t7"])     # bottom seq aligns with bottom row; numbers shifted
 # SLIDING+TRAINABLE -- right col, bottom
-attn(7.0,6.2,"4. sliding + trainable",PROMPT,["p1","p2","t1","t2","t3","t4","t5"])
+attn(7.0,6.2,"4. sliding + trainable prompt",PROMPT,["p1","p2","t1","t2","t3","t4","t5"])
 # no legend: label context / predicted / trainable prompt with brackets under the example cells
 def brace(x0,x1,label,ytop,col):
     yb=ytop+0.26
