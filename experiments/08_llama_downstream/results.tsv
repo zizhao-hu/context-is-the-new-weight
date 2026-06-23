@@ -18,3 +18,8 @@ iter	scheme	window	lr	steps	F1	EM	ans_ppl	decision	note
 2	uniwin	512	2e-5	-	0.014	0	322.76	discard	collapses_8x_confirmsH4
 2	windowed	1024	2e-5	-	0.121	0	7.74	keep	ppl_improves_with_W
 2	startup	1024	2e-5	-	0.159	0	5.69	keep	BEST_F1_0.159_ppl_5.69
+3-adafactor	base	512	1e-4	3B	0.044	0	267.14	discard	ADAFACTOR_DIVERGED_redo_adamw
+3-adafactor	triangle	512	1e-4	3B	0.0	0	16196.18	discard	ADAFACTOR_DIVERGED_redo_adamw
+3-adafactor	windowed	512	1e-4	3B	0.02	0	165.12	discard	ADAFACTOR_DIVERGED_redo_adamw
+3-adafactor	startup	512	1e-4	3B	0.041	0	298.8	discard	ADAFACTOR_DIVERGED_redo_adamw
+3-adafactor	uniwin	512	1e-4	3B	0.004	0	8333.15	discard	ADAFACTOR_DIVERGED_redo_adamw
