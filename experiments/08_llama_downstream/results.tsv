@@ -23,3 +23,12 @@ iter	scheme	window	lr	steps	F1	EM	ans_ppl	decision	note
 3-adafactor	windowed	512	1e-4	3B	0.02	0	165.12	discard	ADAFACTOR_DIVERGED_redo_adamw
 3-adafactor	startup	512	1e-4	3B	0.041	0	298.8	discard	ADAFACTOR_DIVERGED_redo_adamw
 3-adafactor	uniwin	512	1e-4	3B	0.004	0	8333.15	discard	ADAFACTOR_DIVERGED_redo_adamw
+3	base	128	2e-5	3B-adamw	0.029	0	3397.94	control	3B_confirms_1B_startup_best
+3	base	256	2e-5	3B-adamw	0.027	0	1908.09	control	3B_confirms_1B_startup_best
+3	base	512	2e-5	3B-adamw	0.038	0	330.96	control	3B_confirms_1B_startup_best
+3	triangle	128	2e-5	3B-adamw	0.033	0	2949.91	control	3B_confirms_1B_startup_best
+3	triangle	256	2e-5	3B-adamw	0.038	0	1331.24	control	3B_confirms_1B_startup_best
+3	triangle	512	2e-5	3B-adamw	0.044	0	266.06	control	3B_confirms_1B_startup_best
+3	windowed	512	2e-5	3B-adamw	0.128	0	20.31	keep	3B_confirms_1B_startup_best
+3	startup	512	2e-5	3B-adamw	0.198	0	7.09	keep	3B_confirms_1B_startup_best
+3	uniwin	512	2e-5	3B-adamw	0.043	0	280.69	discard	3B_confirms_1B_startup_best
