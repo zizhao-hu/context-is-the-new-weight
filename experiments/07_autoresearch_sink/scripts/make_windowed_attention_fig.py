@@ -8,7 +8,7 @@ from matplotlib.patches import Rectangle, Patch
 CONTENT,HISTC,PROMPT,PREDC=(.12,.47,.71),(.12,.47,.71),(.93,.50,.11),(.74,.13,.13)
 GREY=(.74,.76,.79)
 CTX,PRD="#555","#b21c1c"
-fig,ax=plt.subplots(figsize=(9.6,6.2)); ax.set_aspect("equal"); ax.axis("off")
+fig,ax=plt.subplots(figsize=(8.6,7.0)); ax.set_aspect("equal"); ax.axis("off")
 def Cl(x,y,fc): ax.add_patch(Rectangle((x,y),1,1,facecolor=fc,edgecolor="#555",lw=1.3,zorder=2))
 def Em(x,y): ax.add_patch(Rectangle((x,y),1,1,facecolor="white",edgecolor="#cfcfcf",lw=0.7,zorder=1))
 def TT(x,y,t): ax.text(x,y,t,fontsize=13.5,fontweight="bold",ha="left",va="bottom")
@@ -32,11 +32,11 @@ for r in range(5):
     YL(ox-.25,oy+r,PRED[r],PRD)
 for c,t in enumerate(["t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
 # SLIDING+HISTORY  -- right col, top
-attn(11.0,0,"2. sliding history",HISTC,["t-3","t-2","t-1","t0","t1","t2","t3","t4","t5"])
+attn(6.5,0,"2. sliding history",HISTC,["t-3","t-2","t-1","t0","t1","t2","t3","t4","t5"])
 # TRAINABLE STARTUP (attention) -- bottom-LEFT (panel 3)
 attn(0,7.4,"3. trainable startup",PROMPT,["p1","p2","p3","p4","t1","t2","t3","t4","t5"])
 # UNIFORM CONTEXT (not attention) -- bottom-RIGHT (panel 4): two stacked example sequences, right-aligned to x=14
-ox,oy=15,7.4; TT(ox,oy-.35,"4. uniform context")
+ox,oy=10,7.4; TT(ox,oy-.35,"4. uniform context")
 def useq(sx,ry,toks):           # 5-length predict-last sequence; labels INSIDE cells
     for c in range(4):
         Cl(ox+sx+c,ry,GREY); ax.text(ox+sx+c+.5,ry+.5,toks[c],fontsize=10.5,fontweight="bold",ha="center",va="center",color="#222")
@@ -50,9 +50,9 @@ def brace(x0,x1,label,ytop,col):
     ax.plot([x0+.06,x0+.06,x1-.06,x1-.06],[ytop+.05,yb,yb,ytop+.05],color=col,lw=1.8,zorder=5)
     ax.text((x0+x1)/2,yb+.12,label,fontsize=10.5,fontweight="bold",ha="center",va="top",color=col)
 brace(0,4,"trainable prompt",12.6,"#cf7f1a")     # trainable startup p1-p4 columns
-brace(15,19,"input",8.4,"#555")                  # uniform input tokens t1-t4
-brace(19,20,"predicted",8.4,"#b21c1c")           # uniform predicted t5
-ax.set_xlim(-1.3,20.2); ax.set_ylim(13.1,-0.95)
+brace(10,14,"input",8.4,"#555")                  # uniform input tokens t1-t4
+brace(14,15,"predicted",8.4,"#b21c1c")           # uniform predicted t5
+ax.set_xlim(-1.3,15.7); ax.set_ylim(13.1,-0.95)
 fig.subplots_adjust(left=0.004,right=0.996,top=0.996,bottom=0.004)
 out="/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/.claude/worktrees/exp/paper/attention-sink/figures/windowed_attention.png"
 plt.savefig(out,dpi=175,bbox_inches="tight",pad_inches=0.03); print("wrote",out)
