@@ -26,15 +26,15 @@ def attn(ox,oy,title,fill,xlabels):
         YL(ox-.25,oy+r,PRED[r],PRD)
     for c,t in enumerate(xlabels): XL(ox+c,oy+5+.12,t,CTX)
 # CAUSAL (content side only, 5x5)  -- left col, top
-ox,oy=0,0; TT(ox,oy-.35,"1. triangle")
+ox,oy=0,0; TT(ox,oy-.35,"1. triangle mask")
 for r in range(5):
     for c in range(5): (Cl(ox+c,oy+r,CONTENT) if c<=r else Em(ox+c,oy+r))
     YL(ox-.25,oy+r,PRED[r],PRD)
 for c,t in enumerate(["t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
 # SLIDING+HISTORY  -- right col, top
-attn(6.5,0,"2. sliding history",HISTC,["t-3","t-2","t-1","t0","t1","t2","t3","t4","t5"])
+attn(6.5,0,"2. sliding mask",HISTC,["t-3","t-2","t-1","t0","t1","t2","t3","t4","t5"])
 # TRAINABLE STARTUP (attention) -- bottom-LEFT (panel 3)
-attn(0,7.4,"3. trainable startup",PROMPT,["p1","p2","p3","p4","t1","t2","t3","t4","t5"])
+attn(0,7.4,"3. sliding mask w/ startup",PROMPT,["p1","p2","p3","p4","t1","t2","t3","t4","t5"])
 # UNIFORM CONTEXT (not attention) -- bottom-RIGHT (panel 4): two stacked example sequences, right-aligned to x=14
 ox,oy=10,7.4; TT(ox,oy-.35,"4. uniform context")
 def useq(sx,ry,toks):           # 5-length predict-last sequence; labels INSIDE cells
@@ -50,7 +50,7 @@ def brace(x0,x1,label,ytop,col):
     ax.plot([x0+.06,x0+.06,x1-.06,x1-.06],[ytop+.05,yb,yb,ytop+.05],color=col,lw=1.8,zorder=5)
     ax.text((x0+x1)/2,yb+.12,label,fontsize=10.5,fontweight="bold",ha="center",va="top",color=col)
 brace(0,4,"trainable prompt",12.6,"#cf7f1a")     # trainable startup p1-p4 columns
-brace(10,14,"input",8.4,"#555")                  # uniform input tokens t1-t4
+brace(10,14,"context",8.4,"#555")                  # uniform input tokens t1-t4
 brace(14,15,"predicted",8.4,"#b21c1c")           # uniform predicted t5
 ax.set_xlim(-1.3,15.7); ax.set_ylim(13.1,-0.95)
 fig.subplots_adjust(left=0.004,right=0.996,top=0.996,bottom=0.004)
