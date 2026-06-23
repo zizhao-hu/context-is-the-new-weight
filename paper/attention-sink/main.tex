@@ -142,6 +142,10 @@ The two sink types are \emph{separable}. On Qwen2.5-0.5B we measure, under each 
 
 \input{tables/eff.tex}
 
+\paragraph{Generalization to a second softmax family and scale.} The recovery is not specific to Qwen or to perplexity. On LLaMA-3.2-1B and -3B (\emph{fully} softmax, no hybrid linear layers) we run the same continued-pretraining schemes and score the real downstream task, HotpotQA generation F1 under a constant deployed window (Table~\ref{tab:llama}). The pattern is identical and, if anything, sharper: a base or full-causal (triangle) model collapses under windowing (answer-perplexity $266$--$378$), while sliding-history and trainable-startup recover the task (F1 up to $0.198$, answer-perplexity down to $7$), trainable-startup strongest at $3$B. Crucially, \emph{uniform-context}, which lowers Type-1 without ever training under the window, stays collapsed even given $8\times$ the training signal, the downstream confirmation that removing the concentrated sink is necessary but not sufficient: the model must also develop the Type-2 spread that only sliding-window training induces (H3,~H4).
+
+\input{tables/llama_downstream.tex}
+
 \subsection{H3: Removing Type-1, the Model Resorts to the Separators}
 \paragraph{Hypothesis.} If the Type~1 anchor is removed, e.g.\ by a sliding-history objective that takes position~$0$ out of every deep query's receptive field, the storage/no-op function is not lost. We hypothesize that, rather than anchoring the shared representation on the beginning of the sequence, later tokens \emph{resort to} the Type~2 low-information separators, repurposing them to carry the role position~$0$ used to play and redistributing attention onto them.
 

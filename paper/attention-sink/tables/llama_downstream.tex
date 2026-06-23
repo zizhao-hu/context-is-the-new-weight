@@ -1,0 +1,20 @@
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{lcccc}
+\toprule
+& \multicolumn{2}{c}{LLaMA-3.2-1B} & \multicolumn{2}{c}{LLaMA-3.2-3B} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+scheme & F1 & a-ppl & F1 & a-ppl \\
+\midrule
+base              & .021 & 378 & .038 & 331 \\
+triangle-CPT      & .014 & 372 & .044 & 266 \\
+sliding-history   & .147 & 11.0 & .128 & 20.3 \\
+trainable-startup & \textbf{.148} & \textbf{10.9} & \textbf{.198} & \textbf{7.1} \\
+uniform-context   & .017 & 464 & .043 & 281 \\
+\bottomrule
+\end{tabular}
+\caption{Downstream HotpotQA on two \emph{fully-softmax} LLaMA models (no hybrid linear layers), continued-pretrained on the same wikitext and deployed at a constant $W{=}512$ window: greedy-generation F1 and teacher-forced answer-perplexity (a-ppl). base (no CPT) and triangle (full-causal CPT) \emph{collapse} under windowing (a-ppl $266$--$378$); \textbf{sliding-history} and \textbf{trainable-startup} \emph{recover} the task (a-ppl $7$--$20$, F1 up to $.198$), strongest at $3$B. \emph{Uniform-context} stays collapsed (a-ppl $281$--$464$) even given $8\times$ the training signal: it lowers Type-1 but never trains under the window, so it lacks the Type-2 spread (H1,~H4). F1 rises with the window; at $W{=}1024$ trainable-startup reaches a-ppl $5.7$ ($1$B).}
+\label{tab:llama}
+\end{table}
