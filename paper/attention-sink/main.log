@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  23 JUN 2026 00:38
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  23 JUN 2026 00:42
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -355,7 +355,7 @@ LaTeX Font Info:    Font shape `T1/ntxtlf/m/n' will be
 File: figures/windowed_attention.png Graphic file (type png)
 <use figures/windowed_attention.png>
 Package pdftex.def Info: figures/windowed_attention.png  used on input line 79.
-(pdftex.def)             Requested size: 215.45348pt x 191.53001pt.
+(pdftex.def)             Requested size: 239.39438pt x 212.81198pt.
  (./tables/spread.tex)
 <figures/qwen_sink_spread.png, id=22, 381.67593pt x 455.301pt>
 File: figures/qwen_sink_spread.png Graphic file (type png)
@@ -388,8 +388,8 @@ File: figures/ppl_curve.png Graphic file (type png)
 <use figures/ppl_curve.png>
 Package pdftex.def Info: figures/ppl_curve.png  used on input line 124.
 (pdftex.def)             Requested size: 239.39438pt x 152.48297pt.
-(./tables/ppl05b.tex) (./tables/matrix.tex) [4 <./figures/qwen_sink_spread.png> <./figures/sink_comparison.png>] (./tables/strict_matrix.tex) (./tables/eff.tex) [5 <./figures/qwen9b_sink_summary.png> <./figures/ppl_curve.png>] (./tables/hotpotfair.tex)
-<figures/longbench_cpt_fair.png, id=42, 1430.42978pt x 333.47443pt>
+(./tables/ppl05b.tex) [4 <./figures/qwen_sink_spread.png> <./figures/sink_comparison.png>] (./tables/matrix.tex) (./tables/strict_matrix.tex) (./tables/eff.tex) [5 <./figures/qwen9b_sink_summary.png> <./figures/ppl_curve.png>] (./tables/hotpotfair.tex) [6]
+<figures/longbench_cpt_fair.png, id=45, 1430.42978pt x 333.47443pt>
 File: figures/longbench_cpt_fair.png Graphic file (type png)
 <use figures/longbench_cpt_fair.png>
 Package pdftex.def Info: figures/longbench_cpt_fair.png  used on input line 161.
@@ -399,10 +399,9 @@ Underfull \hbox (badness 2277) in paragraph at lines 162--162
 []\T1/ntxtlf/m/n/10 Figure 7: |Long-Bench multi-hop QA (Qwen2.5-0.5B,
  []
 
+(./main.bbl [7 <./figures/longbench_cpt_fair.png>]) [8
 
-Underfull \vbox (badness 1540) has occurred while \output is active []
-
- [6] (./main.bbl) [7 <./figures/longbench_cpt_fair.png>] (./main.aux)
+] (./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2020/03/25>
@@ -411,16 +410,16 @@ L3 programming layer <2020/03/25>
 Here is how much of TeX's memory you used:
  7023 strings out of 469331
  114106 string characters out of 5465424
- 546842 words of memory out of 5000000
+ 545842 words of memory out of 5000000
  35724 multiletter control sequences out of 15000+600000
  673431 words of font info for 75 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  89i,9n,117p,1785b,394s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmb.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmr.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmri.pfb>
-Output written on main.pdf (7 pages, 766715 bytes).
+Output written on main.pdf (8 pages, 767009 bytes).
 PDF statistics:
- 99 PDF objects out of 1000 (max. 8388607)
- 53 compressed objects within 1 object stream
+ 102 PDF objects out of 1000 (max. 8388607)
+ 55 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  36 words of extra memory for PDF output out of 10000 (max. 10000000)
 
