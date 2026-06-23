@@ -8,7 +8,7 @@ from matplotlib.patches import Rectangle, Patch
 CONTENT,HISTC,PROMPT,PREDC=(.12,.47,.71),(.12,.47,.71),(.93,.50,.11),(.74,.13,.13)
 GREY=(.74,.76,.79)
 CTX,PRD="#555","#b21c1c"
-fig,ax=plt.subplots(figsize=(8.0,7.0)); ax.set_aspect("equal"); ax.axis("off")
+fig,ax=plt.subplots(figsize=(8.2,6.7)); ax.set_aspect("equal"); ax.axis("off")
 def Cl(x,y,fc): ax.add_patch(Rectangle((x,y),1,1,facecolor=fc,edgecolor="#555",lw=1.3,zorder=2))
 def Em(x,y): ax.add_patch(Rectangle((x,y),1,1,facecolor="white",edgecolor="#cfcfcf",lw=0.7,zorder=1))
 def TT(x,y,t): ax.text(x,y,t,fontsize=13.5,fontweight="bold",ha="left",va="bottom")
@@ -49,10 +49,10 @@ def brace(x0,x1,label,ytop,col):
     yb=ytop+0.26
     ax.plot([x0+.06,x0+.06,x1-.06,x1-.06],[ytop+.05,yb,yb,ytop+.05],color=col,lw=1.8,zorder=5)
     ax.text((x0+x1)/2,yb+.12,label,fontsize=10.5,fontweight="bold",ha="center",va="top",color=col)
-brace(0,4,"context",11.2,"#555")                 # grey cells of bottom uniform seq
-brace(4,5,"predicted",11.2,"#b21c1c")            # crimson cell
-brace(7.0,9.0,"trainable prompt",11.45,"#cf7f1a")  # p1,p2 columns of sliding+trainable
-ax.set_xlim(-1.05,14.2); ax.set_ylim(12.6,-0.95)
+brace(0,4,"context",7.2,"#555")                  # grey cells of TOP uniform seq
+brace(4,5,"predicted",7.2,"#b21c1c")             # crimson cell of TOP seq
+brace(7.0,9.0,"trainable\nprompt",8.2,"#cf7f1a")    # under the ->t3 row (p1,p2 prompt columns)
+ax.set_xlim(-1.05,14.2); ax.set_ylim(11.9,-0.95)
 fig.subplots_adjust(left=0.004,right=0.996,top=0.996,bottom=0.004)
 out="/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/.claude/worktrees/exp/paper/attention-sink/figures/windowed_attention.png"
 plt.savefig(out,dpi=175,bbox_inches="tight",pad_inches=0.03); print("wrote",out)
