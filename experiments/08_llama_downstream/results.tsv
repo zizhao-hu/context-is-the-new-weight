@@ -38,3 +38,11 @@ iter	scheme	window	lr	steps	F1	EM	ans_ppl	decision	note
 3fill	windowed	256	2e-5	3B-adamw	0.089	0	50.84	keep	3B_window_trend
 3fill	startup	256	2e-5	3B-adamw	0.155	0	12.53	keep	3B_window_trend
 3fill	uniwin	256	2e-5	3B-adamw	0.03	0	1674.8	discard	3B_window_trend
+4	base+stream	128	-	1B	0.098	0	17.83	baseline	StreamingLLM_recovers_competitive
+4	base+stream	256	-	1B	0.119	0	14.66	baseline	StreamingLLM_recovers_competitive
+4	base+stream	512	-	1B	0.137	0	9.31	baseline	StreamingLLM_recovers_competitive
+4	base+stream	128	-	3B	0.133	0	10.78	baseline	StreamingLLM_recovers_competitive
+4	base+stream	256	-	3B	0.187	0	9.92	baseline	StreamingLLM_recovers_competitive
+4	base+stream	512	-	3B	0.219	0	6.6	baseline	StreamingLLM_recovers_competitive
+4	uniall	256	-	1B	0.0	0	1816.28	baseline	allloss_still_collapses_structural
+4	uniall	512	-	1B	0.01	0	451.77	baseline	allloss_still_collapses_structural
