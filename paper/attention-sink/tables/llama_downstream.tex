@@ -1,20 +1,28 @@
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \footnotesize
-\setlength{\tabcolsep}{4.5pt}
-\begin{tabular}{lcccc}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{l cccc c cccc}
 \toprule
-& \multicolumn{2}{c}{LLaMA-3.2-1B} & \multicolumn{2}{c}{LLaMA-3.2-3B} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
-scheme & F1 & a-ppl & F1 & a-ppl \\
+& \multicolumn{4}{c}{\textbf{HotpotQA F1} (higher is better)} && \multicolumn{4}{c}{\textbf{answer-perplexity} (lower is better)} \\
+\cmidrule(lr){2-5}\cmidrule(lr){7-10}
+deploy window $W$ & 128 & 256 & 512 & 1024 && 128 & 256 & 512 & 1024 \\
 \midrule
-base              & .021 & 378 & .038 & 331 \\
-triangle-CPT      & .014 & 372 & .044 & 266 \\
-sliding-history   & .147 & 11.0 & .128 & 20.3 \\
-trainable-startup & \textbf{.148} & \textbf{10.9} & \textbf{.198} & \textbf{7.1} \\
-uniform-context   & .017 & 464 & .043 & 281 \\
+\multicolumn{10}{l}{\emph{LLaMA-3.2-1B (fully softmax)}}\\
+base \;(no finetuning)        & .010 & .020 & .021 & --   && 2948 & 1422 & 378  & --   \\
+triangle \;(full-causal CPT)  & .009 & .012 & .014 & --   && 2597 & 1415 & 372  & --   \\
+sliding-history               & .085 & .107 & .147 & .121 && 22.7 & 17.5 & 11.0 & 7.7  \\
+trainable-startup             & .100 & .105 & .148 & \textbf{.159} && 21.7 & 16.1 & 10.9 & \textbf{5.7} \\
+uniform-context               & .010 & .003 & .017 & --   && 2904 & 1436 & 464  & --   \\
+\midrule
+\multicolumn{10}{l}{\emph{LLaMA-3.2-3B (fully softmax)}}\\
+base \;(no finetuning)        & .029 & .027 & .038 & --   && 3398 & 1908 & 331  & --   \\
+triangle \;(full-causal CPT)  & .033 & .038 & .044 & --   && 2950 & 1331 & 266  & --   \\
+sliding-history               & .075 & .089 & .128 & --   && 73.9 & 50.8 & 20.3 & --   \\
+trainable-startup             & .117 & .155 & \textbf{.198} & --   && 32.8 & 12.5 & \textbf{7.1} & -- \\
+uniform-context               & .024 & .030 & .043 & --   && 3115 & 1675 & 281  & --   \\
 \bottomrule
 \end{tabular}
-\caption{Downstream HotpotQA on two \emph{fully-softmax} LLaMA models (no hybrid linear layers), continued-pretrained on the same wikitext and deployed at a constant $W{=}512$ window: greedy-generation F1 and teacher-forced answer-perplexity (a-ppl). base (no CPT) and triangle (full-causal CPT) \emph{collapse} under windowing (a-ppl $266$--$378$); \textbf{sliding-history} and \textbf{trainable-startup} \emph{recover} the task (a-ppl $7$--$20$, F1 up to $.198$), strongest at $3$B. \emph{Uniform-context} stays collapsed (a-ppl $281$--$464$) even given $8\times$ the training signal: it lowers Type-1 but never trains under the window, so it lacks the Type-2 spread (H1,~H4). F1 rises with the window (at $3$B, trainable-startup a-ppl $32.8\!\to\!12.5\!\to\!7.1$ for $W{=}128/256/512$, beating sliding-history at every budget by a margin that widens as the window tightens, the prompt filling the coldest part); at $W{=}1024$ it reaches a-ppl $5.7$ ($1$B).}
+\caption{\textbf{Downstream HotpotQA on fully-softmax LLaMA, deployed at a constant sliding window of $W$ tokens (the model attends only the most recent $W$ tokens, never the full context).} All models start from the pretrained LLaMA-3.2 \emph{base} checkpoint (not instruction-tuned), are continued-pretrained on the same WikiText with ordinary next-token prediction under each scheme's attention regime (\emph{only} the mask/format differs, never the data or the task), and are evaluated \emph{zero-shot} on HotpotQA. Each cell is one number; the two halves report two metrics. \textbf{F1} (higher better): token overlap between the model's greedily-generated answer and the gold answer. \textbf{answer-perplexity} (lower better): the model's perplexity on the gold-answer tokens given the context, i.e.\ how surprised it is by the correct answer ($1{=}$certain of it, hundreds--thousands ${=}$ effectively broken). \emph{Reading the table:} base (no finetuning) and triangle (the control: same data and steps, ordinary full attention) \emph{collapse} once the window is imposed (answer-ppl in the hundreds--thousands); \textbf{sliding-history} and \textbf{trainable-startup} \emph{recover} (answer-ppl in single--double digits, F1 up to $.198$), trainable-startup best and strongest as the window tightens (the trainable prompt fills the cold start). \emph{uniform-context} stays collapsed even with $8\times$ the training: it removes the concentrated Type-1 sink but never trains under the window, so it lacks the Type-2 spread (H3,~H4). ``--'' $=$ not run.}
 \label{tab:llama}
-\end{table}
+\end{table*}
