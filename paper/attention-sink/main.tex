@@ -76,7 +76,7 @@ We state four hypotheses, each a claim presented with its mechanism and the expe
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/windowed_attention.png}
+\includegraphics[width=0.9\linewidth]{figures/windowed_attention.png}
 \caption{Four continued-pretraining regimes (\textcolor[rgb]{0.12,0.47,0.71}{blue} = the attention mask in the matrix panels; \textcolor[rgb]{0.5,0.52,0.55}{grey} = a context token and \textcolor[rgb]{0.70,0.11,0.11}{crimson} the predicted token in the uniform sequence panel). \textbf{Top, attention masks} (rows = a predicting step, columns = attended positions; both predict every token): the standard \emph{causal} mask, where context grows with position; and a \emph{sliding window} of constant width $W$ whose cold start is filled with real prior text (blue, the same as content --- history is just earlier context). \textbf{Bottom:} the \emph{uniform window} is not an attention mask but fixed-length training --- a stack of fixed-length sequences (two windows shown with aligned boxes and shifted token indices, $\vdots$ for the rest), each predicting only its last token (crimson) from its preceding context, so it also runs on a recurrence; and a \emph{sliding window with trainable tokens}, whose cold start is filled by a trainable startup prompt (orange) that slides out as content accumulates. Older real context must be carried by the weights.}
 \label{fig:windowed}
 \end{figure}
