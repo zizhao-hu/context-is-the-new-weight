@@ -26,15 +26,15 @@ def attn(ox,oy,title,fill,xlabels):
         YL(ox-.25,oy+r,PRED[r],PRD)
     for c,t in enumerate(xlabels): XL(ox+c,oy+5+.12,t,CTX)
 # CAUSAL (content side only, 5x5)  -- left col, top
-ox,oy=0,0; TT(ox,oy-.35,"1. causal (grows)")
+ox,oy=0,0; TT(ox,oy-.35,"1. triangle")
 for r in range(5):
     for c in range(5): (Cl(ox+c,oy+r,CONTENT) if c<=r else Em(ox+c,oy+r))
     YL(ox-.25,oy+r,PRED[r],PRD)
 for c,t in enumerate(["t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
 # SLIDING+HISTORY  -- right col, top
-attn(7.0,0,"2. sliding + history",HISTC,["t-1","t0","t1","t2","t3","t4","t5"])
+attn(7.0,0,"2. sliding history",HISTC,["t-1","t0","t1","t2","t3","t4","t5"])
 # UNIFORM (NOT attention) -- two example sequences shifted along the stream + vertical dots = stacking dataset
-ox,oy=0,7.4; TT(ox,oy-.35,"3. constant context")
+ox,oy=0,7.4; TT(ox,oy-.35,"3. uniform context")
 def useq(sx,ry,toks):           # 5-length predict-last sequence; tokens by ABSOLUTE position; labels INSIDE cells
     for c in range(4):
         Cl(ox+sx+c,ry,GREY); ax.text(ox+sx+c+.5,ry+.5,toks[c],fontsize=10.5,fontweight="bold",ha="center",va="center",color="#222")
@@ -43,7 +43,7 @@ useq(0,7.4,["t1","t2","t3","t4","t5"])      # top seq aligns with the right pane
 ax.text(ox+2.5,9.9,r"$\vdots$",fontsize=22,fontweight="bold",ha="center",va="center")
 useq(0,11.4,["t3","t4","t5","t6","t7"])     # bottom seq aligns with bottom row; numbers shifted
 # SLIDING+TRAINABLE -- right col, bottom
-attn(7.0,7.4,"4. sliding + trainable prompt",PROMPT,["p1","p2","t1","t2","t3","t4","t5"])
+attn(7.0,7.4,"4. trainable startup",PROMPT,["p1","p2","t1","t2","t3","t4","t5"])
 # no legend: label context / predicted / trainable prompt with brackets under the example cells
 def brace(x0,x1,label,ytop,col):
     yb=ytop+0.26
