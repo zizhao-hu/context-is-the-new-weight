@@ -28,9 +28,9 @@ def attn(ox,oy,title,fill,xlabels):
 # CAUSAL (content side only, 5x5)  -- left col, top
 ox,oy=0,0; TT(ox,oy-.35,"1. triangle")
 for r in range(5):
-    for c in range(9): (Cl(ox+c,oy+r,CONTENT) if c<=4+r else Em(ox+c,oy+r))
+    for c in range(5): (Cl(ox+c,oy+r,CONTENT) if c<=r else Em(ox+c,oy+r))
     YL(ox-.25,oy+r,PRED[r],PRD)
-for c,t in enumerate(["t-3","t-2","t-1","t0","t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
+for c,t in enumerate(["t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
 # SLIDING+HISTORY  -- right col, top
 attn(11.0,0,"2. sliding history",HISTC,["t-3","t-2","t-1","t0","t1","t2","t3","t4","t5"])
 # TRAINABLE STARTUP (attention) -- bottom-LEFT (panel 3)
