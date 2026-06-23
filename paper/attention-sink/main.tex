@@ -49,6 +49,8 @@ We make the following contributions:
 
 \section{Categorizing Attention Sinks}
 \label{sec:sink}
+
+\input{tables/categorization.tex}
 Attention sinks admit more than one categorization. We propose a \emph{structural} one --- by the spatial pattern of the sink itself --- distinguishing a \emph{concentrated} sink from a \emph{sparse} sink. They differ in \emph{where} the attention lands and in \emph{what} drives it, and the rest of the paper turns on telling them apart.
 
 \paragraph{Type~1 --- the concentrated (first-token) sink.} A large, almost content-independent share of every query's attention \emph{concentrates} on the first one or two tokens of the sequence, regardless of their content. Figure~\ref{fig:base_sink} shows this for a base model: the leftmost column of the attention map is a bright vertical stripe, and token~1 absorbs on average $0.42$ of the attention mass --- an order of magnitude more than any later key --- across a majority of heads. This is the sink exploited by StreamingLLM \citep{xiao2024streamingllm}: it is tied to absolute \emph{position}, not to meaning.
@@ -63,8 +65,6 @@ Attention sinks admit more than one categorization. We propose a \emph{structura
 \paragraph{Type~2 --- the sparse (separator) sink.} A second sink is \emph{sparse} rather than concentrated: it spreads across semantically near-empty separator tokens \emph{within} the sequence --- punctuation such as commas and periods, delimiters, and other filler. These tokens carry little predictive information of their own; a head with nothing to retrieve at a given step dumps its attention onto the nearest such token, using it as a local ``no-op'' or scratch register. Unlike Type~1, the no-op sink is distributed throughout the text and keyed to token \emph{identity} rather than to absolute position.
 
 \paragraph{Functional vs.\ structural categorization.} Prior work separates sinks by \emph{function}, but not by \emph{structure} or by \emph{cause}. \citet{fesser2026unifying} distinguish two algorithms behind a sink --- an adaptive \emph{no-op} that suppresses the update by routing to a null token (negligible value norm) and a \emph{broadcast} that aggregates and redistributes global information (low-rank output) --- while earlier accounts simply retain the initial tokens at inference \citep{xiao2024streamingllm,han2024lminfinite}. We categorize \emph{orthogonally and structurally}, by the sink's spatial pattern: a \emph{concentrated} first-token sink (Type~1) vs.\ a \emph{sparse} separator sink (Type~2). The two axes cross-cut (Table~\ref{tab:categorization}) --- a sink of either structure can serve either function --- so the functional split alone cannot assign a \emph{cause}. The structural split can, and this is our central claim (H1): the two structural types arise from \emph{two different mechanisms}. Type~1 is an artifact of the triangular mask's positional exposure imbalance (H2): a property of the \emph{architecture} that disappears when the mask changes. Type~2 is content-driven, keyed to token \emph{identity}: a property of the \emph{data and the model's use of it} that persists --- indeed is leaned on \emph{more} --- once Type~1 is removed (H3). Separating the sink \emph{by position} is what lets us remove the harmful, mask-induced one while keeping (and exploiting) the useful one. We state these mechanisms as testable hypotheses next.
-
-\input{tables/categorization.tex}
 
 \section{Hypotheses}
 \label{sec:hyp}
