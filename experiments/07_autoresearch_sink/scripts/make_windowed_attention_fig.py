@@ -6,6 +6,7 @@ import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, Patch
 CONTENT,HISTC,PROMPT,PREDC=(.12,.47,.71),(.12,.47,.71),(.93,.50,.11),(.74,.13,.13)
+GREY=(.74,.76,.79)
 CTX,PRD="#555","#b21c1c"
 fig,ax=plt.subplots(figsize=(8.8,6.55)); ax.set_aspect("equal"); ax.axis("off")
 def Cl(x,y,fc): ax.add_patch(Rectangle((x,y),1,1,facecolor=fc,edgecolor="#555",lw=1.3,zorder=2))
@@ -34,21 +35,20 @@ for c,t in enumerate(["t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
 attn(7.8,0,"sliding + history",HISTC,["t-4","t-3","t-2","t-1","t0","t1","t2","t3","t4","t5"])
 # UNIFORM (NOT attention) -- two example sequences shifted along the stream + vertical dots = stacking dataset
 ox,oy=0,7.2; TT(ox,oy-.35,"uniform (constant $W$)")
-def useq(sx,ry,toks):           # 5-length predict-last sequence; tokens placed by ABSOLUTE position (t2 under t2)
-    for c in range(4): Cl(ox+sx+c,ry,CONTENT)
-    Cl(ox+sx+4,ry,PREDC)
-    cc=[CTX]*4+[PRD]
-    for c in range(5): XL(ox+sx+c,ry+1.05,toks[c],cc[c])
+def useq(sx,ry,toks):           # 5-length predict-last sequence; tokens by ABSOLUTE position; labels INSIDE cells
+    for c in range(4):
+        Cl(ox+sx+c,ry,GREY); ax.text(ox+sx+c+.5,ry+.5,toks[c],fontsize=10.5,fontweight="bold",ha="center",va="center",color="#222")
+    Cl(ox+sx+4,ry,PREDC); ax.text(ox+sx+4+.5,ry+.5,toks[4],fontsize=10.5,fontweight="bold",ha="center",va="center",color="white")
 useq(0,7.2,["t1","t2","t3","t4","t5"])      # top seq aligns with the right panel's top row (->t2)
-ax.text(ox+2.7,9.85,r"$\vdots$",fontsize=22,fontweight="bold",ha="center",va="center")
-useq(1,11.2,["t2","t3","t4","t5","t6"])     # bottom seq aligns with the right panel's bottom row (->t6); shifted so t2 under t2
+ax.text(ox+3.4,9.85,r"$\vdots$",fontsize=22,fontweight="bold",ha="center",va="center")
+useq(2,11.2,["t3","t4","t5","t6","t7"])     # bottom seq shifted +2 (t3 under t3); aligns with bottom row (->t6)
 # SLIDING+TRAINABLE -- right col, bottom
 attn(7.8,7.2,"sliding + trainable",PROMPT,["p1","p2","p3","p4","p5","t1","t2","t3","t4","t5"])
 # compact legend drawn in-canvas just above the panels (close to content, fills width)
 ly=-1.75; sq=0.72
-for (col,lab),x0 in zip([(CONTENT,"context"),(PROMPT,"trainable prompt"),(PREDC,"predicted")],[1.0,6.2,13.0]):
+for (col,lab),x0 in zip([(CONTENT,"attention"),(GREY,"context"),(PROMPT,"trainable prompt"),(PREDC,"predicted")],[-1.5,3.3,7.2,13.5]):
     ax.add_patch(Rectangle((x0,ly),sq,sq,facecolor=col,edgecolor="#555",lw=1.3,zorder=6))
-    ax.text(x0+sq+0.3,ly+sq/2,lab,fontsize=12,fontweight="bold",va="center",ha="left",zorder=6)
+    ax.text(x0+sq+0.28,ly+sq/2,lab,fontsize=11,fontweight="bold",va="center",ha="left",zorder=6)
 ax.set_xlim(-1.7,17.95); ax.set_ylim(12.7,-2.45)
 fig.subplots_adjust(left=0.004,right=0.996,top=0.996,bottom=0.004)
 out="/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/.claude/worktrees/exp/paper/attention-sink/figures/windowed_attention.png"
