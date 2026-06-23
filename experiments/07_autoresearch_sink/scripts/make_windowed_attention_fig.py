@@ -40,8 +40,8 @@ def useq(sx,ry,toks):           # 5-length predict-last sequence; tokens by ABSO
         Cl(ox+sx+c,ry,GREY); ax.text(ox+sx+c+.5,ry+.5,toks[c],fontsize=10.5,fontweight="bold",ha="center",va="center",color="#222")
     Cl(ox+sx+4,ry,PREDC); ax.text(ox+sx+4+.5,ry+.5,toks[4],fontsize=10.5,fontweight="bold",ha="center",va="center",color="white")
 useq(0,7.2,["t1","t2","t3","t4","t5"])      # top seq aligns with the right panel's top row (->t2)
-ax.text(ox+3.4,9.85,r"$\vdots$",fontsize=22,fontweight="bold",ha="center",va="center")
-useq(2,11.2,["t3","t4","t5","t6","t7"])     # bottom seq shifted +2 (t3 under t3); aligns with bottom row (->t6)
+ax.text(ox+2.5,9.85,r"$\vdots$",fontsize=22,fontweight="bold",ha="center",va="center")
+useq(0,11.2,["t3","t4","t5","t6","t7"])     # bottom seq: same boxes (aligned top & bottom), numbers just shifted
 # SLIDING+TRAINABLE -- right col, bottom
 attn(7.8,7.2,"sliding + trainable",PROMPT,["p1","p2","p3","p4","p5","t1","t2","t3","t4","t5"])
 # compact legend drawn in-canvas just above the panels (close to content, fills width)
