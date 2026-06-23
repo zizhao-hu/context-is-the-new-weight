@@ -10,18 +10,20 @@ deploy window $W$ & 128 & 256 & 512 & 1024 && 128 & 256 & 512 & 1024 \\
 \midrule
 \multicolumn{10}{l}{\emph{LLaMA-3.2-1B (fully softmax)}}\\
 base \,(no finetuning)        & .010 & .020 & .021 & --   && 2948 & 1422 & 378  & --   \\
+base $+$ StreamingLLM         & .098 & .119 & .137 & --   && 17.8 & 14.7 & 9.3  & --   \\
 triangle \,(full-causal CPT)  & .009 & .012 & .014 & --   && 2597 & 1415 & 372  & --   \\
 sliding-history               & .085 & .107 & .147 & .121 && 22.7 & 17.5 & 11.0 & 7.7  \\
 trainable-startup             & .100 & .105 & .148 & \textbf{.159} && 21.7 & 16.1 & 10.9 & \textbf{5.7} \\
 uniform-context               & .010 & .003 & .017 & --   && 2904 & 1436 & 464  & --   \\
 \multicolumn{10}{l}{\emph{LLaMA-3.2-3B (fully softmax)}}\\
 base \,(no finetuning)        & .029 & .027 & .038 & --   && 3398 & 1908 & 331  & --   \\
+base $+$ StreamingLLM         & .133 & .187 & \textbf{.219} & -- && 10.8 & 9.9 & \textbf{6.6} & -- \\
 triangle \,(full-causal CPT)  & .033 & .038 & .044 & --   && 2950 & 1331 & 266  & --   \\
 sliding-history               & .075 & .089 & .128 & --   && 73.9 & 50.8 & 20.3 & --   \\
-trainable-startup             & .117 & .155 & \textbf{.198} & --   && 32.8 & 12.5 & \textbf{7.1} & -- \\
+trainable-startup             & .117 & .155 & .198 & --   && 32.8 & 12.5 & 7.1  & --   \\
 uniform-context               & .024 & .030 & .043 & --   && 3115 & 1675 & 281  & --   \\
 \bottomrule
 \end{tabular}
-\caption{Downstream zero-shot HotpotQA on fully-softmax LLaMA \emph{base} models, continued-pretrained on WikiText under each scheme's attention mask (only the mask differs, never the data or task) and deployed at a constant $W$-token sliding window (columns). \textbf{F1} ($\uparrow$): token overlap of the greedily-generated answer with the gold answer. \textbf{answer-perplexity} ($\downarrow$): the model's perplexity on the gold-answer tokens given the context, i.e.\ its surprise at the correct answer ($1{=}$certain, hundreds--thousands ${=}$ broken). base (no finetuning) and triangle (full-causal control, same data/steps) \emph{collapse} once the window is imposed; sliding-history and trainable-startup \emph{recover} (trainable-startup best, strongest as the window tightens, the prompt filling the cold start); uniform-context stays collapsed even with $8\times$ training (it lowers Type-1 but lacks the Type-2 spread, H3/H4). ``--'' $=$ not run.}
+\caption{Downstream zero-shot HotpotQA on fully-softmax LLaMA \emph{base} models, continued-pretrained on WikiText under each scheme's attention mask (only the mask differs, never the data or task) and deployed at a constant $W$-token sliding window (columns). \textbf{F1} ($\uparrow$): token overlap of the greedily-generated answer with the gold answer. \textbf{answer-perplexity} ($\downarrow$): the model's perplexity on the gold-answer tokens given the context ($1{=}$certain, hundreds--thousands ${=}$ broken). base (no finetuning) and triangle (full-causal control) \emph{collapse} once the window is imposed; sliding-history and trainable-startup \emph{recover} (trainable-startup best among trained schemes, strongest as the window tightens). \emph{base $+$ StreamingLLM} keeps $4$ sink tokens $+$ recent at the \emph{same} budget (training-free): it recovers most of the collapse, confirming the sink is the culprit, and on this downstream task is competitive with (at $3$B, better than) the trained schemes, so finetuning's gain here is the constant-memory mechanism (no sink dependence; trainable-prompt variants) rather than raw F1. \emph{uniform-context} stays collapsed even with all-token loss ($W{\times}$ more signal): it lowers Type-1 but never trains under the window, so it lacks the Type-2 spread (H3/H4). ``--'' $=$ not run.}
 \label{tab:llama}
 \end{table*}
