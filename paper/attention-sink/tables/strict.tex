@@ -3,17 +3,17 @@
 \small
 \begin{tabular}{llcc}
 \toprule
-mixer & finetune & windowed@256 & full \\
+mixer & finetune & sliding-history@256 & full \\
 \midrule
 \multirow{4}{*}{softmax} & base & 16.13 & 9.94 \\
  & triangle-CPT & 13.53 & 8.93 \\
- & \textbf{windowed} & \textbf{10.16} & 9.12 \\
- & startup & 10.19 & 9.15 \\
+ & \textbf{sliding-history} & \textbf{10.16} & 9.12 \\
+ & trainable startup & 10.19 & 9.15 \\
 \midrule
 \multirow{2}{*}{gated (GLA)} & base &, & 10.41 \\
  & triangle-CPT & 8.93 & 8.93 \\
 \bottomrule
 \end{tabular}
-\caption{Strict same-skeleton, same-($100$B-token) control (flash-linear-attention $1.3$B): a softmax Transformer vs.\ a gated-linear (GLA) model where \emph{only the token-mixer differs}. Held-out perplexity under a $256$-token sliding window. The softmax base collapses ($9.94\!\to\!16.13$); full-attention continued pretraining (triangle-CPT) does \emph{not} fix it ($13.53$); \textbf{windowed finetuning recovers it} ($10.16$, near its own full-context $9.12$), approaching the natively constant-memory gated model ($8.93$). Recovery is window-robust: windowed-FT at $W{=}128/256/512$ gives $11.2/10.2/9.5$ vs.\ base $18.9/16.1/14.1$.}
+\caption{Strict same-skeleton, same-($100$B-token) control (flash-linear-attention $1.3$B): a softmax Transformer vs.\ a gated-linear (GLA) model where \emph{only the token-mixer differs}. Held-out perplexity under a $256$-token sliding window. The softmax base collapses ($9.94\!\to\!16.13$); full-attention continued pretraining (triangle-CPT) does \emph{not} fix it ($13.53$); \textbf{sliding-window finetuning recovers it} ($10.16$, near its own full-context $9.12$), approaching the natively constant-memory gated model ($8.93$). Recovery is window-robust: sliding-history-FT at $W{=}128/256/512$ gives $11.2/10.2/9.5$ vs.\ base $18.9/16.1/14.1$.}
 \label{tab:strict}
 \end{table}

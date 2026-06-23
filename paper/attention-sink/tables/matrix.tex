@@ -14,16 +14,16 @@ base 9B            & 59.8 & 28.1 & 13.8 & 7.80 & 7.26 \\
 \multicolumn{6}{l}{\emph{continued-pretraining baseline}}\\
 triangle-FT        & 33.7 & 18.2 & 8.66 & 6.96 & 6.59 \\
 \;+ StreamingLLM   & 7.88 & 7.39 & 7.03 & 6.83 & 6.56 \\
-\multicolumn{6}{l}{\emph{ours, windowed (one model per training window)}}\\
-windowed-128       & \textbf{7.44} & 7.14 & 6.94 & 6.83 & 6.62 \\
-windowed-256       & 7.82 & \textbf{7.19} & 6.93 & 6.79 & 6.57 \\
-windowed-512       & 11.5 & 7.82 & \textbf{6.95} & 6.79 & 6.55 \\
-windowed-1024      & 24.7 & 12.7 & 7.44 & \textbf{6.83} & 6.54 \\
-windowed-2048      & 27.6 & 14.5 & 7.76 & 6.84 & \textbf{6.53} \\
-\multicolumn{6}{l}{\emph{ours, startup (windowed + cold-start prompt)}}\\
-startup-256        & 7.82 & 7.17 & 6.92 & 6.79 & 6.57 \\
+\multicolumn{6}{l}{\emph{ours, sliding-history (one model per training window)}}\\
+sliding-history-128       & \textbf{7.44} & 7.14 & 6.94 & 6.83 & 6.62 \\
+sliding-history-256       & 7.82 & \textbf{7.19} & 6.93 & 6.79 & 6.57 \\
+sliding-history-512       & 11.5 & 7.82 & \textbf{6.95} & 6.79 & 6.55 \\
+sliding-history-1024      & 24.7 & 12.7 & 7.44 & \textbf{6.83} & 6.54 \\
+sliding-history-2048      & 27.6 & 14.5 & 7.76 & 6.84 & \textbf{6.53} \\
+\multicolumn{6}{l}{\emph{ours, trainable startup (sliding-history + cold-start prompt)}}\\
+trainable startup-256        & 7.82 & 7.17 & 6.92 & 6.79 & 6.57 \\
 \bottomrule
 \end{tabular}
-\caption{Qwen3.5-9B held-out perplexity, train-window (rows) $\times$ inference-window (columns); bold is native (train $=$ deploy). Windowed models beat both baselines and their StreamingLLM versions at tight windows, with no sink tokens. Small-window models are robust to any deployment window; wide-window models break when deployed narrower (\emph{train small, deploy anywhere}).}
+\caption{Qwen3.5-9B held-out perplexity, train-window (rows) $\times$ inference-window (columns); bold is native (train $=$ deploy). Sliding-history models beat both baselines and their StreamingLLM versions at tight windows, with no sink tokens. Small-window models are robust to any deployment window; wide-window models break when deployed narrower (\emph{train small, deploy anywhere}).}
 \label{tab:matrix}
 \end{table}
