@@ -1,1 +1,16 @@
 iter	scheme	window	lr	steps	F1	EM	ans_ppl	decision	note
+1	base	128	2e-5	400	0.01	0.0	2947.66	control	collapses under window
+1	base	256	2e-5	400	0.02	0.0	1422.0	control	collapses under window
+1	base	512	2e-5	400	0.021	0.0	378.02	control	collapses under window
+1	triangle	128	2e-5	400	0.009	0	2596.66	control	collapses under window
+1	triangle	256	2e-5	400	0.012	0	1414.99	control	collapses under window
+1	triangle	512	2e-5	400	0.014	0	372.06	control	collapses under window
+1	windowed	128	2e-5	400	0.085	0	22.74	keep	recovers
+1	windowed	256	2e-5	400	0.107	0	17.54	keep	recovers
+1	windowed	512	2e-5	400	0.147	0.007	10.97	keep	recovers
+1	startup	128	2e-5	400	0.1	0.007	21.69	keep	recovers
+1	startup	256	2e-5	400	0.105	0	16.13	keep	recovers
+1	startup	512	2e-5	400	0.148	0	10.85	keep	recovers
+1	uniwin	128	2e-5	400	0.01	0	2903.62	discard	collapsed/under-trained (predict-last)
+1	uniwin	256	2e-5	400	0.003	0	1435.93	discard	collapsed/under-trained (predict-last)
+1	uniwin	512	2e-5	400	0.017	0	463.68	discard	collapsed/under-trained (predict-last)
