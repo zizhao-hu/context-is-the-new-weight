@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  22 JUN 2026 18:19
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  22 JUN 2026 18:31
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -375,10 +375,11 @@ File: figures/qwen_sink_spread.png Graphic file (type png)
 <use figures/qwen_sink_spread.png>
 Package pdftex.def Info: figures/qwen_sink_spread.png  used on input line 121.
 (pdftex.def)             Requested size: 239.39438pt x 285.56978pt.
+ (./tables/transition.tex)
 <figures/qwen9b_sink_summary.png, id=32, 921.95871pt x 307.1475pt>
 File: figures/qwen9b_sink_summary.png Graphic file (type png)
 <use figures/qwen9b_sink_summary.png>
-Package pdftex.def Info: figures/qwen9b_sink_summary.png  used on input line 131.
+Package pdftex.def Info: figures/qwen9b_sink_summary.png  used on input line 135.
 (pdftex.def)             Requested size: 239.39438pt x 79.75336pt.
  (./tables/sink05b.tex
 Overfull \hbox (7.95258pt too wide) in paragraph at lines 4--13
@@ -386,48 +387,53 @@ Overfull \hbox (7.95258pt too wide) in paragraph at lines 4--13
  []
 
 )
-Underfull \hbox (badness 3098) in paragraph at lines 138--139
+Underfull \hbox (badness 3098) in paragraph at lines 142--143
  \T1/ntxtlf/b/n/10 Win-dowed fine-tun-ing re-cov-ers full-context qual-ity.
  []
 
 <figures/ppl_curve.png, id=33, 508.299pt x 323.7696pt>
 File: figures/ppl_curve.png Graphic file (type png)
 <use figures/ppl_curve.png>
-Package pdftex.def Info: figures/ppl_curve.png  used on input line 142.
+Package pdftex.def Info: figures/ppl_curve.png  used on input line 146.
 (pdftex.def)             Requested size: 239.39438pt x 152.48297pt.
 (./tables/ppl05b.tex) (./tables/matrix.tex) [4 <./figures/qwen_sink_spread.png>] (./tables/strict_matrix.tex) (./tables/eff.tex)
-Underfull \vbox (badness 5939) has occurred while \output is active []
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [5 <./figures/qwen9b_sink_summary.png> <./figures/ppl_curve.png>] (./tables/hotpotfair.tex)
-<figures/longbench_cpt_fair.png, id=44, 1430.42978pt x 333.47443pt>
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [6]
+<figures/longbench_cpt_fair.png, id=47, 1430.42978pt x 333.47443pt>
 File: figures/longbench_cpt_fair.png Graphic file (type png)
 <use figures/longbench_cpt_fair.png>
-Package pdftex.def Info: figures/longbench_cpt_fair.png  used on input line 175.
+Package pdftex.def Info: figures/longbench_cpt_fair.png  used on input line 179.
 (pdftex.def)             Requested size: 239.39438pt x 55.8096pt.
 
-Underfull \hbox (badness 2277) in paragraph at lines 176--176
+Underfull \hbox (badness 2277) in paragraph at lines 180--180
 []\T1/ntxtlf/m/n/10 Figure 7: |Long-Bench multi-hop QA (Qwen2.5-0.5B,
  []
 
-[6] (./main.bbl) [7 <./figures/longbench_cpt_fair.png>] (./main.aux)
+(./main.bbl [7 <./figures/longbench_cpt_fair.png>]) [8
+
+] (./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2020/03/25>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 7059 strings out of 469331
- 114829 string characters out of 5465424
- 541842 words of memory out of 5000000
- 35757 multiletter control sequences out of 15000+600000
+ 7066 strings out of 469331
+ 114987 string characters out of 5465424
+ 546842 words of memory out of 5000000
+ 35761 multiletter control sequences out of 15000+600000
  676690 words of font info for 77 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  89i,9n,117p,1800b,394s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/tex-gyre/qtmr.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmb.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmbi.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmr.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmri.pfb>
-Output written on main.pdf (7 pages, 789494 bytes).
+Output written on main.pdf (8 pages, 793052 bytes).
 PDF statistics:
- 110 PDF objects out of 1000 (max. 8388607)
- 60 compressed objects within 1 object stream
+ 113 PDF objects out of 1000 (max. 8388607)
+ 62 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  36 words of extra memory for PDF output out of 10000 (max. 10000000)
 

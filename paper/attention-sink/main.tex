@@ -123,6 +123,10 @@ The two sink types are \emph{separable}. On Qwen2.5-0.5B we measure, under each 
 \label{fig:spread}
 \end{figure}
 
+\paragraph{Structural meets functional.} The two structural types also differ \emph{functionally} in the sense of \citet{fesser2026unifying}: across all training schemes the concentrated Type-1 sink carries a low relative value norm ($\sim$$0.4$, the no-op signature --- it is read precisely to discard the update), while the sparse Type-2 separators carry near-normal value ($\sim$$0.8$--$0.9$) and broadcast content (Table~\ref{tab:transition}). As windowed and startup training drain Type-1, attention shifts onto the higher-value Type-2 tokens --- structurally concentrated$\to$sparse and functionally no-op$\to$broadcast in step. Two caveats keep this honest: pos-0 is not a \emph{pure} no-op (heavily attended, it still injects $\sim$$15\%$ of the base model's output energy), and our \emph{uniform-window} scheme reduces Type-1 \emph{without} the Type-2 spread --- it sinks on each window's relative boundary instead.
+
+\input{tables/transition.tex}
+
 \subsection{H2: The Concentrated Sink Is a Mask Artifact}
 \paragraph{Learned and removable.} Measuring the position-1 sink before and after finetuning shows it is a learned behaviour. On Qwen2.5-0.5B, a majority of softmax heads ($\approx 57\%$) sink onto token~1 in the base and full-attention-finetuned models; windowed finetuning drives this to $0\%$ (Table~\ref{tab:sink05b}), and the \textbf{startup} variant relocates the sink onto the trainable prompt rather than the content. On the larger hybrid model the absolute sink is weaker but the \emph{direction} is identical: full-attention finetuning \emph{builds} the sink, windowed finetuning \emph{shrinks} it (Fig.~\ref{fig:9bsink}).
 

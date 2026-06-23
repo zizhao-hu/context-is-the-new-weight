@@ -62,3 +62,9 @@ iter	exp_id	aim	model	scheme	metric	value	decision	note
 16	A12	spread-consistent	Qwen0.5B	triangle	type1/.../entropy	0.383/0.137/0.138/4.43	keep	keeps (intensifies) sink
 16	A12	spread-consistent	Qwen0.5B	windowed	type1/.../entropy	0.151/0.323/0.354/5.18	keep	drains type1, type2 rises (punct~lowinfo)
 16	A12	spread-consistent	Qwen0.5B	startup	type1/.../entropy	0.004/0.396/0.449/5.52	keep	eliminates type1; corr(attn,surprisal) -0.07->-0.16 robustness
+17	A13	transition	Qwen0.5B	base	T1/T2/vnT1/vnT2	0.367/0.080/0.383/0.915	keep	concentrated+no-op(lowvnorm); pos0 injects 0.153
+17	A13	transition	Qwen0.5B	triangle	T1/T2/vnT1/vnT2	0.380/0.066/0.414/0.885	keep	keeps concentrated no-op sink
+17	A13	transition	Qwen0.5B	windowed	T1/T2/vnT1/vnT2	0.160/0.249/0.425/0.798	keep	T1->T2 spread; separators higher value (broadcast)
+17	A13	transition	Qwen0.5B	uniform-window	T1/T2/vnT1/vnT2	0.206/0.080/0.452/0.909	keep	reduces T1 but NO T2 spread (sinks on window rel-boundary)
+17	A13	transition	Qwen0.5B	startup	T1/T2/vnT1/vnT2	0.004/0.322/0.875/0.806	keep	T1->0, T2->0.32 (no-op->broadcast)
+17	A13	transition	Qwen0.5B	persist	T1/T2/vnT1/vnT2	0.005/0.097/0.864/0.888	keep	T1->0, attention to persistent registers
