@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  22 JUN 2026 23:34
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  22 JUN 2026 23:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -362,13 +362,12 @@ File: figures/qwen_sink_spread.png Graphic file (type png)
 <use figures/qwen_sink_spread.png>
 Package pdftex.def Info: figures/qwen_sink_spread.png  used on input line 90.
 (pdftex.def)             Requested size: 239.39438pt x 285.56978pt.
- (./tables/transition.tex)
-<figures/sink_comparison.png, id=23, 743.63338pt x 257.18152pt>
+ (./tables/transition.tex) [3 <./figures/windowed_attention.png>]
+<figures/sink_comparison.png, id=28, 743.63338pt x 257.18152pt>
 File: figures/sink_comparison.png Graphic file (type png)
 <use figures/sink_comparison.png>
 Package pdftex.def Info: figures/sink_comparison.png  used on input line 104.
 (pdftex.def)             Requested size: 239.39438pt x 82.79028pt.
- [3 <./figures/windowed_attention.png>]
 <figures/qwen9b_sink_summary.png, id=29, 921.95871pt x 307.1475pt>
 File: figures/qwen9b_sink_summary.png Graphic file (type png)
 <use figures/qwen9b_sink_summary.png>
@@ -421,7 +420,7 @@ Here is how much of TeX's memory you used:
  14 hyphenation exceptions out of 8191
  89i,9n,117p,1785b,394s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmb.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmr.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmri.pfb>
-Output written on main.pdf (7 pages, 768022 bytes).
+Output written on main.pdf (7 pages, 766934 bytes).
 PDF statistics:
  99 PDF objects out of 1000 (max. 8388607)
  53 compressed objects within 1 object stream
