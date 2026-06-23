@@ -32,3 +32,9 @@ iter	scheme	window	lr	steps	F1	EM	ans_ppl	decision	note
 3	windowed	512	2e-5	3B-adamw	0.128	0	20.31	keep	3B_confirms_1B_startup_best
 3	startup	512	2e-5	3B-adamw	0.198	0	7.09	keep	3B_confirms_1B_startup_best
 3	uniwin	512	2e-5	3B-adamw	0.043	0	280.69	discard	3B_confirms_1B_startup_best
+3fill	windowed	128	2e-5	3B-adamw	0.075	0	73.9	keep	3B_window_trend
+3fill	startup	128	2e-5	3B-adamw	0.117	0	32.79	keep	3B_window_trend
+3fill	uniwin	128	2e-5	3B-adamw	0.024	0	3114.92	discard	3B_window_trend
+3fill	windowed	256	2e-5	3B-adamw	0.089	0	50.84	keep	3B_window_trend
+3fill	startup	256	2e-5	3B-adamw	0.155	0	12.53	keep	3B_window_trend
+3fill	uniwin	256	2e-5	3B-adamw	0.03	0	1674.8	discard	3B_window_trend
