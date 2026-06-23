@@ -33,24 +33,25 @@ for r in range(5):
 for c,t in enumerate(["t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
 # SLIDING+HISTORY  -- right col, top
 attn(7.0,0,"2. sliding history",HISTC,["t-1","t0","t1","t2","t3","t4","t5"])
-# UNIFORM (NOT attention) -- two example sequences shifted along the stream + vertical dots = stacking dataset
-ox,oy=0,7.4; TT(ox,oy-.35,"3. uniform context")
-def useq(sx,ry,toks):           # 5-length predict-last sequence; tokens by ABSOLUTE position; labels INSIDE cells
+# TRAINABLE STARTUP (attention) -- bottom-LEFT (panel 3)
+attn(0,7.4,"3. trainable startup",PROMPT,["p1","p2","t1","t2","t3","t4","t5"])
+# UNIFORM CONTEXT (not attention) -- bottom-RIGHT (panel 4): two stacked example sequences, right-aligned to x=14
+ox,oy=9,7.4; TT(ox,oy-.35,"4. uniform context")
+def useq(sx,ry,toks):           # 5-length predict-last sequence; labels INSIDE cells
     for c in range(4):
         Cl(ox+sx+c,ry,GREY); ax.text(ox+sx+c+.5,ry+.5,toks[c],fontsize=10.5,fontweight="bold",ha="center",va="center",color="#222")
     Cl(ox+sx+4,ry,PREDC); ax.text(ox+sx+4+.5,ry+.5,toks[4],fontsize=10.5,fontweight="bold",ha="center",va="center",color="white")
-useq(0,7.4,["t1","t2","t3","t4","t5"])      # top seq aligns with the right panel's top row (->t2)
+useq(0,7.4,["t1","t2","t3","t4","t5"])
 ax.text(ox+2.5,9.9,r"$\vdots$",fontsize=22,fontweight="bold",ha="center",va="center")
-useq(0,11.4,["t3","t4","t5","t6","t7"])     # bottom seq aligns with bottom row; numbers shifted
-# SLIDING+TRAINABLE -- right col, bottom
-attn(7.0,7.4,"4. trainable startup",PROMPT,["p1","p2","t1","t2","t3","t4","t5"])
-# no legend: label context / predicted / trainable prompt with brackets under the example cells
+useq(0,11.4,["t3","t4","t5","t6","t7"])
+# brackets (no legend)
 def brace(x0,x1,label,ytop,col):
     yb=ytop+0.26
     ax.plot([x0+.06,x0+.06,x1-.06,x1-.06],[ytop+.05,yb,yb,ytop+.05],color=col,lw=1.8,zorder=5)
     ax.text((x0+x1)/2,yb+.12,label,fontsize=10.5,fontweight="bold",ha="center",va="top",color=col)
-brace(4,5,"predicted",8.4,"#b21c1c")             # crimson cell of TOP seq
-brace(7.0,9.0,"trainable\nprompt",9.4,"#cf7f1a")    # under the ->t3 row (p1,p2 prompt columns)
+brace(0,2,"trainable\nprompt",9.4,"#cf7f1a")     # trainable startup (bottom-left), p1,p2 under ->t3
+brace(9,13,"input",8.4,"#555")                   # uniform input tokens t1-t4
+brace(13,14,"predicted",8.4,"#b21c1c")           # uniform predicted t5
 ax.set_xlim(-1.05,14.2); ax.set_ylim(13.1,-0.95)
 fig.subplots_adjust(left=0.004,right=0.996,top=0.996,bottom=0.004)
 out="/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/.claude/worktrees/exp/paper/attention-sink/figures/windowed_attention.png"
