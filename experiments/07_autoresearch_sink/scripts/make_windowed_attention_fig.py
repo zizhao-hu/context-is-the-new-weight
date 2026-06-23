@@ -34,14 +34,14 @@ for c,t in enumerate(["t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
 attn(7.8,0,"sliding + history",HISTC,["t-4","t-3","t-2","t-1","t0","t1","t2","t3","t4","t5"])
 # UNIFORM (NOT attention) -- two example sequences shifted along the stream + vertical dots = stacking dataset
 ox,oy=0,7.2; TT(ox,oy-.35,"uniform (constant $W$)")
-def useq(sx,ry,toks):
-    for c in range(5): Cl(ox+sx+c,ry,CONTENT)
-    Cl(ox+sx+5,ry,PREDC)
-    cc=[CTX]*5+[PRD]
-    for c in range(6): XL(ox+sx+c,ry+1.05,toks[c],cc[c])
-useq(0,7.45,["t1","t2","t3","t4","t5","t6"])
-ax.text(ox+3.3,9.95,r"$\vdots$",fontsize=22,fontweight="bold",ha="center",va="center")
-useq(1,10.75,["t2","t3","t4","t5","t6","t7"])
+def useq(ry,toks):              # 5-length sequence: 4 context + predict-last; both right-aligned (cols 0-4)
+    for c in range(4): Cl(ox+c,ry,CONTENT)
+    Cl(ox+4,ry,PREDC)
+    cc=[CTX]*4+[PRD]
+    for c in range(5): XL(ox+c,ry+1.05,toks[c],cc[c])
+useq(7.45,["t1","t2","t3","t4","t5"])
+ax.text(ox+2.0,9.95,r"$\vdots$",fontsize=22,fontweight="bold",ha="center",va="center")
+useq(10.75,["t2","t3","t4","t5","t6"])
 # SLIDING+TRAINABLE -- right col, bottom
 attn(7.8,7.2,"sliding + trainable",PROMPT,["p1","p2","p3","p4","p5","t1","t2","t3","t4","t5"])
 # compact legend drawn in-canvas just above the panels (close to content, fills width)
