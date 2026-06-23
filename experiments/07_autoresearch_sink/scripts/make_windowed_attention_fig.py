@@ -34,7 +34,7 @@ for c,t in enumerate(["t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
 # SLIDING+HISTORY  -- right col, top
 attn(6.5,0,"2. sliding mask",HISTC,["t-3","t-2","t-1","t0","t1","t2","t3","t4","t5"])
 # TRAINABLE STARTUP (attention) -- bottom-LEFT (panel 3)
-attn(0,7.4,"3. sliding mask w/ startup",PROMPT,["p1","p2","p3","p4","t1","t2","t3","t4","t5"])
+attn(0,7.4,"3. sliding mask w/ prefix",PROMPT,["p1","p2","p3","p4","t1","t2","t3","t4","t5"])
 # UNIFORM CONTEXT (not attention) -- bottom-RIGHT (panel 4): two stacked example sequences, right-aligned to x=14
 ox,oy=10,7.4; TT(ox,oy-.35,"4. uniform context")
 def useq(sx,ry,toks):           # 5-length predict-last sequence; labels INSIDE cells
