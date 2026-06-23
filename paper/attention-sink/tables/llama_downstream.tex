@@ -9,20 +9,19 @@
 deploy window $W$ & 128 & 256 & 512 & 1024 && 128 & 256 & 512 & 1024 \\
 \midrule
 \multicolumn{10}{l}{\emph{LLaMA-3.2-1B (fully softmax)}}\\
-base \;(no finetuning)        & .010 & .020 & .021 & --   && 2948 & 1422 & 378  & --   \\
-triangle \;(full-causal CPT)  & .009 & .012 & .014 & --   && 2597 & 1415 & 372  & --   \\
+base \,(no finetuning)        & .010 & .020 & .021 & --   && 2948 & 1422 & 378  & --   \\
+triangle \,(full-causal CPT)  & .009 & .012 & .014 & --   && 2597 & 1415 & 372  & --   \\
 sliding-history               & .085 & .107 & .147 & .121 && 22.7 & 17.5 & 11.0 & 7.7  \\
 trainable-startup             & .100 & .105 & .148 & \textbf{.159} && 21.7 & 16.1 & 10.9 & \textbf{5.7} \\
 uniform-context               & .010 & .003 & .017 & --   && 2904 & 1436 & 464  & --   \\
-\midrule
 \multicolumn{10}{l}{\emph{LLaMA-3.2-3B (fully softmax)}}\\
-base \;(no finetuning)        & .029 & .027 & .038 & --   && 3398 & 1908 & 331  & --   \\
-triangle \;(full-causal CPT)  & .033 & .038 & .044 & --   && 2950 & 1331 & 266  & --   \\
+base \,(no finetuning)        & .029 & .027 & .038 & --   && 3398 & 1908 & 331  & --   \\
+triangle \,(full-causal CPT)  & .033 & .038 & .044 & --   && 2950 & 1331 & 266  & --   \\
 sliding-history               & .075 & .089 & .128 & --   && 73.9 & 50.8 & 20.3 & --   \\
 trainable-startup             & .117 & .155 & \textbf{.198} & --   && 32.8 & 12.5 & \textbf{7.1} & -- \\
 uniform-context               & .024 & .030 & .043 & --   && 3115 & 1675 & 281  & --   \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Downstream HotpotQA on fully-softmax LLaMA, deployed at a constant sliding window of $W$ tokens (the model attends only the most recent $W$ tokens, never the full context).} All models start from the pretrained LLaMA-3.2 \emph{base} checkpoint (not instruction-tuned), are continued-pretrained on the same WikiText with ordinary next-token prediction under each scheme's attention regime (\emph{only} the mask/format differs, never the data or the task), and are evaluated \emph{zero-shot} on HotpotQA. Each cell is one number; the two halves report two metrics. \textbf{F1} (higher better): token overlap between the model's greedily-generated answer and the gold answer. \textbf{answer-perplexity} (lower better): the model's perplexity on the gold-answer tokens given the context, i.e.\ how surprised it is by the correct answer ($1{=}$certain of it, hundreds--thousands ${=}$ effectively broken). \emph{Reading the table:} base (no finetuning) and triangle (the control: same data and steps, ordinary full attention) \emph{collapse} once the window is imposed (answer-ppl in the hundreds--thousands); \textbf{sliding-history} and \textbf{trainable-startup} \emph{recover} (answer-ppl in single--double digits, F1 up to $.198$), trainable-startup best and strongest as the window tightens (the trainable prompt fills the cold start). \emph{uniform-context} stays collapsed even with $8\times$ the training: it removes the concentrated Type-1 sink but never trains under the window, so it lacks the Type-2 spread (H3,~H4). ``--'' $=$ not run.}
+\caption{Downstream zero-shot HotpotQA on fully-softmax LLaMA \emph{base} models, continued-pretrained on WikiText under each scheme's attention mask (only the mask differs, never the data or task) and deployed at a constant $W$-token sliding window (columns). \textbf{F1} ($\uparrow$): token overlap of the greedily-generated answer with the gold answer. \textbf{answer-perplexity} ($\downarrow$): the model's perplexity on the gold-answer tokens given the context, i.e.\ its surprise at the correct answer ($1{=}$certain, hundreds--thousands ${=}$ broken). base (no finetuning) and triangle (full-causal control, same data/steps) \emph{collapse} once the window is imposed; sliding-history and trainable-startup \emph{recover} (trainable-startup best, strongest as the window tightens, the prompt filling the cold start); uniform-context stays collapsed even with $8\times$ training (it lowers Type-1 but lacks the Type-2 spread, H3/H4). ``--'' $=$ not run.}
 \label{tab:llama}
 \end{table*}
