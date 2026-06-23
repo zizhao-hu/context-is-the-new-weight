@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  22 JUN 2026 21:59
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.5.22)  22 JUN 2026 22:02
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -343,34 +343,35 @@ File: figures/base_sink.png Graphic file (type png)
 Package pdftex.def Info: figures/base_sink.png  used on input line 55.
 (pdftex.def)             Requested size: 239.39438pt x 100.1739pt.
 LaTeX Font Info:    Font shape `T1/ntxtlf/m/n' will be
-(Font)              scaled to size 7.0pt on input line 69.
+(Font)              scaled to size 10.95pt on input line 72.
+LaTeX Font Info:    Font shape `T1/ntxtlf/b/n' will be
+(Font)              scaled to size 10.95pt on input line 72.
 LaTeX Font Info:    Font shape `T1/ntxtlf/m/n' will be
-(Font)              scaled to size 5.0pt on input line 69.
-<figures/windowed_attention.png, id=17, 751.1262pt x 241.3818pt>
+(Font)              scaled to size 7.0pt on input line 75.
+LaTeX Font Info:    Font shape `T1/ntxtlf/m/n' will be
+(Font)              scaled to size 5.0pt on input line 75.
+ [2 <./figures/base_sink.png>]
+<figures/windowed_attention.png, id=22, 751.1262pt x 241.3818pt>
 File: figures/windowed_attention.png Graphic file (type png)
 <use figures/windowed_attention.png>
-Package pdftex.def Info: figures/windowed_attention.png  used on input line 73.
+Package pdftex.def Info: figures/windowed_attention.png  used on input line 79.
 (pdftex.def)             Requested size: 239.39438pt x 76.93068pt.
-LaTeX Font Info:    Font shape `T1/ntxtlf/m/n' will be
-(Font)              scaled to size 10.95pt on input line 78.
-LaTeX Font Info:    Font shape `T1/ntxtlf/b/n' will be
-(Font)              scaled to size 10.95pt on input line 78.
- [2 <./figures/base_sink.png>] (./tables/spread.tex)
+ (./tables/spread.tex)
 <figures/qwen_sink_spread.png, id=23, 381.67593pt x 455.301pt>
 File: figures/qwen_sink_spread.png Graphic file (type png)
 <use figures/qwen_sink_spread.png>
-Package pdftex.def Info: figures/qwen_sink_spread.png  used on input line 87.
+Package pdftex.def Info: figures/qwen_sink_spread.png  used on input line 90.
 (pdftex.def)             Requested size: 239.39438pt x 285.56978pt.
  (./tables/transition.tex)
 <figures/sink_comparison.png, id=24, 743.63338pt x 257.18152pt>
 File: figures/sink_comparison.png Graphic file (type png)
 <use figures/sink_comparison.png>
-Package pdftex.def Info: figures/sink_comparison.png  used on input line 101.
+Package pdftex.def Info: figures/sink_comparison.png  used on input line 104.
 (pdftex.def)             Requested size: 239.39438pt x 82.79028pt.
 <figures/qwen9b_sink_summary.png, id=25, 921.95871pt x 307.1475pt>
 File: figures/qwen9b_sink_summary.png Graphic file (type png)
 <use figures/qwen9b_sink_summary.png>
-Package pdftex.def Info: figures/qwen9b_sink_summary.png  used on input line 110.
+Package pdftex.def Info: figures/qwen9b_sink_summary.png  used on input line 113.
 (pdftex.def)             Requested size: 239.39438pt x 79.75336pt.
  (./tables/sink05b.tex
 Overfull \hbox (7.95258pt too wide) in paragraph at lines 4--13
@@ -378,27 +379,33 @@ Overfull \hbox (7.95258pt too wide) in paragraph at lines 4--13
  []
 
 )
-Underfull \hbox (badness 3098) in paragraph at lines 117--118
+Underfull \hbox (badness 3098) in paragraph at lines 120--121
  \T1/ntxtlf/b/n/10 Win-dowed fine-tun-ing re-cov-ers full-context qual-ity.
  []
 
 <figures/ppl_curve.png, id=26, 508.299pt x 323.7696pt>
 File: figures/ppl_curve.png Graphic file (type png)
 <use figures/ppl_curve.png>
-Package pdftex.def Info: figures/ppl_curve.png  used on input line 121.
+Package pdftex.def Info: figures/ppl_curve.png  used on input line 124.
 (pdftex.def)             Requested size: 239.39438pt x 152.48297pt.
-(./tables/ppl05b.tex) [3 <./figures/windowed_attention.png>] (./tables/matrix.tex) [4 <./figures/qwen_sink_spread.png> <./figures/sink_comparison.png>] (./tables/strict_matrix.tex) (./tables/eff.tex) [5 <./figures/qwen9b_sink_summary.png> <./figures/ppl_curve.png>] (./tables/hotpotfair.tex)
+(./tables/ppl05b.tex) [3 <./figures/windowed_attention.png>] (./tables/matrix.tex)
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [4 <./figures/qwen_sink_spread.png> <./figures/sink_comparison.png>] (./tables/strict_matrix.tex) (./tables/eff.tex) [5 <./figures/qwen9b_sink_summary.png> <./figures/ppl_curve.png>] (./tables/hotpotfair.tex)
 <figures/longbench_cpt_fair.png, id=42, 1430.42978pt x 333.47443pt>
 File: figures/longbench_cpt_fair.png Graphic file (type png)
 <use figures/longbench_cpt_fair.png>
-Package pdftex.def Info: figures/longbench_cpt_fair.png  used on input line 158.
+Package pdftex.def Info: figures/longbench_cpt_fair.png  used on input line 161.
 (pdftex.def)             Requested size: 239.39438pt x 55.8096pt.
 
-Underfull \hbox (badness 2277) in paragraph at lines 159--159
+Underfull \hbox (badness 2277) in paragraph at lines 162--162
 []\T1/ntxtlf/m/n/10 Figure 7: |Long-Bench multi-hop QA (Qwen2.5-0.5B,
  []
 
-[6] (./main.bbl) [7 <./figures/longbench_cpt_fair.png>] (./main.aux)
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [6] (./main.bbl) [7 <./figures/longbench_cpt_fair.png>] (./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2020/03/25>
@@ -413,7 +420,7 @@ Here is how much of TeX's memory you used:
  14 hyphenation exceptions out of 8191
  89i,9n,117p,1785b,394s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmb.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmr.pfb></Users/zizhaohu/Library/TinyTeX/texmf-dist/fonts/type1/public/newtx/ztmri.pfb>
-Output written on main.pdf (7 pages, 761355 bytes).
+Output written on main.pdf (7 pages, 760818 bytes).
 PDF statistics:
  99 PDF objects out of 1000 (max. 8388607)
  53 compressed objects within 1 object stream
