@@ -13,13 +13,18 @@ ap.add_argument("--window", type=int, default=256); ap.add_argument("--sink", ty
 ap.add_argument("--nP", type=int, default=64); ap.add_argument("--ctx", type=int, default=1536)
 ap.add_argument("--steps", type=int, default=400); ap.add_argument("--lr", type=float, default=2e-5)
 ap.add_argument("--n_seq", type=int, default=2000); ap.add_argument("--n_eval", type=int, default=150)
-ap.add_argument("--maxnew", type=int, default=12)
-a = ap.parse_args(); dev="cuda"; bf16=torch.bfloat16; random.seed(0)
+ap.add_argument("--maxnew", type=int, default=12); ap.add_argument("--bs", type=int, default=16); ap.add_argument("--model", default="unsloth/Llama-3.2-1B"); ap.add_argument("--opt", default="adamw")
+a = ap.parse_args(); dev="cuda"; bf16=torch.bfloat16; random.seed(0); MODEL=a.model
 tok = AutoTokenizer.from_pretrained(MODEL)
 if tok.pad_token is None: tok.pad_token = tok.eos_token
 model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=bf16, attn_implementation="eager").to(dev)
 emb = model.get_input_embeddings(); EOS = tok.eos_token_id; H = model.config.hidden_size; NL = tok.convert_tokens_to_ids("\n")
 
+def mkopt(ps):
+    if a.opt=="adafactor":
+        from transformers.optimization import Adafactor
+        return Adafactor(ps,lr=a.lr,scale_parameter=False,relative_step=False,warmup_init=False)
+    return torch.optim.AdamW(ps,lr=a.lr,betas=(0.9,0.95))
 def cmask(kind, L, nP, W, dt):
     q=torch.arange(L,device=dev)[:,None]; k=torch.arange(L,device=dev)[None,:]; c=k<=q
     al={"full":c,"windowed":c&(k>q-W),"streaming":c&((k<a.sink)|(k>q-W)),"persist":c&((k<nP)|(k>q-W))}[kind]
@@ -46,11 +51,11 @@ if a.scheme!="base":
     model.gradient_checkpointing_enable(); model.config.use_cache=False; model.train(); params=list(model.parameters())
     if a.scheme=="startup":
         prompt=torch.nn.Parameter(torch.randn(a.nP,H,device=dev,dtype=torch.float32)*0.02); params+=[prompt]
-    opt=torch.optim.AdamW(params,lr=a.lr,betas=(0.9,0.95))
+    opt=mkopt(params)
     if a.scheme=="uniwin":
         stream=[t for sq in pack(a.n_seq,a.ctx) for t in sq]; W=a.window
         for s in range(a.steps):
-            st=[random.randrange(0,len(stream)-W-1) for _ in range(16)]
+            st=[random.randrange(0,len(stream)-W-1) for _ in range(a.bs)]
             wins=torch.tensor([stream[j:j+W+1] for j in st],device=dev)
             loss=F.cross_entropy(model(wins[:,:-1]).logits[:,-1].float(),wins[:,-1])
             loss.backward(); torch.nn.utils.clip_grad_norm_(params,1.0); opt.step(); opt.zero_grad()
