@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, Patch
 CONTENT,HISTC,PROMPT,PREDC=(.12,.47,.71),(.12,.47,.71),(.93,.50,.11),(.74,.13,.13)
 CTX,PRD="#555","#b21c1c"
-fig,ax=plt.subplots(figsize=(8.8,6.0)); ax.set_aspect("equal"); ax.axis("off")
+fig,ax=plt.subplots(figsize=(8.8,6.55)); ax.set_aspect("equal"); ax.axis("off")
 def Cl(x,y,fc): ax.add_patch(Rectangle((x,y),1,1,facecolor=fc,edgecolor="#555",lw=1.3,zorder=2))
 def Em(x,y): ax.add_patch(Rectangle((x,y),1,1,facecolor="white",edgecolor="#cfcfcf",lw=0.7,zorder=1))
 def TT(x,y,t): ax.text(x,y,t,fontsize=13.5,fontweight="bold",ha="left",va="bottom")
@@ -32,21 +32,24 @@ for r in range(5):
 for c,t in enumerate(["t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
 # SLIDING+HISTORY  -- right col, top
 attn(7.8,0,"sliding + history",HISTC,["t-4","t-3","t-2","t-1","t0","t1","t2","t3","t4","t5"])
-# UNIFORM (NOT attention) -- four separate predict-last windows, left col, bottom, left-aligned w/ causal
-ox,oy=0,7.2; g=1.0/3; TT(ox,oy-.35,"uniform (constant $W$)")
-for w in range(4):
-    ry=oy+w*(1+g)
-    for c in range(5): Cl(ox+c,ry,CONTENT)
-    Cl(ox+5,ry,PREDC)
-    YL(ox-.35,ry,f"s{w+1}",CTX)
-ybot=oy+3*(1+g)+1
-for c,t in enumerate(["c1","c2","c3","c4","c5"]): XL(ox+c,ybot+.12,t,CTX)
-XL(ox+5,ybot+.12,"c6",PRD)
+# UNIFORM (NOT attention) -- two example sequences shifted along the stream + vertical dots = stacking dataset
+ox,oy=0,7.2; TT(ox,oy-.35,"uniform (constant $W$)")
+def useq(sx,ry,toks):
+    for c in range(5): Cl(ox+sx+c,ry,CONTENT)
+    Cl(ox+sx+5,ry,PREDC)
+    cc=[CTX]*5+[PRD]
+    for c in range(6): XL(ox+sx+c,ry+1.05,toks[c],cc[c])
+useq(0,7.45,["t1","t2","t3","t4","t5","t6"])
+ax.text(ox+3.3,9.95,r"$\vdots$",fontsize=22,fontweight="bold",ha="center",va="center")
+useq(1,10.75,["t2","t3","t4","t5","t6","t7"])
 # SLIDING+TRAINABLE -- right col, bottom
 attn(7.8,7.2,"sliding + trainable",PROMPT,["p1","p2","p3","p4","p5","t1","t2","t3","t4","t5"])
-ax.set_xlim(-1.9,18.3); ax.set_ylim(13.6,-1.5)
-fig.legend(handles=[Patch(color=CONTENT,label="context"),Patch(color=PROMPT,label="trainable prompt"),
-                    Patch(color=PREDC,label="predicted")],
-           loc="upper center",ncol=3,fontsize=10.5,bbox_to_anchor=(0.5,1.0),frameon=False,handlelength=1.0,columnspacing=1.4,handletextpad=0.5)
+# compact legend drawn in-canvas just above the panels (close to content, fills width)
+ly=-1.75; sq=0.72
+for (col,lab),x0 in zip([(CONTENT,"context"),(PROMPT,"trainable prompt"),(PREDC,"predicted")],[1.0,6.2,13.0]):
+    ax.add_patch(Rectangle((x0,ly),sq,sq,facecolor=col,edgecolor="#555",lw=1.3,zorder=6))
+    ax.text(x0+sq+0.3,ly+sq/2,lab,fontsize=12,fontweight="bold",va="center",ha="left",zorder=6)
+ax.set_xlim(-1.7,17.95); ax.set_ylim(12.7,-2.45)
+fig.subplots_adjust(left=0.004,right=0.996,top=0.996,bottom=0.004)
 out="/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/.claude/worktrees/exp/paper/attention-sink/figures/windowed_attention.png"
-plt.savefig(out,dpi=170,bbox_inches="tight"); print("wrote",out)
+plt.savefig(out,dpi=175,bbox_inches="tight",pad_inches=0.03); print("wrote",out)
