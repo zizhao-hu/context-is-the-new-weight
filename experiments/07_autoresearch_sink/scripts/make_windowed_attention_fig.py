@@ -5,7 +5,7 @@ token (crimson, col c6). All cells are equal squares; the first (left) column is
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, Patch
-CONTENT,HISTC,PROMPT,PREDC=(.18,.53,.31),(.60,.81,.67),(.93,.50,.11),(.74,.13,.13)
+CONTENT,HISTC,PROMPT,PREDC=(.12,.47,.71),(.12,.47,.71),(.93,.50,.11),(.74,.13,.13)
 CTX,PRD="#555","#b21c1c"
 fig,ax=plt.subplots(figsize=(8.8,6.0)); ax.set_aspect("equal"); ax.axis("off")
 def Cl(x,y,fc): ax.add_patch(Rectangle((x,y),1,1,facecolor=fc,edgecolor="#555",lw=1.3,zorder=2))
@@ -45,8 +45,8 @@ XL(ox+5,ybot+.12,"c6",PRD)
 # SLIDING+TRAINABLE -- right col, bottom
 attn(7.8,7.2,"sliding + trainable",PROMPT,["p1","p2","p3","p4","p5","t1","t2","t3","t4","t5"])
 ax.set_xlim(-1.9,18.3); ax.set_ylim(13.6,-1.5)
-fig.legend(handles=[Patch(color=CONTENT,label="context (real)"),Patch(color=HISTC,label="history fill"),
-                    Patch(color=PROMPT,label="trainable prompt"),Patch(color=PREDC,label="predicted token")],
-           loc="upper center",ncol=4,fontsize=11,bbox_to_anchor=(0.5,1.0),frameon=False,handlelength=1.3,columnspacing=1.4)
+fig.legend(handles=[Patch(color=CONTENT,label="context"),Patch(color=PROMPT,label="trainable prompt"),
+                    Patch(color=PREDC,label="predicted")],
+           loc="upper center",ncol=3,fontsize=10.5,bbox_to_anchor=(0.5,1.0),frameon=False,handlelength=1.0,columnspacing=1.4,handletextpad=0.5)
 out="/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/.claude/worktrees/exp/paper/attention-sink/figures/windowed_attention.png"
 plt.savefig(out,dpi=170,bbox_inches="tight"); print("wrote",out)
