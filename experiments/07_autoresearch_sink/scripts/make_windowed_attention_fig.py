@@ -11,6 +11,7 @@ CTX,PRD="#555","#b21c1c"
 fig,ax=plt.subplots(figsize=(8.6,7.0)); ax.set_aspect("equal"); ax.axis("off")
 def Cl(x,y,fc): ax.add_patch(Rectangle((x,y),1,1,facecolor=fc,edgecolor="#555",lw=1.3,zorder=2))
 def Em(x,y): ax.add_patch(Rectangle((x,y),1,1,facecolor="white",edgecolor="#cfcfcf",lw=0.7,zorder=1))
+def cbox(x,y,w,h): ax.add_patch(Rectangle((x,y),w,h,facecolor="none",edgecolor="black",lw=2.2,zorder=6))
 def TT(x,y,t): ax.text(x,y,t,fontsize=13.5,fontweight="bold",ha="left",va="bottom")
 def XL(x,y,t,c): ax.text(x+.5,y,t,fontsize=10,fontweight="bold",ha="center",va="top",color=c)
 def YL(x,y,t,c): ax.text(x,y+.5,t,fontsize=10,fontweight="bold",ha="right",va="center",color=c)
@@ -52,6 +53,9 @@ def brace(x0,x1,label,ytop,col):
 brace(0,4,"trainable prompt",12.6,"#cf7f1a")     # trainable startup p1-p4 columns
 brace(10,14,"context",8.4,"#555")                  # uniform input tokens t1-t4
 brace(14,15,"predicted",8.4,"#b21c1c")           # uniform predicted t5
+cbox(6.5,0,4,5)        # panel 2: first 4 cols = context
+cbox(0,7.4,4,5)        # panel 3: first 4 cols (prefix fills context)
+cbox(10,7.4,4,1); cbox(10,11.4,4,1)   # panel 4: first 4 cols of each seq = context
 ax.set_xlim(-1.3,15.7); ax.set_ylim(13.1,-0.95)
 fig.subplots_adjust(left=0.004,right=0.996,top=0.996,bottom=0.004)
 out="/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/.claude/worktrees/exp/paper/attention-sink/figures/windowed_attention.png"
