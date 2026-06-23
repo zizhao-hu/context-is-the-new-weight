@@ -26,15 +26,15 @@ def attn(ox,oy,title,fill,xlabels):
         YL(ox-.25,oy+r,PRED[r],PRD)
     for c,t in enumerate(xlabels): XL(ox+c,oy+5+.12,t,CTX)
 # CAUSAL (content side only, 5x5)  -- left col, top
-ox,oy=0,0; TT(ox,oy-.35,"causal (grows)")
+ox,oy=0,0; TT(ox,oy-.35,"1. causal (grows)")
 for r in range(5):
     for c in range(5): (Cl(ox+c,oy+r,CONTENT) if c<=r else Em(ox+c,oy+r))
     YL(ox-.25,oy+r,PRED[r],PRD)
 for c,t in enumerate(["t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
 # SLIDING+HISTORY  -- right col, top
-attn(7.0,0,"sliding + history",HISTC,["t-1","t0","t1","t2","t3","t4","t5"])
+attn(7.0,0,"2. sliding + history",HISTC,["t-1","t0","t1","t2","t3","t4","t5"])
 # UNIFORM (NOT attention) -- two example sequences shifted along the stream + vertical dots = stacking dataset
-ox,oy=0,6.2; TT(ox,oy-.35,"uniform (constant $W$)")
+ox,oy=0,6.2; TT(ox,oy-.35,"3. constant context")
 def useq(sx,ry,toks):           # 5-length predict-last sequence; tokens by ABSOLUTE position; labels INSIDE cells
     for c in range(4):
         Cl(ox+sx+c,ry,GREY); ax.text(ox+sx+c+.5,ry+.5,toks[c],fontsize=10.5,fontweight="bold",ha="center",va="center",color="#222")
@@ -43,13 +43,12 @@ useq(0,6.2,["t1","t2","t3","t4","t5"])      # top seq aligns with the right pane
 ax.text(ox+2.5,8.7,r"$\vdots$",fontsize=22,fontweight="bold",ha="center",va="center")
 useq(0,10.2,["t3","t4","t5","t6","t7"])     # bottom seq aligns with bottom row; numbers shifted
 # SLIDING+TRAINABLE -- right col, bottom
-attn(7.0,6.2,"sliding + trainable",PROMPT,["p1","p2","t1","t2","t3","t4","t5"])
+attn(7.0,6.2,"4. sliding + trainable",PROMPT,["p1","p2","t1","t2","t3","t4","t5"])
 # no legend: label context / predicted / trainable prompt with brackets under the example cells
 def brace(x0,x1,label,ytop,col):
     yb=ytop+0.26
     ax.plot([x0+.06,x0+.06,x1-.06,x1-.06],[ytop+.05,yb,yb,ytop+.05],color=col,lw=1.8,zorder=5)
     ax.text((x0+x1)/2,yb+.12,label,fontsize=10.5,fontweight="bold",ha="center",va="top",color=col)
-brace(0,4,"context",7.2,"#555")                  # grey cells of TOP uniform seq
 brace(4,5,"predicted",7.2,"#b21c1c")             # crimson cell of TOP seq
 brace(7.0,9.0,"trainable\nprompt",8.2,"#cf7f1a")    # under the ->t3 row (p1,p2 prompt columns)
 ax.set_xlim(-1.05,14.2); ax.set_ylim(11.9,-0.95)
