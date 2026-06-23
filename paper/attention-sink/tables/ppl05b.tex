@@ -12,6 +12,6 @@ sliding-window-trained & 256 & \textbf{12.81} \\
 startup-trained & 256\,($+$\,prompts) & 12.78 \\
 \bottomrule
 \end{tabular}
-\caption{Held-out wikitext perplexity vs.\ context budget on Qwen2.5-0.5B. The causal-trained model needs the full 1024-token history (12.35) and degrades steeply when windowed (19.09 at 256 --- worse than the untrained base, because windowing masks the first-token sink it leans on); the windowed-finetuned model reaches 12.81 at a 256-token window, matching the causal model's full-context quality on a quarter of the context.}
+\caption{Held-out wikitext perplexity vs.\ context budget on Qwen2.5-0.5B. The causal-trained model needs the full 1024-token history (12.35) and degrades steeply when windowed (19.09 at 256, worse than the untrained base, because windowing masks the first-token sink it leans on); the windowed-finetuned model reaches 12.81 at a 256-token window, matching the causal model's full-context quality on a quarter of the context.}
 \label{tab:ppl05b}
 \end{table}
