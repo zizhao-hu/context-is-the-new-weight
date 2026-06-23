@@ -38,12 +38,12 @@ for w in range(4):
     ry=oy+w*(1+g)
     for c in range(5): Cl(ox+c,ry,CONTENT)
     Cl(ox+5,ry,PREDC)
-    YL(ox-.25,ry,f"win {w+1}",CTX)
+    YL(ox-.35,ry,f"s{w+1}",CTX)
 ybot=oy+3*(1+g)+1
 for c,t in enumerate(["c1","c2","c3","c4","c5"]): XL(ox+c,ybot+.12,t,CTX)
 XL(ox+5,ybot+.12,"c6",PRD)
 # SLIDING+TRAINABLE -- right col, bottom
-attn(7.8,7.2,"sliding + trainable",PROMPT,["s1","s2","s3","s4","s5","t1","t2","t3","t4","t5"])
+attn(7.8,7.2,"sliding + trainable",PROMPT,["p1","p2","p3","p4","p5","t1","t2","t3","t4","t5"])
 ax.set_xlim(-1.9,18.3); ax.set_ylim(13.6,-1.5)
 fig.legend(handles=[Patch(color=CONTENT,label="context (real)"),Patch(color=HISTC,label="history fill"),
                     Patch(color=PROMPT,label="trainable prompt"),Patch(color=PREDC,label="predicted token")],
