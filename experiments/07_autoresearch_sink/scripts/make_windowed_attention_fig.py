@@ -33,7 +33,7 @@ for c,t in enumerate(["t1","t2","t3","t4","t5"]): XL(ox+c,oy+5+.12,t,CTX)
 # SLIDING+HISTORY  -- right col, top
 attn(7.8,0,"sliding + history",HISTC,["t-4","t-3","t-2","t-1","t0","t1","t2","t3","t4","t5"])
 # UNIFORM (NOT attention) -- four separate predict-last windows, left col, bottom, left-aligned w/ causal
-ox,oy=0,7.2; g=0.55; TT(ox,oy-.35,"uniform (constant $W$)")
+ox,oy=0,7.2; g=1.0/3; TT(ox,oy-.35,"uniform (constant $W$)")
 for w in range(4):
     ry=oy+w*(1+g)
     for c in range(5): Cl(ox+c,ry,CONTENT)
