@@ -1,0 +1,3 @@
+[submodule "paper/attention-sink"]
+	path = paper/attention-sink
+	url = git@github.com:zizhao-hu/attention-sink-paper.git
