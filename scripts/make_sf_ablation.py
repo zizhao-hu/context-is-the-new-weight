@@ -48,18 +48,21 @@ a1.legend(handles=[Patch(facecolor=C_P0, label="p0 sink"),
           frameon=False, fontsize=8.6, ncol=2, loc="upper center",
           handlelength=1.2, columnspacing=0.9, handletextpad=0.4)
 
-# ---- right: perplexity ----
-a2.bar(x, short, w, color=C_SHORT, edgecolor="white", linewidth=0.6, alpha=0.85)
-a2.plot(x, short, "-o", color="#7a2f2f", ms=4, lw=1.8, zorder=5)
-a2.plot(x, ppl, "-o", color=C_STREAM, ms=4, lw=1.8, zorder=5)
-a2.fill_between(x, ppl - ppl_sem, ppl + ppl_sem, color=C_STREAM, alpha=0.18, lw=0)
+# ---- right: perplexity (grouped bars: in-context vs streaming) ----
+bw = 0.38
+a2.bar(x - bw / 2, short, bw, color=C_SHORT, edgecolor="white", linewidth=0.5, alpha=0.9)
+a2.bar(x + bw / 2, ppl, bw, color=C_STREAM, edgecolor="white", linewidth=0.5, alpha=0.9)
+a2.plot(x - bw / 2, short, "-o", color="#7a2f2f", ms=4, lw=1.8, zorder=5)
+a2.plot(x + bw / 2, ppl, "-o", color="#2b2b2b", ms=4, lw=1.8, zorder=5)
+a2.errorbar(x + bw / 2, ppl, yerr=ppl_sem, fmt="none", ecolor="0.1",
+            elinewidth=0.9, capsize=2, zorder=6)
 a2.set_ylabel("perplexity", fontsize=12)
 a2.set_ylim(0, max(short) * 1.22)
 a2.set_title("LM quality", fontsize=12, fontweight="bold", pad=4)
-a2.legend(handles=[Patch(facecolor=C_SHORT, label="short (len 64)"),
-                   Line2D([], [], color=C_STREAM, marker="o", ms=4, lw=1.8, label="stream (30k)")],
+a2.legend(handles=[Patch(facecolor=C_SHORT, label="in-context (len 64)"),
+                   Patch(facecolor=C_STREAM, label="streaming (30k)")],
           frameon=False, fontsize=8.6, loc="upper left",
-          handlelength=1.2, handletextpad=0.4)
+          handlelength=1.1, handletextpad=0.4)
 
 for ax in (a1, a2):
     ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=9.5)
