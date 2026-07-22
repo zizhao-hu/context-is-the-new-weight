@@ -1,65 +1,75 @@
 #!/usr/bin/env python3
-"""SWA -> S-SWA loss-mask ablation (Finding 3 dose-response), two panels.
+"""SWA -> S-SWA loss-mask ablation as BAR charts with trend curves.
 
-x = number of unscored context rows (score_from): 0 = plain SWA ... W-1 = S-SWA.
-Left: deep streaming perplexity (+/-1 SEM band) -- flat: the loss rule does not change LM quality.
-Right: within-max-context sink masses (p0 / separator / total, +/-1 SEM) -- p0 drains monotonically.
-
-All models: identical mask, W=128, C=256, data, and loss-token budget; ONLY score_from differs.
-Data from figures/sf_ablation.tsv (measured; this script refuses to plot without it).
-Columns: sf  ppl  ppl_sem  p0  p0_sem  sep  sep_sem   (within-max-context masses)
+Left: sink distribution per dose -- stacked bars (p0 + separator) with trend curves
+      tracing the p0 drain and the total.
+Right: perplexity per dose -- bars for short-context ppl (the rising cost) with its trend
+       curve, and a flat line+band for deep streaming ppl (the axis that never moves).
+Data: figures/sf_ablation.tsv (measured; refuses to plot without it).
 """
 import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 
 DATA = "figures/sf_ablation.tsv"
 OUT = "paper/attention-sink/figures/sf_ablation.png"
-
 if not os.path.exists(DATA):
-    sys.exit("missing %s -- fill it from the sym_sf logs + sinkdecomp output first" % DATA)
+    sys.exit("missing %s" % DATA)
 
-rows = []
-for ln in open(DATA, encoding="utf-8"):
-    ln = ln.strip()
-    if not ln or ln.startswith("#"):
-        continue
-    rows.append([float(x) for x in ln.split("\t")])
+rows = [[float(x) for x in l.split("\t")] for l in open(DATA) if l.strip() and not l.startswith("#")]
 rows.sort()
-sf, ppl, ppl_sem, p0, p0_sem, sep, sep_sem = map(np.array, zip(*rows))
+sf, ppl, ppl_sem, p0, p0s, sep, seps, short = map(np.array, zip(*rows))
 tot = p0 + sep
-tot_sem = np.sqrt(p0_sem**2 + sep_sem**2)
+x = np.arange(len(sf))
+labels = ["%d" % v for v in sf]
 
-C_PPL, C_P0, C_SEP, C_TOT = "#555555", "#4C72B0", "#55A868", "#B04C4C"
+C_P0, C_SEP, C_SHORT, C_STREAM = "#4C72B0", "#55A868", "#B04C4C", "#555555"
 plt.rcParams.update({"font.size": 12, "axes.linewidth": 0.9})
-fig, (a1, a2) = plt.subplots(1, 2, figsize=(7.6, 3.0))
+fig, (a1, a2) = plt.subplots(1, 2, figsize=(7.6, 3.2))
 
-a1.fill_between(sf, ppl - ppl_sem, ppl + ppl_sem, color=C_PPL, alpha=0.18, lw=0)
-a1.plot(sf, ppl, "-o", color=C_PPL, ms=4.5, lw=1.6)
-a1.set_ylabel("streaming perplexity", fontsize=12)
-a1.set_ylim(min(ppl) - 4, max(ppl) + 4)
-a1.set_title("LM quality: flat", fontsize=12, fontweight="bold", pad=4)
+# ---- left: sink distribution ----
+w = 0.72
+a1.bar(x, p0, w, color=C_P0, edgecolor="white", linewidth=0.6)
+a1.bar(x, sep, w, bottom=p0, color=C_SEP, edgecolor="white", linewidth=0.6)
+a1.plot(x, p0, "-o", color="#1f3d63", ms=4, lw=1.8, zorder=5)
+a1.plot(x, tot, "-o", color="#2e6b45", ms=4, lw=1.8, zorder=5)
+a1.errorbar(x, p0, yerr=p0s, fmt="none", ecolor="0.15", elinewidth=0.9, capsize=2, zorder=6)
+a1.errorbar(x, tot, yerr=np.sqrt(p0s**2 + seps**2), fmt="none", ecolor="0.15",
+            elinewidth=0.9, capsize=2, zorder=6)
+a1.set_ylabel("attention mass", fontsize=12)
+a1.set_ylim(0, max(tot) * 1.28)
+a1.set_title("sink distribution", fontsize=12, fontweight="bold", pad=4)
+a1.legend(handles=[Patch(facecolor=C_P0, label="p0 sink"),
+                   Patch(facecolor=C_SEP, label="separator sink"),
+                   Line2D([], [], color="#1f3d63", marker="o", ms=4, lw=1.8, label="p0 trend"),
+                   Line2D([], [], color="#2e6b45", marker="o", ms=4, lw=1.8, label="total trend")],
+          frameon=False, fontsize=8.6, ncol=2, loc="upper center",
+          handlelength=1.2, columnspacing=0.9, handletextpad=0.4)
 
-for y, e, c, lab in ((p0, p0_sem, C_P0, "p0 sink"), (sep, sep_sem, C_SEP, "separator sink"),
-                     (tot, tot_sem, C_TOT, "total sink")):
-    a2.errorbar(sf, y, yerr=e, fmt="-o", color=c, ms=4.5, lw=1.6,
-                elinewidth=1.0, capsize=2.4, label=lab)
-a2.set_ylabel("attention mass", fontsize=12)
-a2.set_ylim(0, max(tot) * 1.25)
-a2.set_title("p0 drains; separator absorbs", fontsize=12, fontweight="bold", pad=4)
-a2.legend(frameon=False, fontsize=10.5, handlelength=1.4, loc="center left")
+# ---- right: perplexity ----
+a2.bar(x, short, w, color=C_SHORT, edgecolor="white", linewidth=0.6, alpha=0.85)
+a2.plot(x, short, "-o", color="#7a2f2f", ms=4, lw=1.8, zorder=5)
+a2.plot(x, ppl, "-o", color=C_STREAM, ms=4, lw=1.8, zorder=5)
+a2.fill_between(x, ppl - ppl_sem, ppl + ppl_sem, color=C_STREAM, alpha=0.18, lw=0)
+a2.set_ylabel("perplexity", fontsize=12)
+a2.set_ylim(0, max(short) * 1.22)
+a2.set_title("LM quality", fontsize=12, fontweight="bold", pad=4)
+a2.legend(handles=[Patch(facecolor=C_SHORT, label="short (len 64)"),
+                   Line2D([], [], color=C_STREAM, marker="o", ms=4, lw=1.8, label="stream (30k)")],
+          frameon=False, fontsize=8.6, loc="upper left",
+          handlelength=1.2, handletextpad=0.4)
 
-W = int(max(sf)) + 1
 for ax in (a1, a2):
-    ax.set_xlabel("unscored context rows (score_from)", fontsize=12)
-    ax.set_xticks([0, W // 4, W // 2, 3 * W // 4, W - 1])
+    ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=9.5)
+    ax.set_xlabel("unscored context rows", fontsize=12)
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-    ax.tick_params(length=3.5, labelsize=10.5)
-    lo, hi = ax.get_ylim()
-    ax.text(0, lo + 0.02 * (hi - lo), "SWA", ha="left", va="bottom",
-            fontsize=10.5, fontweight="bold", color="#333")
-    ax.text(W - 1, lo + 0.02 * (hi - lo), "S-SWA", ha="right", va="bottom",
-            fontsize=10.5, fontweight="bold", color="#333")
+    ax.tick_params(length=3.5, labelsize=10)
+    ax.text(0, -0.24, "SWA", ha="center", fontsize=10, fontweight="bold",
+            color="#333", transform=ax.get_xaxis_transform())
+    ax.text(len(sf) - 1, -0.24, "S-SWA", ha="center", fontsize=10, fontweight="bold",
+            color="#333", transform=ax.get_xaxis_transform())
 
 plt.tight_layout()
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
