@@ -21,13 +21,15 @@ for mm in re.finditer(r"CURVE(_REGS)? (\w+) (means|sems) = \[([^\]]+)\]", txt):
     vals = [float(x) for x in mm.group(4).split(",")]
     (means if mm.group(3) == "means" else sems)[k] = vals
 
-ORDER = [(("plain", "a_w128"),   "A. full causal",        "--", "#7f7f7f"),
-         (("plain", "b_w128"),   "B. SWA",                "--", "#1f77b4"),
-         (("plain", "c_w128"),   "C. SWAA",               "--", "#2ca02c"),
-         (("plain", "e_B_w128"), "D. Transformer-XL",     "--", "#d62728"),
-         (("plain", "b_w128_fw"),"E. S-SWA",              "-",  "#9467bd"),
-         (("regs", "m_w128_fw"), "F. S-SWA$+$sink prefix","-",  "#ff7f0e"),
-         (("regs", "n_w128_fw"), "G. S-SWA$+$riding sink","-",  "#8c564b")]
+ORDER = [(("plain", "a_w128"),   "A. full causal",          "--", "#7f7f7f"),
+         (("plain", "b_w128"),   "B. SWA",                  "--", "#1f77b4"),
+         (("plain", "c_w128"),   "C. SWAA",                 "--", "#2ca02c"),
+         (("plain", "e_B_w128"), "D. Transformer-XL",       "--", "#d62728"),
+         (("plain", "b_w128_fw"),"E. S-SWA",                "-",  "#9467bd"),
+         (("regs", "k_w128_fw"), "F. $+$sink token",        "-",  "#e377c2"),
+         (("regs", "m_w128_fw"), "F. $+$sink prefix",       "-",  "#ff7f0e"),
+         (("regs", "n_w128_fw"), "G. $+$riding sink token", "-",  "#8c564b"),
+         (("regs", "o_w128_fw"), "G. $+$riding sink prefix","-",  "#17becf")]
 x = np.arange(1, 31)
 plt.rcParams.update({"font.size": 12, "axes.linewidth": 0.9})
 fig, ax = plt.subplots(figsize=(6.8, 3.4))
@@ -40,7 +42,7 @@ for key, label, ls, col in ORDER:
 ax.set_ylim(33, 50); ax.set_xlim(0.5, 30.5)
 ax.set_xlabel("stream position (k tokens)", fontsize=12)
 ax.set_ylabel("perplexity", fontsize=12)
-ax.legend(fontsize=8.6, frameon=False, ncol=2, loc="upper right",
+ax.legend(fontsize=8.0, frameon=False, ncol=2, loc="upper right",
           title="training mask (ppl at 30k)", title_fontsize=8.6)
 ax.spines[["top", "right"]].set_visible(False); ax.tick_params(labelsize=10)
 fig.tight_layout()
