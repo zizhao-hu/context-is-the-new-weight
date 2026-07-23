@@ -129,7 +129,7 @@ for arg in sys.argv[2:]:
 ROWS = [
     ("Full-attention baselines", [
         ("a", "A.\\ full causal"), ("a_tok", "\\quad$+$sink token"), ("a_scal", "\\quad$+$sink scalar"),
-        ("a_pref", "\\quad$+$sink prefix"), ("a_2p0", "\\quad$+$2 slots (2 p0)"),
+        ("a_pref", "\\quad$+$sink prefix"),
         ("d", "D.\\ Transformer-XL")]),
     ("Sliding-window baselines", [
         ("b", "B.\\ SWA"), ("b_tok", "\\quad$+$sink token"), ("b_rtok", "\\quad$+$riding sink token"),
@@ -198,26 +198,27 @@ tex = """\\begin{table*}[!t]
 \\centering
 \\footnotesize
 \\setlength{\\tabcolsep}{5pt}
-\\begin{tabular}{l rr @{\\hskip 1.4em} rr @{\\hskip 1.4em} rr @{\\hskip 0.9em} rr}
+\\begin{tabular*}{\\textwidth}{@{}l@{\\extracolsep{\\fill}} rr rr rr rr@{}}
 \\toprule
  & \\multicolumn{2}{c}{Pretraining} & \\multicolumn{6}{c}{Continued pretraining: Llama-3.2-3B}\\\\
 \\cmidrule(lr){2-3}\\cmidrule(lr){4-9}
  & \\multicolumn{2}{c}{\\footnotesize WikiText ppl ($\\downarrow$)} & \\multicolumn{2}{c}{\\footnotesize WikiText ppl ($\\downarrow$)} & \\multicolumn{4}{c}{\\footnotesize HotpotQA, zero-shot ($\\uparrow$)}\\\\
 \\cmidrule(lr){2-3}\\cmidrule(lr){4-5}\\cmidrule(lr){6-9}
- & {\\footnotesize full} & {\\footnotesize stream@$128$} & {\\footnotesize full} & {\\footnotesize stream@$1024$} & \\multicolumn{2}{c}{\\footnotesize full} & \\multicolumn{2}{c}{\\footnotesize stream@$1024$}\\\\
+ & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream@$128$} & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream@$1024$} & \\multicolumn{2}{c}{\\footnotesize full} & \\multicolumn{2}{c}{\\footnotesize stream@$1024$}\\\\
 \\cmidrule(lr){6-7}\\cmidrule(lr){8-9}
-mask (training) & ppl$_{<C}$ & ppl$_{>C}$ & ppl$_{<C}$ & ppl$_{>C}$ & F1 & Acc & F1 & Acc\\\\
+mask (training) & \\multicolumn{1}{c}{ppl$_{<C}$} & \\multicolumn{1}{c}{ppl$_{>C}$} & \\multicolumn{1}{c}{ppl$_{<C}$} & \\multicolumn{1}{c}{ppl$_{>C}$} & \\multicolumn{1}{c}{F1} & \\multicolumn{1}{c}{Acc} & \\multicolumn{1}{c}{F1} & \\multicolumn{1}{c}{Acc}\\\\
 \\midrule
 %s
 \\bottomrule
-\\end{tabular}
+\\end{tabular*}
 \\caption{\\textbf{One picture across pretraining, continued pretraining, and a downstream task ---
 window-matched.} Every row shares the training chunk ($C{=}256$ toy, $2048$ CPT) and the deploy
 budget ($W{=}128$ toy, $1024$ CPT); the SWA family is retrained at the matched window. Pretraining:
 an $8$-layer GPT from scratch on WikiText; CPT: Llama-3.2-3B on WikiText under each mask, scored
 zero-shot on HotpotQA ($n{=}150$; F1 $=$ token overlap, Acc $=$ containment). ppl$_{<C}$ is the
 full-attention deploy within the training length (register-aware for token/prefix rows);
-ppl$_{>C}$ streams $30$k tokens ($30$-bin chunked cache, last bin) at the stated budget: $^{r}$
+ppl$_{>C}$ streams $30$k tokens ($30$-bin chunked cache, last bin) at the stated budget; its
+superscript marks the \\emph{deploy} used for that row (not an error or significance mark): $^{r}$
 sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink), $^{s}$
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
 S-SWA (E--G) trains only full-window queries, so its ppl$_{<C}$ is undefined ($C/2$ context rows
