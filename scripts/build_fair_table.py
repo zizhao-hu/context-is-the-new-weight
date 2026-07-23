@@ -23,7 +23,11 @@ def f(pat, cast=float):
 
 # ---------------- CPT: ppl<C (full deploy deep) ----------------
 # b-family from W=1024 RESULT lines; token/prefix from register-aware causal (validated)
-BASE = {"pplC": 9.30, "pplC_sem": 1.0, "pplS": 9.97, "hp": (0.555, 0.587), "hp_stream": (None, None)}
+# pplS awaits the 30k deep-stream eval (job 5165092); the short-eval 9.97 is NOT comparable
+# to the 30k column and must not be printed. Inject via CLI: base_ppls=<val>.
+BASE = {"pplC": 9.30, "pplC_sem": 1.0, "pplS": None, "hp": (0.555, 0.587), "hp_stream": (None, None)}
+for arg in sys.argv[2:]:
+    if arg.startswith("base_ppls="): BASE["pplS"] = float(arg.split("=")[1])
 for arg in sys.argv[2:]:
     if arg.startswith("base_hs="):
         BASE["hp_stream"] = tuple(float(v) for v in arg.split("=")[1].split(","))
@@ -161,7 +165,7 @@ def fmt_task(v, sem):
 # ppl>C uses StreamingLLM (plain sliding collapses to 181.9) -> s marker.
 toy["BASE"] = (None, None, None, "")
 pplC["BASE"] = BASE["pplC"]; pplC_sem["BASE"] = BASE["pplC_sem"]
-pplS["BASE"] = (BASE["pplS"], "s")
+pplS["BASE"] = (BASE["pplS"], "s") if BASE["pplS"] is not None else (None, "s")
 task["BASE"] = (BASE["hp"][0], BASE["hp"][1], BASE["hp_stream"][0], BASE["hp_stream"][1])
 
 # best-in-column bolding (computed post-hoc below on assembled floats)
