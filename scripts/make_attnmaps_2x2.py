@@ -33,8 +33,8 @@ slide_pfx = (causal & (k > q - W)) | (causal & (k < P))     # startup: prompt al
 PANELS = [
     ("full context",                    binmap(d["base_full"], causal)),
     ("sliding window",                  binmap(d["base_slide"], slide)),
-    ("sliding window $+$ ours",         binmap(d["windowed"], slide, blank_rows=W)),
-    ("ours $+$ trainable sink prefix",  binmap(d["startup"], slide_pfx, blank_rows=P)),
+    ("symmetric sliding window",        binmap(d["windowed"], slide, blank_rows=W)),
+    ("$+$ trainable sink prefix",       binmap(d["startup"], slide_pfx, blank_rows=P)),
 ]
 ANNOT = {2: "history accum.\n(no prediction)", 3: "trainable prompt\n(no prediction)"}
 CYAN = "#1899c2"
