@@ -46,9 +46,11 @@ for j, (ax, (title, v)) in enumerate(zip(axes.flat, PANELS)):
     ax.imshow(v, extent=[0, T, T, 0], cmap="magma", norm=norm,
               interpolation="nearest", aspect="equal")
     ax.set_title(title, fontsize=17.5, fontweight="bold", pad=7)
-    ax.set_xticks([0, 500, 1000, 1500]); ax.set_yticks([0, 500, 1000, 1500])
-    ax.tick_params(labelsize=15, length=0)
-    for sp in ax.spines.values(): sp.set_visible(False)
+    ax.set_xticks([]); ax.set_yticks([])
+    for side in ("top", "bottom"):
+        ax.spines[side].set_visible(True); ax.spines[side].set_linewidth(2.2)
+    for side in ("left", "right"):
+        ax.spines[side].set_visible(False)
     if j == 2:
         ax.add_patch(Rectangle((8, 8), P - 16, P - 16, fill=False, edgecolor=CYAN, lw=2.5))
         ax.text(P + 44, 30, ANNOT[j], color=CYAN, fontsize=15.5, fontweight="bold", va="top")
@@ -56,15 +58,8 @@ for j, (ax, (title, v)) in enumerate(zip(axes.flat, PANELS)):
         ax.annotate(ANNOT[j], xy=(24, 620), xytext=(300, 130), color=CYAN, fontsize=15.5,
                     fontweight="bold", va="top",
                     arrowprops=dict(arrowstyle="->", color=CYAN, lw=2.5))
-for ax in axes[0, :]: ax.set_xticklabels([])
-for ax in axes[:, 1]: ax.set_yticklabels([])
-for ax in axes[1, :]: ax.set_xticklabels(["0", "500", "1000", ""])
-fig.subplots_adjust(left=0.075, right=0.885, top=0.945, bottom=0.045, wspace=0.055, hspace=0.15)
-cax = fig.add_axes([0.9, 0.15, 0.028, 0.7])
-cb = fig.colorbar(cm.ScalarMappable(norm=norm, cmap="magma"), cax=cax)
-cb.set_ticks([1e-1, 1e-2, 1e-3])
-cb.set_ticklabels(["$10^{-1}$", "$10^{-2}$", "$10^{-3}$"])
-cb.outline.set_visible(False)
-cax.tick_params(labelsize=16, length=0)
+for ax in axes[1, :]: ax.set_xlabel("key", fontsize=16, fontweight="bold")
+for ax in axes[:, 0]: ax.set_ylabel("query", fontsize=16, fontweight="bold")
+fig.subplots_adjust(left=0.05, right=0.985, top=0.945, bottom=0.055, wspace=0.055, hspace=0.16)
 fig.savefig(OUT, dpi=200)
 print("saved", OUT)
