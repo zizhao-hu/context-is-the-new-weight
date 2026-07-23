@@ -132,8 +132,8 @@ ROWS = [
         ("a_pref", "\\quad$+$sink prefix"),
         ("d", "D.\\ Transformer-XL")]),
     ("Sliding-window baselines", [
-        ("b", "B.\\ SWA"), ("b_tok", "\\quad$+$sink token"), ("b_rtok", "\\quad$+$riding sink token"),
-        ("b_scal", "\\quad$+$sink scalar"), ("b_pref", "\\quad$+$sink prefix"),
+        ("b", "B.\\ SWA"), ("b_tok", "\\quad$+$sink token"), ("b_scal", "\\quad$+$sink scalar"),
+        ("b_pref", "\\quad$+$sink prefix"), ("b_rtok", "\\quad$+$riding sink token"),
         ("b_rpref", "\\quad$+$riding sink prefix"), ("c", "C.\\ SWAA (sink$+$window)")]),
     ("Ours: symmetric SWA", [
         ("e", "E.\\ S-SWA"), ("f_tok", "\\quad$+$fixed sink token"), ("f_pref", "\\quad$+$fixed sink prefix"),
