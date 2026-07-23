@@ -136,8 +136,8 @@ ROWS = [
         ("b_scal", "\\quad$+$sink scalar"), ("b_pref", "\\quad$+$sink prefix"),
         ("b_rpref", "\\quad$+$riding sink prefix"), ("c", "C.\\ SWAA (sink$+$window)")]),
     ("Ours: symmetric SWA", [
-        ("e", "E.\\ S-SWA"), ("f_tok", "F.\\ $+$sink token"), ("f_pref", "\\quad$+$sink prefix"),
-        ("f_scal", "\\quad$+$sink scalar"), ("g_rtok", "G.\\ $+$riding sink token"),
+        ("e", "E.\\ S-SWA"), ("f_tok", "\\quad$+$fixed sink token"), ("f_pref", "\\quad$+$fixed sink prefix"),
+        ("f_scal", "\\quad$+$fixed sink scalar"), ("g_rtok", "\\quad$+$riding sink token"),
         ("g_rpref", "\\quad$+$riding sink prefix")]),
 ]
 
@@ -221,7 +221,7 @@ ppl$_{>C}$ streams $30$k tokens ($30$-bin chunked cache, last bin) at the stated
 superscript marks the \\emph{deploy} used for that row (not an error or significance mark): $^{r}$
 sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink), $^{s}$
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
-S-SWA (E--G) trains only full-window queries, so its ppl$_{<C}$ is undefined ($C/2$ context rows
+S-SWA and its sink variants (E) train only full-window queries, so its ppl$_{<C}$ is undefined ($C/2$ context rows
 unscored). SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
 ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. Remaining asymmetry, stated plainly:
 at matched loss tokens ($10$M) the S-SWA rows consume $2\\times$ the data tokens of the SWA rows

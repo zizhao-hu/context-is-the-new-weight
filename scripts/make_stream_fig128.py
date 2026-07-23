@@ -26,10 +26,10 @@ ORDER = [(("plain", "a_w128"),   "A. full causal",          "--", "#7f7f7f"),
          (("plain", "c_w128"),   "C. SWAA",                 "--", "#2ca02c"),
          (("plain", "e_B_w128"), "D. Transformer-XL",       "--", "#d62728"),
          (("plain", "b_w128_fw"),"E. S-SWA",                "-",  "#9467bd"),
-         (("regs", "k_w128_fw"), "F. $+$sink token",        "-",  "#e377c2"),
-         (("regs", "m_w128_fw"), "F. $+$sink prefix",       "-",  "#ff7f0e"),
-         (("regs", "n_w128_fw"), "G. $+$riding sink token", "-",  "#8c564b"),
-         (("regs", "o_w128_fw"), "G. $+$riding sink prefix","-",  "#17becf")]
+         (("regs", "k_w128_fw"), "E $+$ fixed sink token",        "-",  "#e377c2"),
+         (("regs", "m_w128_fw"), "E $+$ fixed sink prefix",       "-",  "#ff7f0e"),
+         (("regs", "n_w128_fw"), "E $+$ riding sink token", "-",  "#8c564b"),
+         (("regs", "o_w128_fw"), "E $+$ riding sink prefix","-",  "#17becf")]
 x = np.arange(1, 31)
 plt.rcParams.update({"font.size": 12, "axes.linewidth": 0.9})
 fig, ax = plt.subplots(figsize=(6.8, 3.4))
