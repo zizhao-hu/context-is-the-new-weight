@@ -51,14 +51,14 @@ for sl in (slice(0, nsf), slice(nsf, None)):
 a1.errorbar(x, p0, yerr=p0s, fmt="none", ecolor="0.15", elinewidth=0.9, capsize=2, zorder=6)
 a1.errorbar(x, tot, yerr=np.sqrt(p0s**2 + seps**2), fmt="none", ecolor="0.15",
             elinewidth=0.9, capsize=2, zorder=6)
-a1.set_ylabel("attention mass", fontsize=12)
+a1.text(0.012, 0.97, "attention mass", transform=a1.transAxes, ha="left", va="top", fontsize=12)
 a1.set_ylim(0, max(tot) * 1.28)
 a1.set_title("sink distribution", fontsize=12, fontweight="bold", pad=4)
 a1.legend(handles=[Patch(facecolor=C_P0, label="p0 sink"),
                    Patch(facecolor=C_SEP, label="separator sink"),
                    Line2D([], [], color="#1f3d63", marker="o", ms=4, lw=1.8, label="p0 trend"),
                    Line2D([], [], color="#2e6b45", marker="o", ms=4, lw=1.8, label="total trend")],
-          frameon=False, fontsize=8.6, ncol=2, loc="upper center",
+          frameon=False, fontsize=8.6, ncol=2, loc="upper right",
           handlelength=1.2, columnspacing=0.9, handletextpad=0.4)
 
 # ---- right: perplexity (grouped bars: in-context vs streaming) ----
@@ -70,13 +70,13 @@ for sl in (slice(0, nsf), slice(nsf, None)):
     a2.plot(x[sl] + bw / 2, ppl[sl], "-o", color="#2b2b2b", ms=4, lw=1.8, zorder=5)
 a2.errorbar(x + bw / 2, ppl, yerr=ppl_sem, fmt="none", ecolor="0.1",
             elinewidth=0.9, capsize=2, zorder=6)
-a2.set_ylabel("perplexity", fontsize=12)
-a2.set_ylim(0, max(short) * 1.22)
+a2.text(0.012, 0.97, "perplexity", transform=a2.transAxes, ha="left", va="top", fontsize=12)
+a2.set_ylim(30, max(short) * 1.15)
 a2.set_title("LM quality", fontsize=12, fontweight="bold", pad=4)
 a2.legend(handles=[Patch(facecolor=C_SHORT, label="in-context (len 64)"),
                    Patch(facecolor=C_STREAM, label="streaming (30k)")],
-          frameon=False, fontsize=8.6, loc="upper left",
-          handlelength=1.1, handletextpad=0.4)
+          frameon=False, fontsize=8.6, ncol=2, loc="upper center",
+          handlelength=1.1, columnspacing=0.9, handletextpad=0.4)
 
 div = nsf - 1 + GAP / 2 + 0.5
 for ax in (a1, a2):
