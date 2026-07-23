@@ -35,7 +35,7 @@ ppl = np.concatenate([ppl, mppl]); ppl_sem = np.concatenate([ppl_sem, mppl_sem])
 short = np.concatenate([short, mshort])
 tot = p0 + sep
 nsf = len(sf)
-labels = ["%d" % v for v in sf] + [("%.2f" % a).lstrip("0") for a in mal]
+labels = ["%d" % v for v in sf] + ["0" if a == 0 else ("1" if a == 1 else ("%.2f" % a).lstrip("0").rstrip("0")) for a in mal]
 
 C_P0, C_SEP, C_SHORT, C_STREAM = "#4C72B0", "#55A868", "#B04C4C", "#555555"
 plt.rcParams.update({"font.size": 12, "axes.linewidth": 0.9})
@@ -90,8 +90,12 @@ for ax in (a1, a2):
             color="#333", transform=ax.get_xaxis_transform())
     ax.text((nsf - 1) / 2, -0.34, "unscored context rows", ha="center", fontsize=11,
             transform=ax.get_xaxis_transform())
-    ax.text(np.mean(mx), -0.34, "coverage-mix $\\alpha$ (on S-SWA)", ha="center", fontsize=11,
+    ax.text(np.mean(mx), -0.34, "mix ratio $\\alpha$ (fraction of S-SWA steps)", ha="center", fontsize=11,
             transform=ax.get_xaxis_transform())
+    ax.text(mx[0], -0.22, "SWA", ha="center", fontsize=10, fontweight="bold",
+            color="#333", transform=ax.get_xaxis_transform())
+    ax.text(mx[-1], -0.22, "S-SWA", ha="center", fontsize=10, fontweight="bold",
+            color="#333", transform=ax.get_xaxis_transform())
 
 plt.tight_layout()
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
