@@ -25,18 +25,19 @@ def binmap(m, valid, blank_rows=0):
     with np.errstate(invalid="ignore"):
         return np.nanmean(r, axis=2)
 
+NP = 8                                                       # Table-8 setting: 8 always-on registers
 q = np.arange(T)[:, None]; k = np.arange(T)[None, :]
 causal = k <= q
 slide = causal & (k > q - W)
-slide_pfx = (causal & (k > q - W)) | (causal & (k < P))     # startup: prompt always visible
+slide_pfx = (causal & (k > q - W)) | (causal & (k < NP))    # registers always visible
 
 PANELS = [
     ("full context",                    binmap(d["base_full"], causal)),
     ("sliding window",                  binmap(d["base_slide"], slide)),
     ("symmetric sliding window",        binmap(d["windowed"], slide, blank_rows=W)),
-    ("$+$ trainable sink prefix",       binmap(d["startup"], slide_pfx, blank_rows=P)),
+    ("$+$ trainable sink tokens",       binmap(d["startup"], slide_pfx, blank_rows=W + NP)),
 ]
-ANNOT = {2: "history accum.\n(no prediction)", 3: "trainable prompt\n(no prediction)"}
+ANNOT = {2: "history accum.\n(no prediction)", 3: "8 trainable sink tokens\n(always attended)"}
 CYAN = "#1899c2"
 norm = LogNorm(vmin=2e-4, vmax=0.5, clip=True)
 
@@ -48,9 +49,13 @@ for j, (ax, (title, v)) in enumerate(zip(axes.flat, PANELS)):
     ax.set_xticks([0, 500, 1000, 1500]); ax.set_yticks([0, 500, 1000, 1500])
     ax.tick_params(labelsize=15, length=0)
     for sp in ax.spines.values(): sp.set_visible(False)
-    if j in ANNOT:
+    if j == 2:
         ax.add_patch(Rectangle((8, 8), P - 16, P - 16, fill=False, edgecolor=CYAN, lw=2.5))
         ax.text(P + 44, 30, ANNOT[j], color=CYAN, fontsize=15.5, fontweight="bold", va="top")
+    if j == 3:
+        ax.annotate(ANNOT[j], xy=(24, 620), xytext=(300, 130), color=CYAN, fontsize=15.5,
+                    fontweight="bold", va="top",
+                    arrowprops=dict(arrowstyle="->", color=CYAN, lw=2.5))
 for ax in axes[0, :]: ax.set_xticklabels([])
 for ax in axes[:, 1]: ax.set_yticklabels([])
 for ax in axes[1, :]: ax.set_xticklabels(["0", "500", "1000", ""])
