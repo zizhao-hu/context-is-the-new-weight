@@ -55,9 +55,7 @@ a1.text(0.012, 0.97, "attention mass", transform=a1.transAxes, ha="left", va="to
 a1.set_ylim(0, max(tot) * 1.28)
 a1.set_title("sink distribution", fontsize=12, fontweight="bold", pad=4)
 a1.legend(handles=[Patch(facecolor=C_P0, label="p0 sink"),
-                   Patch(facecolor=C_SEP, label="separator sink"),
-                   Line2D([], [], color="#1f3d63", marker="o", ms=4, lw=1.8, label="p0 trend"),
-                   Line2D([], [], color="#2e6b45", marker="o", ms=4, lw=1.8, label="total trend")],
+                   Patch(facecolor=C_SEP, label="separator sink")],
           frameon=False, fontsize=8.6, ncol=2, loc="upper right",
           handlelength=1.2, columnspacing=0.9, handletextpad=0.4)
 
