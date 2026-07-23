@@ -27,26 +27,26 @@ def binmap(m, valid):
         return np.nanmean(r, axis=2)
 
 norm = LogNorm(vmin=2e-4, vmax=0.5, clip=True)
-PANELS = [("Gemma-3-4B full-attention layers", binmap(G, causal)),
-          ("Gemma-3-4B sliding-window layers", binmap(Loc, slide))]
+PANELS = [("full-attention layers", binmap(G, causal)),
+          ("sliding-window layers", binmap(Loc, slide))]
 
 fig, axes = plt.subplots(1, 2, figsize=(10.4, 5.0))
 for ax, (title, v) in zip(axes, PANELS):
     ax.imshow(v, extent=[0, T, T, 0], cmap="magma", norm=norm,
               interpolation="nearest", aspect="equal")
-    ax.set_title(title, fontsize=17, fontweight="bold", pad=7)
+    ax.set_title(title, fontsize=21, fontweight="bold", pad=8)
     ax.set_xticks([]); ax.set_yticks([])
-    ax.set_xlabel("key", fontsize=16, fontweight="bold")
+    ax.set_xlabel("key", fontsize=20, fontweight="bold")
     for side, on in (("top", True), ("bottom", True), ("left", False), ("right", False)):
         ax.spines[side].set_visible(on); ax.spines[side].set_linewidth(2.2)
-axes[0].set_ylabel("query", fontsize=16, fontweight="bold")
+axes[0].set_ylabel("query", fontsize=20, fontweight="bold")
 
 # callouts (fig-1 identity): p0 sink column in full layers; separator columns in SWA layers
 BLUE, ORNG = "#2b6cb0", "#e07b18"
-kw = dict(fontsize=14.5, fontweight="bold", va="center",
+kw = dict(fontsize=18, fontweight="bold", va="center",
           bbox=dict(boxstyle="round,pad=0.4", fc="white", ec="none", lw=0))
 axes[0].annotate("p0 sink\n(Peng et al. 2026)", xy=(30, 900), xytext=(430, 330),
-                 color=BLUE, arrowprops=dict(arrowstyle="->", color=BLUE, lw=2.6), **kw)
+                 color=BLUE, arrowprops=dict(arrowstyle="->", color=BLUE, lw=3.2), **kw)
 band = binmap(Loc, slide)
 colmean = np.nanmean(np.nan_to_num(band), 0)
 colmean[:2] = 0                                              # skip the leading edge
@@ -55,8 +55,8 @@ for sb in sep_bins:
     sc = sb * BIN + BIN / 2
     qy = min(sc + 500, T - 60)                               # a query row where this key is in-window
     axes[1].annotate("", xy=(sc, qy), xytext=(1080, 430),
-                     arrowprops=dict(arrowstyle="->", color=ORNG, lw=2.6))
+                     arrowprops=dict(arrowstyle="->", color=ORNG, lw=3.2))
 axes[1].text(1080, 380, "distributed sink\n(Ruscio et al. 2025)", color=ORNG, ha="center", **kw)
-fig.subplots_adjust(left=0.045, right=0.985, top=0.9, bottom=0.075, wspace=0.08)
-fig.savefig(OUT, dpi=200)
+fig.subplots_adjust(left=0.04, right=0.99, top=0.9, bottom=0.07, wspace=0.07)
+fig.savefig(OUT, dpi=200, bbox_inches="tight", pad_inches=0.03)
 print("saved", OUT)
