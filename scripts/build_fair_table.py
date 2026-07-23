@@ -204,7 +204,7 @@ tex = """\\begin{table*}[!t]
 \\cmidrule(lr){2-3}\\cmidrule(lr){4-9}
  & \\multicolumn{2}{c}{\\footnotesize WikiText ppl ($\\downarrow$)} & \\multicolumn{2}{c}{\\footnotesize WikiText ppl ($\\downarrow$)} & \\multicolumn{4}{c}{\\footnotesize HotpotQA, zero-shot ($\\uparrow$)}\\\\
 \\cmidrule(lr){2-3}\\cmidrule(lr){4-5}\\cmidrule(lr){6-9}
- & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream@$128$} & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream@$1024$} & \\multicolumn{2}{c}{\\footnotesize full} & \\multicolumn{2}{c}{\\footnotesize stream@$1024$}\\\\
+ & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream} & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream} & \\multicolumn{2}{c}{\\footnotesize full} & \\multicolumn{2}{c}{\\footnotesize stream}\\\\
 \\cmidrule(lr){6-7}\\cmidrule(lr){8-9}
 mask (training) & \\multicolumn{1}{c}{ppl$_{<C}$} & \\multicolumn{1}{c}{ppl$_{>C}$} & \\multicolumn{1}{c}{ppl$_{<C}$} & \\multicolumn{1}{c}{ppl$_{>C}$} & \\multicolumn{1}{c}{F1} & \\multicolumn{1}{c}{Acc} & \\multicolumn{1}{c}{F1} & \\multicolumn{1}{c}{Acc}\\\\
 \\midrule
