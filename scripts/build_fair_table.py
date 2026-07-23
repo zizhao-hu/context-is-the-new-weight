@@ -202,7 +202,7 @@ tex = """\\begin{table*}[!t]
 \\toprule
  & \\multicolumn{2}{c}{Pretraining} & \\multicolumn{6}{c}{Continued pretraining: Llama-3.2-3B}\\\\
 \\cmidrule(lr){2-3}\\cmidrule(lr){4-9}
- & \\multicolumn{2}{c}{\\footnotesize WikiText ppl ($\\downarrow$)} & \\multicolumn{2}{c}{\\footnotesize WikiText ppl ($\\downarrow$)} & \\multicolumn{4}{c}{\\footnotesize HotpotQA, zero-shot ($\\uparrow$)}\\\\
+ & \\multicolumn{2}{c}{\\footnotesize WikiText ($\\downarrow$)} & \\multicolumn{2}{c}{\\footnotesize WikiText ($\\downarrow$)} & \\multicolumn{4}{c}{\\footnotesize HotpotQA, zero-shot ($\\uparrow$)}\\\\
 \\cmidrule(lr){2-3}\\cmidrule(lr){4-5}\\cmidrule(lr){6-9}
  & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream} & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream} & \\multicolumn{2}{c}{\\footnotesize full} & \\multicolumn{2}{c}{\\footnotesize stream}\\\\
 \\cmidrule(lr){6-7}\\cmidrule(lr){8-9}
