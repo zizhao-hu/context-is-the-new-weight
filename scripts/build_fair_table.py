@@ -23,6 +23,11 @@ def f(pat, cast=float):
 
 # ---------------- CPT: ppl<C (full deploy deep) ----------------
 # b-family from W=1024 RESULT lines; token/prefix from register-aware causal (validated)
+BASE = {"pplC": 9.30, "pplC_sem": 1.0, "pplS": 9.97, "hp": (0.555, 0.587), "hp_stream": (None, None)}
+for arg in sys.argv[2:]:
+    if arg.startswith("base_hs="):
+        BASE["hp_stream"] = tuple(float(v) for v in arg.split("=")[1].split(","))
+
 pplC = {
     "a": 10.17, "a_tok": 10.62, "a_scal": 10.13, "a_pref": 10.67, "a_2p0": 10.10,  # ckpts unchanged (full deploy W-free); reg-aware for tok/pref
     "b":       f(r"w1k_b_\d+\|RESULT cpt mask=b .*full\(avg [\d.]+ deep ([\d.]+)\)"),
@@ -128,6 +133,7 @@ for arg in sys.argv[2:]:
 
 ROWS = [
     ("Full-attention baselines", [
+        ("BASE", "base (no CPT)"),
         ("a", "A.\\ full causal"), ("a_tok", "\\quad$+$sink token"), ("a_scal", "\\quad$+$sink scalar"),
         ("a_pref", "\\quad$+$sink prefix"),
         ("d", "D.\\ Transformer-XL")]),
@@ -150,6 +156,13 @@ def fmt(v, dec=2, sem=None):
 def fmt_task(v, sem):
     if v is None: return "---"
     return "%.3f{\\tiny$\\pm$%.2f}" % (v, sem)
+
+# base (no CPT): measured by base8 job 5163200 (steps=0, W=1024 budget); toy columns n/a.
+# ppl>C uses StreamingLLM (plain sliding collapses to 181.9) -> s marker.
+toy["BASE"] = (None, None, None, "")
+pplC["BASE"] = BASE["pplC"]; pplC_sem["BASE"] = BASE["pplC_sem"]
+pplS["BASE"] = (BASE["pplS"], "s")
+task["BASE"] = (BASE["hp"][0], BASE["hp"][1], BASE["hp_stream"][0], BASE["hp_stream"][1])
 
 # best-in-column bolding (computed post-hoc below on assembled floats)
 body = []
@@ -223,7 +236,10 @@ sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink),
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
 S-SWA and its sink variants (E) train only full-window queries, so its ppl$_{<C}$ is undefined ($C/2$ context rows
 unscored). SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
-ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. Remaining asymmetry, stated plainly:
+ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The \\emph{base} row is the untouched pretrained model at the same deploy budget --- the absolute
+reference: it retains the most zero-shot QA (F1 $0.555$; every WikiText CPT trades QA ability for
+domain fit), but its constant-memory deploy depends on the StreamingLLM patch (plain sliding
+collapses to $182$). Remaining asymmetry, stated plainly:
 at matched loss tokens ($10$M) the S-SWA rows consume $2\\times$ the data tokens of the SWA rows
 ($20$M vs $10$M); bold marks the best point estimate per column.}
 \\label{tab:toydeploy}
