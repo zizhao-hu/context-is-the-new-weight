@@ -25,7 +25,7 @@ def f(pat, cast=float):
 # b-family from W=1024 RESULT lines; token/prefix from register-aware causal (validated)
 # pplS awaits the 30k deep-stream eval (job 5165092); the short-eval 9.97 is NOT comparable
 # to the 30k column and must not be printed. Inject via CLI: base_ppls=<val>.
-BASE = {"pplC": 9.30, "pplC_sem": 1.0, "pplS": None, "hp": (0.555, 0.587), "hp_stream": (None, None)}
+BASE = {"pplC": 6.50, "pplC_sem": 0.7, "pplS": None, "hp": (0.346, 0.467), "hp_stream": (None, None)}   # pretrained Llama-3.2-3B (jobs 5166380/81)
 for arg in sys.argv[2:]:
     if arg.startswith("base_ppls="): BASE["pplS"] = float(arg.split("=")[1])
 for arg in sys.argv[2:]:
@@ -240,9 +240,7 @@ sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink),
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
 S-SWA and its sink variants (E) train only full-window queries, so its ppl$_{<C}$ is undefined ($C/2$ context rows
 unscored). SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
-ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The base row is the untouched pretrained model at the same deploy budget, the absolute
-reference: it retains the most zero-shot QA (F1 $0.555$; every WikiText CPT trades QA ability for
-domain fit), but its constant-memory deploy depends on the StreamingLLM patch (plain sliding collapses to $213$ at $30$k). Remaining asymmetry, stated plainly:
+ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The base row is the untouched pretrained Llama-3.2-3B at the same deploy budget (the CPT rows start from its Instruct variant); its constant-memory deploy depends on the StreamingLLM patch (plain sliding collapses to $157$ at $30$k). Remaining asymmetry, stated plainly:
 at matched loss tokens ($10$M) the S-SWA rows consume $2\\times$ the data tokens of the SWA rows
 ($20$M vs $10$M); bold marks the best point estimate per column.}
 \\label{tab:toydeploy}
