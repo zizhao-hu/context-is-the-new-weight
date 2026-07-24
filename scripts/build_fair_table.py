@@ -228,7 +228,7 @@ mask (training) & \\multicolumn{1}{c}{ppl$_{<C}$} & \\multicolumn{1}{c}{ppl$_{>C
 %s
 \\bottomrule
 \\end{tabular*}
-\\caption{\\textbf{One picture across pretraining, continued pretraining, and a downstream task ---
+\\caption{\\textbf{One picture across pretraining, continued pretraining, and a downstream task,
 window-matched.} Every row shares the training chunk ($C{=}256$ toy, $2048$ CPT) and the deploy
 budget ($W{=}128$ toy, $1024$ CPT); the SWA family is retrained at the matched window. Pretraining:
 an $8$-layer GPT from scratch on WikiText; CPT: Llama-3.2-3B on WikiText under each mask, scored
@@ -240,7 +240,7 @@ sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink),
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
 S-SWA and its sink variants (E) train only full-window queries, so its ppl$_{<C}$ is undefined ($C/2$ context rows
 unscored). SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
-ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The \\emph{base} row is the untouched pretrained model at the same deploy budget --- the absolute
+ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The \\emph{base} row is the untouched pretrained model at the same deploy budget, the absolute
 reference: it retains the most zero-shot QA (F1 $0.555$; every WikiText CPT trades QA ability for
 domain fit), but its constant-memory deploy depends on the StreamingLLM patch (plain sliding
 collapses to $182$). Remaining asymmetry, stated plainly:
