@@ -31,7 +31,17 @@ assert list(map(str, d2["tokens"])) == toks, "sequences differ between captures"
 PANELS = [("SWA CPT (loss on all rows)", d1["trained_win"], d1["trained_prob_win"]),
           ("S-SWA CPT (loss on full-window rows only)", d2["trained_win"], d2["trained_prob_win"])]
 
-ROWQ = list(range(W + 1, L - 1, 3))          # query positions with a full window
+# first separator-sink column: strongest received column among full-window queries (SWA capture)
+_att = d1["trained_win"]
+_recv = np.array([_att[k + 1:min(k + 1 + W, L), k].mean() if k + 1 < L else 0 for k in range(L)])
+_recv[0] = 0
+_strong = np.where(_recv > 0.5 * _recv.max())[0]
+_ok = [k for k in _strong if k <= L - W - 6]
+SINK = int(_ok[0]) if _ok else int(np.argmax(_recv))   # earliest strong sink column that fits a window
+X0 = max(0, SINK - 2)                        # view starts 2 tokens left of the sink column
+XSPAN = L // 2                               # half the sequence
+X1 = min(L, X0 + XSPAN)
+ROWQ = list(range(X0 + W - 1, min(L - 1, X1 - 1), 2))   # windows starting inside the view
 CMAP = cm.get_cmap("Reds")
 NORM = Normalize(vmin=0.0, vmax=0.35)
 
@@ -39,11 +49,11 @@ fig, axes = plt.subplots(2, 1, figsize=(13.2, 9.6))
 for ax, (title, att, prob) in zip(axes, PANELS):
     ax.set_title(title, fontsize=15, fontweight="bold", loc="left", pad=26)
     # green prob bars along the top
-    for t in range(1, L):
+    for t in range(X0, X1):
         ax.add_patch(Rectangle((t, len(ROWQ) + 0.35), 0.9, 2.6 * float(prob[t]),
                                fc="#2e8b57", ec="none"))
     mp = float(np.mean(prob[W:]))
-    ax.text(L + 0.6, len(ROWQ) + 0.9, "mean $p{\\approx}%.2f$" % mp,
+    ax.text(X1 + 0.6, len(ROWQ) + 0.9, "mean $p{\\approx}%.2f$" % mp,
             fontsize=12.5, fontweight="bold", color="#2e8b57", va="bottom")
     # staircase
     for r, q in enumerate(ROWQ):
@@ -52,12 +62,12 @@ for ax, (title, att, prob) in zip(axes, PANELS):
             ax.add_patch(Rectangle((k, y), 1, 0.92, fc=CMAP(NORM(float(att[q, k]))),
                                    ec="white", lw=0.3))
         ax.add_patch(Rectangle((q, y), 1, 0.92, fill=False, ec="#1f77b4", lw=1.6))
-    ax.set_xlim(0, L + 7); ax.set_ylim(-0.3, len(ROWQ) + 3.4)
+    ax.set_xlim(X0 - 0.5, X1 + 7); ax.set_ylim(-0.3, len(ROWQ) + 3.4)
     ax.set_xticks([]); ax.set_yticks([])
     for sp in ax.spines.values(): sp.set_visible(False)
     # token strip along the bottom
-    for t in range(L):
-        ax.text(t + 0.5, -0.55, toks[t].replace(" ", "·"), fontsize=4.6,
+    for t in range(X0, X1):
+        ax.text(t + 0.5, -0.55, toks[t].replace(" ", "·"), fontsize=8.5,
                 rotation=90, ha="center", va="top", color="0.25")
     ax.set_ylim(-3.3, len(ROWQ) + 3.4)
 
