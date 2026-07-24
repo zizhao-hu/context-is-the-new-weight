@@ -242,8 +242,7 @@ S-SWA and its sink variants (E) train only full-window queries, so its ppl$_{<C}
 unscored). SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
 ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The base row is the untouched pretrained model at the same deploy budget, the absolute
 reference: it retains the most zero-shot QA (F1 $0.555$; every WikiText CPT trades QA ability for
-domain fit), but its constant-memory deploy depends on the StreamingLLM patch (plain sliding
-collapses to $182$). Remaining asymmetry, stated plainly:
+domain fit), but its constant-memory deploy depends on the StreamingLLM patch (plain sliding collapses to $213$ at $30$k). Remaining asymmetry, stated plainly:
 at matched loss tokens ($10$M) the S-SWA rows consume $2\\times$ the data tokens of the SWA rows
 ($20$M vs $10$M); bold marks the best point estimate per column.}
 \\label{tab:toydeploy}
