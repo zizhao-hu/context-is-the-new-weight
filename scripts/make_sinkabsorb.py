@@ -41,9 +41,10 @@ for j in range(3):
                 elinewidth=0.9, capsize=2.0, capthick=0.9, zorder=5)
 for xx, a_, b_, c_ in zip(x, p0, rg, sp):
     for yy, v in ((a_ / 2, a_), (a_ + b_ / 2, b_), (a_ + b_ + c_ / 2, c_)):
-        if v >= 0.02:
-            ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=10.6,
-                    color="white", fontweight="bold")
+        if v >= 0.01:
+            ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=9.8,
+                    color="0.1", fontweight="bold", zorder=7,
+                    bbox=dict(boxstyle="round,pad=0.18", fc="white", ec="none", alpha=0.85))
 ax.set_ylim(0, 1); ax.set_xticks(x)
 ax.set_xticklabels(labs, fontsize=11.2)
 ax.set_xlim(-0.60, len(ROWS) - 0.40)

@@ -61,9 +61,10 @@ for ax, vals, sv, ttl in ((axes[0], cold, sem_cold, T_LO),
     # label the three sink classes; content is the remainder to 1 and needs no number
     for xx, a_, b_ in zip(x, fiw, sep):
         for yy, v in ((a_ / 2, a_), (a_ + b_ / 2, b_)):
-            if v >= 0.02:
-                ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=10.6,
-                        color="white", fontweight="bold")
+            if v >= 0.01:
+                ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=9.8,
+                        color="0.1", fontweight="bold", zorder=7,
+                        bbox=dict(boxstyle="round,pad=0.18", fc="white", ec="none", alpha=0.85))
     ax.set_ylim(0, 1); ax.set_xticks(x)
     ax.set_xticklabels(xl, fontsize=11.6)
     ax.set_xlim(-0.60, len(labels) - 0.40)

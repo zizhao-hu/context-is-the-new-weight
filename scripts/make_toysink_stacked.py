@@ -47,9 +47,10 @@ for ax, rows, ttl in ((axes[0], TOY, T_L), (axes[1], CPT, T_R)):
                     elinewidth=0.9, capsize=2.0, capthick=0.9, zorder=5)
     for xx, a_, b_ in zip(x, p0, cm):
         for yy, v in ((a_ / 2, a_), (a_ + b_ / 2, b_)):
-            if v >= 0.02:
-                ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=10.6,
-                        color="white", fontweight="bold")
+            if v >= 0.01:
+                ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=9.8,
+                        color="0.1", fontweight="bold", zorder=7,
+                        bbox=dict(boxstyle="round,pad=0.18", fc="white", ec="none", alpha=0.85))
     ax.set_ylim(0, 1); ax.set_xticks(x)
     ax.set_xticklabels(labs, fontsize=11.6)
     ax.set_xlim(-0.60, len(rows) - 0.40)
