@@ -44,7 +44,7 @@ for xx, a_, b_, c_ in zip(x, p0, rg, sp):
         if v >= 0.01:
             ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=9.8,
                     color="0.1", fontweight="bold", zorder=7,
-                    bbox=dict(boxstyle="round,pad=0.18", fc="white", ec="none", alpha=0.85))
+                    bbox=dict(boxstyle="round,pad=0.18", fc="white", ec="0.45", lw=0.8, alpha=0.9))
 ax.set_ylim(0, 1); ax.set_xticks(x)
 ax.set_xticklabels(labs, fontsize=11.2)
 ax.set_xlim(-0.60, len(ROWS) - 0.40)
