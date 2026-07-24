@@ -54,7 +54,7 @@ ax.set_ylabel("attention mass", fontsize=11.6)
 plt.tight_layout(rect=(0, 0, 1, 0.90))
 fig.legend(handles=[Patch(facecolor=C_P0, label="p0 sink"),
                     Patch(facecolor=C_REG, label="trainable sink"),
-                    Patch(facecolor=C_SEP, label="separator sink"),
+                    Patch(facecolor=C_SEP, label="distributed sink"),
                     Patch(facecolor=C_CT, label="content")],
            loc="upper center", bbox_to_anchor=(0.55, 1.0), bbox_transform=fig.transFigure,
            ncol=4, frameon=False, fontsize=10.4, handlelength=1.1, handleheight=0.9,

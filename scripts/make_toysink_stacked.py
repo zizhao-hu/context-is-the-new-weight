@@ -60,7 +60,7 @@ axes[0].set_ylabel("attention mass", fontsize=11.6)
 plt.tight_layout(rect=(0, 0, 1, 0.90))
 _cx = (axes[0].get_position().x0 + axes[1].get_position().x1) / 2
 fig.legend(handles=[Patch(facecolor=C_P0, label="p0 sink"),
-                    Patch(facecolor=C_SEP, label="common-token sink"),
+                    Patch(facecolor=C_SEP, label="distributed sink"),
                     Patch(facecolor=C_CT, label="content")],
            loc="upper center", bbox_to_anchor=(_cx, 1.0), bbox_transform=fig.transFigure,
            ncol=3, frameon=False, fontsize=11.0, handlelength=1.15, handleheight=0.9,
