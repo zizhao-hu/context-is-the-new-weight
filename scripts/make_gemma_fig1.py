@@ -49,7 +49,7 @@ from matplotlib.patches import ConnectionPatch
 def arrow(axA, tail, axB, head, color):
     fig.add_artist(ConnectionPatch(xyA=tail, coordsA=axA.transData,
                                    xyB=head, coordsB=axB.transData,
-                                   arrowstyle="->", color=color, lw=3.2))
+                                   arrowstyle="-|>,head_width=0.55,head_length=1.1", color=color, lw=3.2))
 
 # blue: label in panel 1; arrows start BELOW the text, into both panels' p0 columns
 axes[0].text(1510, 40, "p0 sink\n(Peng et al. 2026)", color=BLUE, ha="right", **kw)
