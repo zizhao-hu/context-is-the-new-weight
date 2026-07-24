@@ -27,7 +27,7 @@ plt.rcParams.update({"font.size": 12, "axes.linewidth": 0.9})
 fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.65), sharey=True,
                          gridspec_kw={"width_ratios": [2, 3]})
 
-T_L = "from scratch (toy GPT)"
+T_L = "pretrained from scratch"
 T_R = "continued pretraining (Llama-3.2-3B)"
 for ax, rows, ttl in ((axes[0], TOY, T_L), (axes[1], CPT, T_R)):
     x = np.arange(len(rows))
