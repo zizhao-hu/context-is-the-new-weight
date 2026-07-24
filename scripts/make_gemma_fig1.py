@@ -47,6 +47,11 @@ kw = dict(fontsize=18, fontweight="bold", va="center",
           bbox=dict(boxstyle="round,pad=0.4", fc="white", ec="none", lw=0))
 axes[0].annotate("p0 sink\n(Peng et al. 2026)", xy=(30, 900), xytext=(430, 330),
                  color=BLUE, arrowprops=dict(arrowstyle="->", color=BLUE, lw=3.2), **kw)
+from matplotlib.patches import ConnectionPatch
+cp = ConnectionPatch(xyA=(1160, 260), coordsA=axes[0].transData,
+                     xyB=(30, 340), coordsB=axes[1].transData,
+                     arrowstyle="->", color=BLUE, lw=3.2)
+fig.add_artist(cp)
 band = binmap(Loc, slide)
 colmean = np.nanmean(np.nan_to_num(band), 0)
 colmean[:2] = 0                                              # skip the leading edge
@@ -57,6 +62,13 @@ for sb in sep_bins:
     axes[1].annotate("", xy=(sc, qy), xytext=(1080, 430),
                      arrowprops=dict(arrowstyle="->", color=ORNG, lw=3.2))
 axes[1].text(1080, 380, "distributed sink\n(Ruscio et al. 2025)", color=ORNG, ha="center", **kw)
+gband = binmap(G, causal)
+gcol = np.nanmean(np.nan_to_num(gband), 0); gcol[:4] = 0     # keep clear of the p0 column
+gb = int(np.argsort(gcol)[-1]); gc = gb * BIN + BIN / 2
+cpo = ConnectionPatch(xyA=(700, 400), coordsA=axes[1].transData,
+                      xyB=(gc, min(gc + 700, T - 60)), coordsB=axes[0].transData,
+                      arrowstyle="->", color=ORNG, lw=3.2)
+fig.add_artist(cpo)
 fig.subplots_adjust(left=0.04, right=0.99, top=0.9, bottom=0.07, wspace=0.07)
 fig.savefig(OUT, dpi=200, bbox_inches="tight", pad_inches=0.03)
 print("saved", OUT)
