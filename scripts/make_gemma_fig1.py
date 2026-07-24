@@ -52,14 +52,14 @@ def arrow(axA, tail, axB, head, color):
                                    arrowstyle="->", color=color, lw=3.2))
 
 # blue: label in panel 1; arrows start BELOW the text, into both panels' p0 columns
-axes[0].text(430, 300, "p0 sink\n(Peng et al. 2026)", color=BLUE, **kw)
-BT = (700, 560)                                              # tail below the blue text
+axes[0].text(1510, 40, "p0 sink\n(Peng et al. 2026)", color=BLUE, ha="right", **kw)
+BT = (1180, 300)                                             # tail below the blue text
 arrow(axes[0], BT, axes[0], (40, 900), BLUE)
 arrow(axes[0], BT, axes[1], (30, 340), BLUE)
 
 # orange: label in panel 2; arrows start BELOW the text, into both panels' separator columns
-axes[1].text(1080, 240, "distributed sink\n(Ruscio et al. 2025)", color=ORNG, ha="center", **kw)
-OT = (1080, 520)                                             # tail below the orange text
+axes[1].text(1510, 40, "distributed sink\n(Ruscio et al. 2025)", color=ORNG, ha="right", **kw)
+OT = (1180, 300)                                             # tail below the orange text
 band = binmap(Loc, slide)
 colmean = np.nanmean(np.nan_to_num(band), 0)
 colmean[:2] = 0                                              # skip the leading edge
