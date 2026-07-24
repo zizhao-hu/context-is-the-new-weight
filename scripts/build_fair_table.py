@@ -33,7 +33,8 @@ for arg in sys.argv[2:]:
         BASE["hp_stream"] = tuple(float(v) for v in arg.split("=")[1].split(","))
 
 pplC = {
-    "a": 10.17, "a_tok": 10.62, "a_scal": 10.13, "a_pref": 10.67, "a_2p0": 10.10,  # ckpts unchanged (full deploy W-free); reg-aware for tok/pref
+    # FRESH a-family (w1k_afresh jobs 5164970-73, same 4883-step recipe as the b family)
+    "a": 8.93, "a_tok": 10.14, "a_scal": 8.90, "a_pref": 11.49, "a_2p0": 10.10,
     "b":       f(r"w1k_b_\d+\|RESULT cpt mask=b .*full\(avg [\d.]+ deep ([\d.]+)\)"),
     "b_tok":   10.44,  # RESULT_REGDEPLOY reg=token/causal (job 5153822)
     "b_pref":  10.44,  # RESULT_REGDEPLOY reg=prefix/causal (job 5153822)
@@ -45,7 +46,7 @@ pplC = {
 }
 # SEM for ppl<C (kind=full deep_sem) where available
 pplC_sem = {
-    "a": 1.0, "a_tok": 1.0, "a_scal": 1.0, "a_pref": 1.1, "a_2p0": 1.0,
+    "a": 1.2, "a_tok": 1.4, "a_scal": 1.5, "a_pref": 1.7, "a_2p0": 1.0,
     "b":       f(r"w1k_b_\d+\|SEM_DEPLOY kind=full n=\d+ avg_sem=[\d.]+ deep_sem=([\d.]+)"),
     "b_tok": 1.1, "b_pref": 1.1,
     "b_rtok":  f(r"w1k_b_ridtok_\d+\|SEM_DEPLOY kind=full .*deep_sem=([\d.]+)"),
