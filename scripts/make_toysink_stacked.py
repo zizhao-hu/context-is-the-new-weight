@@ -15,9 +15,10 @@ from matplotlib.patches import Patch
 
 OUT = "/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/paper/attention-sink/figures/toy_sink.png"
 
-# (p0, p0sem, common, commonsem)
-TOY = [("full", 0.5770, 0.0190, 0.1190, 0.0100),
-       ("SWA",  0.0000, 0.0000, 0.2280, 0.0410)]
+# (p0, p0sem, dist, distsem) -- W=128 BPE toy, FULL-CAUSAL eval (both models given
+# access to p0), all-heads means, sequence within max context (fulldecomp job 5166394).
+TOY = [("full", 0.2491, 0.0032, 0.0498, 0.0017),
+       ("SWA",  0.1197, 0.0019, 0.0713, 0.0022)]
 CPT = [("base", 0.5855, 0.0031, 0.0479, 0.0011),
        ("full", 0.6404, 0.0046, 0.0537, 0.0018),
        ("SWA",  0.1630, 0.0267, 0.5017, 0.0311)]
