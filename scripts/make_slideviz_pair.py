@@ -41,7 +41,7 @@ SINK = int(_ok[0]) if _ok else int(np.argmax(_recv))   # earliest strong sink co
 X0 = max(0, SINK - 2)                        # view starts 2 tokens left of the sink column
 XSPAN = L // 2                               # half the sequence
 X1 = min(L, X0 + XSPAN)
-ROWQ = list(range(X0 + W - 1, min(L - 1, X1 - 1), 2))   # windows starting inside the view
+ROWQ = list(range(X0 + W - 1, min(L - 1, X1 - 1), 3))   # rows 3 tokens apart
 CMAP = cm.get_cmap("Reds")
 NORM = Normalize(vmin=0.0, vmax=0.35)
 
