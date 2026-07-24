@@ -38,10 +38,10 @@ _recv[0] = 0
 _strong = np.where(_recv > 0.5 * _recv.max())[0]
 _ok = [k for k in _strong if k <= L - W - 6]
 SINK = int(_ok[0]) if _ok else int(np.argmax(_recv))   # earliest strong sink column that fits a window
-X0 = max(0, SINK - 2)                        # view starts 2 tokens left of the sink column
-XSPAN = L // 2                               # half the sequence
-X1 = min(L, X0 + XSPAN)
-ROWQ = list(range(X0 + W - 1, min(L - 1, X1 - 1), 3))   # rows 3 tokens apart
+X0 = max(0, SINK - 7)                        # view starts 7 tokens left of the sink column
+ROWQ = [X0 + W - 1 + 5 * r for r in range(5)]           # 5 rows, 5 tokens apart
+ROWQ = [q for q in ROWQ if q < L]
+X1 = min(L, ROWQ[-1] + 2)                    # view ends at the last predicted token
 CMAP = cm.get_cmap("Reds")
 NORM = Normalize(vmin=0.0, vmax=0.35)
 
