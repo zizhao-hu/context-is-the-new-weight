@@ -235,12 +235,12 @@ an $8$-layer GPT from scratch on WikiText; CPT: Llama-3.2-3B on WikiText under e
 zero-shot on HotpotQA ($n{=}150$; F1 $=$ token overlap, Acc $=$ containment). ppl$_{<C}$ is the
 full-attention deploy within the training length (register-aware for token/prefix rows);
 ppl$_{>C}$ streams $30$k tokens ($30$-bin chunked cache, last bin) at the stated budget; its
-superscript marks the \deploy used for that row (not an error or significance mark): $^{r}$
+superscript marks the deploy used for that row (not an error or significance mark): $^{r}$
 sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink), $^{s}$
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
 S-SWA and its sink variants (E) train only full-window queries, so its ppl$_{<C}$ is undefined ($C/2$ context rows
 unscored). SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
-ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The \base row is the untouched pretrained model at the same deploy budget, the absolute
+ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The base row is the untouched pretrained model at the same deploy budget, the absolute
 reference: it retains the most zero-shot QA (F1 $0.555$; every WikiText CPT trades QA ability for
 domain fit), but its constant-memory deploy depends on the StreamingLLM patch (plain sliding
 collapses to $182$). Remaining asymmetry, stated plainly:
