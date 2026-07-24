@@ -128,7 +128,7 @@ toy = {  # key: (pplC, pplS, sem, marker)
 }
 # late-arriving values injected via CLI:  --set a_pref_ppls=XX.X --set d_pplc=YY.Y
 for arg in sys.argv[2:]:
-    if arg.startswith("--set"): continue
+    if arg.startswith("--set") or arg.startswith("base_"): continue
     k, v = arg.split("=")
     key, fld = k.rsplit("_", 1)
     t = list(toy[key])
