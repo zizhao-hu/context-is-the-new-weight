@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""Build tables/t340suite.tex from the 340M from-scratch lm-eval JSONs.
+
+SWAT-comparable setting: 341M Mistral-style LM, 15B FineWeb tokens, C=2048, W=1024,
+each mask pretrained from scratch. One row per variant, one column per suite task.
+
+Input: <indir>/t340_<tag>_<deploy>.json written by lmeval_sswa.py (keys are task names,
+values carry acc,none / acc_norm,none / perplexity,none).
+Rows are emitted only for variants whose JSON exists, so the table can be built while
+the remaining runs are still training.
+"""
+import json
+import os
+import sys
+
+IN = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser("~/.claude/jobs/f25a34dc/tmp/t340eval")
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                   "paper/attention-sink/tables/t340suite.tex")
+
+# (json tag, deploy, printed label, group)
+ROWS = [
+    ("full",  "full",    "A. full causal",                    "Full-attention pretraining"),
+    ("swa",   "sliding", "B. SWA",                            "Sliding-window pretraining"),
+    ("sswa",  "sliding", "E. S-SWA",                          "Ours: symmetric SWA"),
+    ("mix10", "sliding", r"\quad coverage mix $\alpha{=}.10$", "Ours: symmetric SWA"),
+    ("mix50", "sliding", r"\quad coverage mix $\alpha{=}.50$", "Ours: symmetric SWA"),
+    ("mix75", "sliding", r"\quad coverage mix $\alpha{=}.75$", "Ours: symmetric SWA"),
+]
+TASKS = [("piqa", "PIQA"), ("hellaswag", "Hella"), ("winogrande", "Wino"),
+         ("arc_easy", "ARC-e"), ("arc_challenge", "ARC-c"), ("siqa_pq", "SIQA"),
+         ("boolq", "BoolQ")]
+
+
+def load(tag, deploy):
+    p = os.path.join(IN, "t340_%s_%s.json" % (tag, deploy))
+    if not os.path.exists(p):
+        return None
+    return json.load(open(p))
+
+
+def acc(d, task):
+    v = d.get(task)
+    if v is None:
+        return None
+    a = v.get("acc_norm,none", v.get("acc,none"))
+    return None if a is None else 100.0 * a
+
+
+def main():
+    lines = [r"\begin{table*}[!t]", r"\centering", r"\footnotesize",
+             r"\setlength{\tabcolsep}{3.4pt}",
+             r"\begin{tabular}{l rr rrrrrrr r}", r"\toprule",
+             "model (pretraining) & LMB ppl & LMB & " +
+             " & ".join(t[1] for t in TASKS) + r" & Avg\\", r"\midrule"]
+    group = None
+    n = 0
+    for tag, deploy, label, grp in ROWS:
+        d = load(tag, deploy)
+        if d is None:
+            continue
+        if grp != group:
+            group = grp
+            lines.append(r"\multicolumn{11}{@{}l}{%s}\\" % grp)
+        lmb = d.get("lambada_openai", {})
+        ppl = lmb.get("perplexity,none")
+        lacc = lmb.get("acc,none")
+        cells = [acc(d, t[0]) for t in TASKS]
+        got = [c for c in cells if c is not None]
+        allacc = got + ([100.0 * lacc] if lacc is not None else [])
+        avg = sum(allacc) / len(allacc) if allacc else float("nan")
+        row = "%s & %s & %s & %s & %.1f" % (
+            label,
+            ("%.2f" % ppl) if ppl is not None else "---",
+            ("%.1f" % (100.0 * lacc)) if lacc is not None else "---",
+            " & ".join(("%.1f" % c) if c is not None else "---" for c in cells),
+            avg)
+        lines.append(row + r"\\")
+        n += 1
+    lines += [r"\bottomrule", r"\end{tabular}",
+              r"""\caption{\textbf{Commonsense-reasoning suite} (lm-evaluation-harness, zero-shot) on
+models pretrained \emph{from scratch} under each mask: 341M parameters, 15B FineWeb tokens,
+train context $C{=}2048$, window $W{=}1024$, identical data order and budget across rows. Task
+columns are scored under each model's own deploy (full attention for A, constant-memory sliding
+at $W{=}1024$ for the rest). Avg $=$ mean of the accuracy tasks. LMB ppl $=$ LAMBADA perplexity
+($\downarrow$); all other columns accuracy in \% ($\uparrow$). Same suite and scale as SWAT
+\citep{swat2025}, so rows here are comparable to their from-scratch setting rather than to our
+continued-pretraining tables.}""",
+              r"\label{tab:t340suite}", r"\end{table*}", ""]
+    open(OUT, "w").write("\n".join(lines))
+    print("wrote %s (%d data rows)" % (OUT, n))
+
+
+if __name__ == "__main__":
+    main()
