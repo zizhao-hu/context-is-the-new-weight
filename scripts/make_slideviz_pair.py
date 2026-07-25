@@ -19,8 +19,8 @@ from matplotlib.patches import Rectangle
 from matplotlib.colors import TwoSlopeNorm
 import matplotlib.cm as cm
 
-D1 = "/Users/zizhaohu/.claude/jobs/f25a34dc/tmp/slideviz.npz"
-D2 = "/Users/zizhaohu/.claude/jobs/f25a34dc/tmp/slideviz_sswa.npz"
+D1 = "/Users/zizhaohu/.claude/jobs/f25a34dc/tmp/slideviz_L200.npz"
+D2 = "/Users/zizhaohu/.claude/jobs/f25a34dc/tmp/slideviz_sswa_L200.npz"
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                    "paper/attention-sink/figures/slideviz_seq.png")
 
