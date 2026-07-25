@@ -35,17 +35,16 @@ ATT2, P2 = d2["trained_win"], d2["trained_prob_win"]
 DATT = ATT2 - ATT1                                   # S-SWA minus SWA
 DPROB = np.asarray(P2, dtype=float) - np.asarray(P1, dtype=float)
 
-# first separator-sink column: strongest received column among full-window queries (SWA capture)
-_recv = np.array([ATT1[k + 1:min(k + 1 + W, L), k].mean() if k + 1 < L else 0 for k in range(L)])
-_recv[0] = 0
-_strong = np.where(_recv > 0.5 * _recv.max())[0]
-_ok = [k for k in _strong if k <= L - W - 6]
-SINK = int(_ok[0]) if _ok else int(np.argmax(_recv))   # earliest strong sink column that fits a window
-_the = [i for i, t in enumerate(toks) if t.strip() == "The" and i <= L - W - 6]
-X0 = _the[0] if _the else max(0, SINK - 7)   # view starts at the first "The"
-ROWQ = [X0 + W - 1 + 5 * r for r in range(5)]           # 5 rows, 5 tokens apart
-ROWQ = [q for q in ROWQ if q < L]
-X1 = min(L, ROWQ[-1] + 2)                    # view ends at the last predicted token
+# rows sit at the prediction positions of the passage's content words, in order
+TARGETS = ["4", "Frem", "Main", "M", "Stewart"]
+ROWQ = []
+_floor = W
+for _tgt in TARGETS:
+    _cand = [i for i in range(_floor, L) if toks[i].strip() == _tgt]
+    if _cand:
+        ROWQ.append(_cand[0]); _floor = _cand[0] + 1
+X0 = max(0, min(ROWQ) - W)                   # view starts at the first row's window edge
+X1 = min(L, max(ROWQ) + 2)
 
 # symmetric scale from the cells actually drawn
 _cells = [abs(float(DATT[q, k])) for q in ROWQ for k in range(q - W, q)]
