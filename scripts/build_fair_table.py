@@ -142,16 +142,16 @@ for arg in sys.argv[2:]:
     toy[key] = tuple(t)
 
 ROWS = [
-    ("Full-attention baselines", [
-        ("BASE", "base (no CPT)"),
+    ("base", [
+        ("BASE", "base (no CPT)")]),
+    ("baselines", [                                   # A-D and B-C read as one block, no internal rule
         ("a", "A.\\ full causal"), ("a_tok", "\\quad$+$sink token"), ("a_scal", "\\quad$+$sink scalar"),
         ("a_pref", "\\quad$+$sink prefix"),
-        ("d", "D.\\ Transformer-XL")]),
-    ("Sliding-window baselines", [
+        ("d", "D.\\ Transformer-XL"),
         ("b", "B.\\ SWA"), ("b_tok", "\\quad$+$sink token"), ("b_scal", "\\quad$+$sink scalar"),
         ("b_pref", "\\quad$+$sink prefix"), ("b_rtok", "\\quad$+$riding sink token"),
         ("b_rpref", "\\quad$+$riding sink prefix"), ("c", "C.\\ SWAA (sink$+$window)")]),
-    ("Ours: symmetric SWA", [
+    ("ours", [
         ("e", "E.\\ S-SWA"), ("f_tok", "\\quad$+$fixed sink token"), ("f_pref", "\\quad$+$fixed sink prefix"),
         ("f_scal", "\\quad$+$fixed sink scalar"), ("g_rtok", "\\quad$+$riding sink token"),
         ("g_rpref", "\\quad$+$riding sink prefix")]),
