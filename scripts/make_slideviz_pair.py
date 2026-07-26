@@ -124,7 +124,7 @@ bx.set_ylim(-nz * 1.12, nz * 1.12)
 bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
 bx.tick_params(labelsize=9, length=3)
 bx.set_ylabel(r"mean $\Delta p$", fontsize=10)
-bx.set_title("held-out chunks, 2 seeds per rule", fontsize=10.5, pad=6, loc="left", color="0.25")
+bx.set_title("held-out chunks, 2 runs per rule", fontsize=10.5, pad=6, loc="left", color="0.25")
 bx.text(len(rows) - 0.52, nz * 0.97, "grey $=$ same-rule\nseed spread, per class", fontsize=8.2,
         ha="right", va="top", color="0.45", linespacing=1.15)
 for sp in ("top", "right", "bottom"):
