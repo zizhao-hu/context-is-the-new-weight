@@ -11,10 +11,11 @@ Conventions:
   cc (E/F/G) rows: ppl<C = --- (train only full-window queries)
 Usage: python scripts/build_fair_table.py <fair_dump.txt>
 """
-import re, sys
+import os, re, sys
 
 DUMP = sys.argv[1]
-OUT = "/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/paper/attention-sink/tables/toydeploy.tex"
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                   "paper/attention-sink/tables/toydeploy.tex")
 d = open(DUMP, encoding="utf-8").read()
 
 def f(pat, cast=float):
@@ -25,7 +26,11 @@ def f(pat, cast=float):
 # b-family from W=1024 RESULT lines; token/prefix from register-aware causal (validated)
 # pplS awaits the 30k deep-stream eval (job 5165092); the short-eval 9.97 is NOT comparable
 # to the 30k column and must not be printed. Inject via CLI: base_ppls=<val>.
-BASE = {"pplC": 6.50, "pplC_sem": 0.7, "pplS": None, "hp": (0.346, 0.467), "hp_stream": (None, None)}   # pretrained Llama-3.2-3B (jobs 5166380/81)
+# The no-CPT row must be the model the CPT rows actually start from: Llama-3.2-3B-Instruct
+# (cpt_masks.py default). The pretrained Llama-3.2-3B sits at 6.50/7.72 but is a different
+# model, so putting it here made every CPT row look like a regression (job 5163378 = Instruct,
+# steps=0: full deep 9.29, HotpotQA full .560/.587, streaming .430/.500).
+BASE = {"pplC": 9.29, "pplC_sem": 0.7, "pplS": None, "hp": (0.560, 0.587), "hp_stream": (0.430, 0.500)}
 for arg in sys.argv[2:]:
     if arg.startswith("base_ppls="): BASE["pplS"] = float(arg.split("=")[1])
 for arg in sys.argv[2:]:
@@ -194,7 +199,9 @@ for i, vals in colvals.items():
 
 for row in grid:
     if row[0] == "HDR":
-        body.append("\\multicolumn{9}{@{}l}{%s}\\\\" % row[1]); continue
+        if body:                                  # group headings dropped; keep a rule between groups
+            body.append("\\midrule")
+        continue
     k, label, cells, tmark, sM = row
     out = []
     for i, (v, sem) in enumerate(cells):
@@ -241,7 +248,7 @@ sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink),
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
 S-SWA and its sink variants (E) train only full-window queries, so its ppl$_{<C}$ is undefined ($C/2$ context rows
 unscored). SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
-ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The base row is the untouched pretrained Llama-3.2-3B at the same deploy budget (the CPT rows start from its Instruct variant); its constant-memory deploy depends on the StreamingLLM patch (plain sliding collapses to $157$ at $30$k). Remaining asymmetry, stated plainly:
+ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The base row is Llama-3.2-3B-Instruct with no CPT, the checkpoint every CPT row starts from, at the same deploy budget. Remaining asymmetry, stated plainly:
 at matched loss tokens ($10$M) the S-SWA rows consume $2\\times$ the data tokens of the SWA rows
 ($20$M vs $10$M); bold marks the best point estimate per column.}
 \\label{tab:toydeploy}
