@@ -189,6 +189,7 @@ for gname, members in ROWS:
         cells = [(tC, None), (tS, tsem), (cC, cCs), (sV, None),
                  (F1f, 0.03), (Accf, 0.04), (F1s, 0.03), (Accs, 0.04)]
         grid.append((k, label, cells, tmark, sM))
+        if k == "BASE": continue          # the no-CPT reference is not in the running for best-in-column
         for i, (v, _) in enumerate(cells):
             if v is not None: colvals[i].append(v)
 
@@ -248,7 +249,7 @@ sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink),
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
 S-SWA and its sink variants (E) train only full-window queries, so its ppl$_{<C}$ is undefined ($C/2$ context rows
 unscored). SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
-ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The base row is Llama-3.2-3B-Instruct with no CPT, the checkpoint every CPT row starts from, at the same deploy budget. Remaining asymmetry, stated plainly:
+ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The base row is Llama-3.2-3B-Instruct with no CPT, the checkpoint every CPT row starts from, at the same deploy budget; it is a reference, not a competitor, so bolding marks the best CPT row only. Remaining asymmetry, stated plainly:
 at matched loss tokens ($10$M) the S-SWA rows consume $2\\times$ the data tokens of the SWA rows
 ($20$M vs $10$M); bold marks the best point estimate per column.}
 \\label{tab:toydeploy}
