@@ -1,100 +1,128 @@
 #!/usr/bin/env python3
-"""Paper Fig 5: S-SWA minus SWA on a real sequence, one panel.
+"""Paper Fig 5: what the symmetric loss rule does to next-token probability.
 
-Both models are Qwen2.5-0.5B CPT at W=32 on the same data/steps; the only
-difference is the loss rule (all rows vs full-window rows only). This figure
-shows the difference between them directly: staircase cells are shaded by the
-change in attention the predicted token (blue box) pays each key, and the bars
-on top are the change in p(token | window). Red means S-SWA attends more or is
-more confident, blue means less.
+Top: per-token change in p(token | window), S-SWA minus SWA, on one real WikiText
+sequence, with each token coloured by its class (function word, content word,
+punctuation, digit, subword piece).
 
-Data: slideviz.npz (SWA: trained_win/trained_prob_win) and slideviz_sswa.npz.
+Bottom: the same difference aggregated by token class over a 2x2 design, two seeds
+per loss rule scored on 40 held-out 200-token chunks. The grey band is the
+within-condition (same rule, different data order) difference, i.e. the noise floor.
+
+Data: slideviz{,_sswa}_L200h.npz for the top panel, probsweep_{swa,sswa}{0,1}.npz
+plus probsweep_toks.npz for the bottom.
 """
 import os
+import re
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-from matplotlib.colors import TwoSlopeNorm
-import matplotlib.cm as cm
+from matplotlib.patches import Rectangle, Patch
 
-D1 = "/Users/zizhaohu/.claude/jobs/f25a34dc/tmp/slideviz_L200.npz"
-D2 = "/Users/zizhaohu/.claude/jobs/f25a34dc/tmp/slideviz_sswa_L200.npz"
+T = "/Users/zizhaohu/.claude/jobs/f25a34dc/tmp/"
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                    "paper/attention-sink/figures/slideviz_seq.png")
 
-d1 = np.load(D1, allow_pickle=True)
-d2 = np.load(D2, allow_pickle=True)
-toks = [str(t) for t in d1["tokens"]]
-W = int(d1["W"]); L = int(d1["L"])
-assert list(map(str, d2["tokens"])) == toks, "sequences differ between captures"
+# standard English stop list (NLTK's), so the function-word class is not ad hoc
+STOP = set("""i me my myself we our ours ourselves you your yours yourself yourselves he him his
+himself she her hers herself it its itself they them their theirs themselves what which who whom
+this that these those am is are was were be been being have has had having do does did doing a an
+the and but if or because as until while of at by for with about against between into through
+during before after above below to from up down in out on off over under again further then once
+here there when where why how all any both each few more most other some such no nor not only own
+same so than too very s t can will just don should now""".split())
 
-ATT1, P1 = d1["trained_win"], d1["trained_prob_win"]
-ATT2, P2 = d2["trained_win"], d2["trained_prob_win"]
-DATT = ATT2 - ATT1                                   # S-SWA minus SWA
-DPROB = np.asarray(P2, dtype=float) - np.asarray(P1, dtype=float)
 
-# rows sit at the largest and smallest probability changes inside a compact query range
-QLO, QHI = 110, 140
-_ok = np.arange(max(W, QLO), min(L, QHI + 1))
-_order = _ok[np.argsort(DPROB[_ok])]
-ROWQ = sorted(int(q) for q in list(_order[:3]) + list(_order[-3:]))
-X0 = max(0, min(ROWQ) - W)                   # view starts at the first row's window edge
-X1 = min(L, max(ROWQ) + 2)
+def klass(t):
+    s = t.strip()
+    if s == "":
+        return "whitespace"
+    if re.fullmatch(r"[^\w\s]+", s):
+        return "punctuation"
+    if s.isdigit():
+        return "digit"
+    if not t.startswith(" "):
+        return "subword piece"
+    return "function word" if s.lower() in STOP else "content word"
 
-# symmetric scale from the cells actually drawn
-_cells = [abs(float(DATT[q, k])) for q in ROWQ for k in range(q - W, q)]
-AMAX = max(1e-4, float(np.percentile(_cells, 99)))
-CMAP = matplotlib.colormaps["RdBu_r"]
-NORM = TwoSlopeNorm(vmin=-AMAX, vcenter=0.0, vmax=AMAX)
-PMAX = max(1e-3, float(np.abs(DPROB[X0:X1]).max()))
-BARH = 1.5                                    # rows of vertical space for the bar strip
 
-fig, ax = plt.subplots(figsize=(13.2, 5.0))
-NR = len(ROWQ)
-base = NR + 0.45 + BARH                       # zero line of the probability bars
+ORDER = ["function word", "content word", "punctuation", "digit", "subword piece"]
+COL = {"function word": "#4C72B0", "content word": "#55A868", "punctuation": "#DD5B45",
+       "digit": "#C39B3E", "subword piece": "#8A6BBE", "whitespace": "0.7"}
 
-# probability-difference bars, signed around their own zero line
-ax.plot([X0 - 0.2, X1 + 0.4], [base, base], color="0.55", lw=0.8, zorder=2)
+# ---------------------------------------------------------------- top panel data
+a = np.load(T + "slideviz_L200h.npz", allow_pickle=True)
+b = np.load(T + "slideviz_sswa_L200h.npz", allow_pickle=True)
+toks = [str(x) for x in a["tokens"]]
+W, L = int(a["W"]), int(a["L"])
+dp = np.asarray(b["trained_prob_win"], float) - np.asarray(a["trained_prob_win"], float)
+X0, X1 = 104, min(L, 178)                       # the two-sentence span used earlier
+
+# ------------------------------------------------------------- bottom panel data
+sw = {k: np.load(T + "probsweep_%s.npz" % k) for k in ("swa0", "swa1", "sswa0", "sswa1")}
+P = {k: sw[k]["probs"][:, W:] for k in sw}
+TOKS = np.load(T + "probsweep_toks.npz", allow_pickle=True)["toks"][:, W:]
+EFF = (P["sswa0"] + P["sswa1"]) / 2 - (P["swa0"] + P["swa1"]) / 2
+N1, N2 = P["swa1"] - P["swa0"], P["sswa1"] - P["sswa0"]
+KL = np.array([[klass(str(t)) for t in row] for row in TOKS])
+
+rows = []
+for k in ORDER:
+    m = KL == k
+    n = int(m.sum())
+    if n == 0:
+        continue
+    e = EFF[m]
+    sem = e.std(ddof=1) / np.sqrt(n)
+    noise = max(abs(N1[m].mean()), abs(N2[m].mean()))
+    rows.append((k, n, e.mean(), sem, noise))
+
+# ------------------------------------------------------------------------ figure
+plt.rcParams.update({"font.size": 11})
+fig, (ax, bx) = plt.subplots(2, 1, figsize=(13.2, 5.8),
+                             gridspec_kw={"height_ratios": [1.5, 1.0]})
+
+PMAX = float(np.abs(dp[X0:X1]).max())
+ax.axhline(0, color="0.55", lw=0.8, zorder=2)
 for t in range(X0, X1):
-    v = float(DPROB[t])
-    h = BARH * v / PMAX
-    ax.add_patch(Rectangle((t + 0.05, base), 0.9, h, zorder=3,
-                           fc=("#b2182b" if v >= 0 else "#2166ac"), ec="none"))
-ax.text(X0 - 0.7, base, r"$\Delta p$  ", fontsize=12, ha="right", va="center", color="0.25")
-for _q in ROWQ:                               # mark the bars the rows were chosen from
-    _h = BARH * float(DPROB[_q]) / PMAX
-    ax.add_patch(Rectangle((_q + 0.05, base), 0.9, _h, fill=False, ec="0.25", lw=0.9, zorder=4))
-ax.text(X0 - 0.7, base + BARH * 0.82, "%+.2f " % PMAX, fontsize=9.5, ha="right", va="center", color="#b2182b")
-ax.text(X0 - 0.7, base - BARH * 0.82, "%+.2f " % -PMAX, fontsize=9.5, ha="right", va="center", color="#2166ac")
+    k = klass(toks[t])
+    ax.add_patch(Rectangle((t + 0.08, 0), 0.84, float(dp[t]), fc=COL[k], ec="none", zorder=3))
+    ax.text(t + 0.5, -PMAX * 1.12, toks[t].replace(" ", "·"), fontsize=7.4, rotation=90,
+            ha="center", va="top", color=COL[k])
+ax.set_xlim(X0 - 0.6, X1 + 0.4)
+ax.set_ylim(-PMAX * 1.95, PMAX * 1.15)
+ax.set_yticks([-round(PMAX, 1), 0, round(PMAX, 1)])
+ax.tick_params(labelsize=9.5, length=3)
+ax.set_ylabel(r"$\Delta p$  (S-SWA $-$ SWA)", fontsize=10.5)
+ax.set_xticks([])
+for sp in ("top", "right", "bottom"):
+    ax.spines[sp].set_visible(False)
+ax.legend(handles=[Patch(facecolor=COL[k], label=k) for k in ORDER],
+          loc="upper center", bbox_to_anchor=(0.5, 1.22), ncol=5, frameon=False,
+          fontsize=10, handlelength=1.1, handleheight=0.9, columnspacing=1.4,
+          handletextpad=0.4)
 
-# staircase of attention differences
-for r, q in enumerate(ROWQ):
-    y = NR - 1 - r
-    for k in range(q - W, q):
-        ax.add_patch(Rectangle((k, y), 1, 0.92, fc=CMAP(NORM(float(DATT[q, k]))),
-                               ec="white", lw=0.3))
-    ax.add_patch(Rectangle((q, y), 1, 0.92, fill=False, ec="#1f77b4", lw=1.6))
-    ax.text(q - W - 0.45, y + 0.46, "%d" % q, fontsize=10, ha="right", va="center",
-            color=("#b2182b" if DPROB[q] >= 0 else "#2166ac"), fontweight="bold")
+y = np.arange(len(rows))[::-1]
+nz = max(r[4] for r in rows) * 1.05
+bx.axvspan(-nz, nz, color="0.88", zorder=0)
+bx.axvline(0, color="0.45", lw=0.9, zorder=2)
+for yy, (k, n, e, sem, noise) in zip(y, rows):
+    bx.barh(yy, e, height=0.62, color=COL[k], zorder=3)
+    bx.errorbar(e, yy, xerr=sem, fmt="none", ecolor="0.15", elinewidth=1.0,
+                capsize=2.5, capthick=1.0, zorder=4)
+    bx.text(nz * 0.60, yy, "%+.3f  (n=%d)" % (e, n), fontsize=9.5, va="center", ha="left", color="0.25")
+bx.set_yticks(y)
+bx.set_yticklabels([r[0] for r in rows], fontsize=10.5)
+bx.set_xlim(-nz * 1.15, nz * 1.15)
+bx.set_xlabel(r"mean $\Delta p$ by token class, 40 held-out chunks, two seeds per rule "
+              r"(grey band $=$ same-rule seed difference)", fontsize=10.5)
+bx.tick_params(labelsize=9.5, length=3)
+for sp in ("top", "right", "left"):
+    bx.spines[sp].set_visible(False)
 
-ax.set_xlim(X0 - 4.2, X1 + 0.5)
-ax.set_ylim(-5.7, base + BARH + 0.5)
-ax.set_xticks([]); ax.set_yticks([])
-for sp in ax.spines.values():
-    sp.set_visible(False)
-for t in range(X0, X1):
-    ax.text(t + 0.5, -0.55, toks[t].replace(" ", "·"), fontsize=8.0,
-            rotation=90, ha="center", va="top", color="0.25")
-
-fig.subplots_adjust(left=0.015, right=0.995, top=0.97, bottom=0.02)
-sm = cm.ScalarMappable(norm=NORM, cmap=CMAP)
-cax = ax.inset_axes([X0 + 1.0, -4.65, 13.0, 0.24], transform=ax.transData)
-cb = fig.colorbar(sm, cax=cax, orientation="horizontal")
-cb.set_label(r"$\Delta$ attention (S-SWA $-$ SWA)", fontsize=10, labelpad=2)
-cb.set_ticks([-AMAX, 0, AMAX])
-cb.ax.set_xticklabels(["%+.2f" % -AMAX, "0", "%+.2f" % AMAX])
-cb.ax.tick_params(labelsize=8.5)
+fig.subplots_adjust(left=0.075, right=0.995, top=0.90, bottom=0.13, hspace=0.42)
 fig.savefig(OUT, dpi=220, bbox_inches="tight")
-print("wrote", OUT, "| amax %.4f pmax %.4f" % (AMAX, PMAX))
+print("wrote", OUT)
+for k, n, e, sem, noise in rows:
+    print("  %-15s n=%6d  eff %+.4f +- %.4f   seed-noise %+.4f" % (k, n, e, sem, noise))
