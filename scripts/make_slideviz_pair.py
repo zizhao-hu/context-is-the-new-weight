@@ -60,9 +60,14 @@ dp = np.asarray(b["trained_prob_win"], float) - np.asarray(a["trained_prob_win"]
 X0, X1 = 104, min(L, 156)                       # one sentence span, fits the left panel
 
 # ------------------------------------------------------------- bottom panel data
-sw = {k: np.load(T + "probsweep_%s.npz" % k) for k in ("swa0", "swa1", "sswa0", "sswa1")}
+def _sweep(k):
+    big = T + "probsweep_%s_big.npz" % k
+    return np.load(big if os.path.exists(big) else T + "probsweep_%s.npz" % k)
+
+
+sw = {k: _sweep(k) for k in ("swa0", "swa1", "sswa0", "sswa1")}
 P = {k: sw[k]["probs"][:, W:] for k in sw}
-TOKS = np.load(T + "probsweep_toks.npz", allow_pickle=True)["toks"][:, W:]
+TOKS = np.load(T + "probsweep_toks%s.npz" % ("_big" if os.path.exists(T + "probsweep_swa0_big.npz") else ""), allow_pickle=True)["toks"][:, W:]
 EFF = (P["sswa0"] + P["sswa1"]) / 2 - (P["swa0"] + P["swa1"]) / 2
 N1, N2 = P["swa1"] - P["swa0"], P["sswa1"] - P["sswa0"]
 KL = np.array([[klass(str(t)) for t in row] for row in TOKS])
@@ -100,24 +105,29 @@ for sp in ("top", "right", "bottom"):
     ax.spines[sp].set_visible(False)
 ax.set_title("per token, one passage", fontsize=10.5, pad=6, loc="left", color="0.25")
 
-y = np.arange(len(rows))[::-1]
+x = np.arange(len(rows))
 nz = max(r[4] for r in rows)
-bx.axvspan(-nz, nz, color="0.90", zorder=0, lw=0)
-bx.axvline(0, color="0.45", lw=0.9, zorder=2)
-for yy, (k, n, e, sem, noise) in zip(y, rows):
-    bx.barh(yy, e, height=0.58, color=COL[k], zorder=3)
-    bx.errorbar(e, yy, xerr=sem, fmt="none", ecolor="0.15", elinewidth=1.0,
+bx.axhline(0, color="0.45", lw=0.9, zorder=2)
+for xx, (k, n, e, sem, noise) in zip(x, rows):
+    bx.bar(xx, 2 * noise, width=0.84, bottom=-noise, color="0.90", zorder=0, lw=0)
+    bx.bar(xx, e, width=0.58, color=COL[k], zorder=3)
+    bx.errorbar(xx, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=1.0,
                 capsize=2.2, capthick=0.9, zorder=4)
-bx.set_yticks(y)
-bx.set_yticklabels(["%s\n(n=%d)" % (r[0], r[1]) for r in rows], fontsize=8.8, linespacing=1.15)
-bx.set_xlim(-nz * 1.12, nz * 1.12)
-bx.set_xticks([-round(nz, 2), 0, round(nz, 2)])
+bx.set_xticks(x)
+SHORT = {"function word": "function\nword", "content word": "content\nword",
+         "punctuation & space": "punct.\n& space", "subword piece": "subword\npiece"}
+bx.set_xticklabels([SHORT[r[0]] for r in rows], fontsize=8.8, linespacing=1.2)
+for xx, r in zip(x, rows):
+    bx.text(xx, -nz * 0.93, "n=%s" % (("%.1fk" % (r[1] / 1000)) if r[1] >= 1000 else r[1]),
+            fontsize=7.6, ha="center", va="center", color="0.45")
+bx.set_ylim(-nz * 1.12, nz * 1.12)
+bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
 bx.tick_params(labelsize=9, length=3)
-bx.set_xlabel(r"mean $\Delta p$ by class", fontsize=10)
-bx.set_title("40 held-out chunks, 2 seeds per rule", fontsize=10.5, pad=6, loc="left", color="0.25")
-bx.text(nz * 0.99, len(rows) - 0.62, "same-rule\nseed spread", fontsize=8.2, ha="right",
-        va="top", color="0.45", linespacing=1.15)
-for sp in ("top", "right", "left"):
+bx.set_ylabel(r"mean $\Delta p$", fontsize=10)
+bx.set_title("held-out chunks, 2 seeds per rule", fontsize=10.5, pad=6, loc="left", color="0.25")
+bx.text(len(rows) - 0.52, nz * 0.97, "grey $=$ same-rule\nseed spread, per class", fontsize=8.2,
+        ha="right", va="top", color="0.45", linespacing=1.15)
+for sp in ("top", "right", "bottom"):
     bx.spines[sp].set_visible(False)
 
 fig.legend(handles=[Patch(facecolor=COL[k], label=k) for k in ORDER],
