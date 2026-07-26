@@ -31,6 +31,15 @@ ROWS = [
 TASKS = [("piqa", "PIQA"), ("hellaswag", "Hella"), ("winogrande", "Wino"),
          ("arc_easy", "ARC-e"), ("arc_challenge", "ARC-c"), ("siqa_pq", "SIQA"),
          ("boolq", "BoolQ")]
+# random / majority-class baseline per task; cells at or below it carry no signal
+BASE = {"lambada_openai": 0.0, "piqa": 50.0, "hellaswag": 25.0, "winogrande": 50.0,
+        "arc_easy": 25.0, "arc_challenge": 25.0, "siqa_pq": 33.3, "boolq": 62.2}
+
+
+def mark(task, v):
+    if v is None:
+        return "---"
+    return (r"\textcolor{black!45}{%.1f}" % v) if v <= BASE.get(task, 0.0) else "%.1f" % v
 
 
 def load(tag, deploy):
@@ -72,7 +81,7 @@ def main():
         row = "%s & %s & %s & %.1f" % (
             label,
             ("%.1f" % (100.0 * lacc)) if lacc is not None else "---",
-            " & ".join(("%.1f" % c) if c is not None else "---" for c in cells),
+            " & ".join(mark(t[0], c) for t, c in zip(TASKS, cells)),
             avg)
         lines.append(row + r"\\")
         n += 1
@@ -83,7 +92,8 @@ vocabulary, global batch $0.5$M tokens, train context $C{=}2048$, window $W{=}10
 data order and budget across rows. Task columns are scored under each model's own deploy (full
 attention for A, constant-memory sliding at $W{=}1024$ for the rest). Every column is accuracy in \% ($\uparrow$): length-normalised accuracy for PIQA, HellaSwag
 and both ARC splits, plain accuracy for LAMBADA, WinoGrande, SIQA and BoolQ. Avg $=$ mean of the
-eight. We follow SWAT's protocol \citep{swat2025} in model size, token budget, batch and
+eight. Greyed cells sit at or below the task's random or majority-class baseline, where the
+ordering between rows carries no signal. We follow SWAT's protocol \citep{swat2025} in model size, token budget, batch and
 vocabulary, but train at $C{=}2048$ rather than $4096$ and on FineWeb rather than their corpus,
 so these rows are comparable to each other and not to their published numbers. All rows are
 sink-free: they isolate the loss rule.}""",
