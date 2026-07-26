@@ -51,8 +51,8 @@ def acc(d, task):
 def main():
     lines = [r"\begin{table*}[!t]", r"\centering", r"\footnotesize",
              r"\setlength{\tabcolsep}{3.4pt}",
-             r"\begin{tabular}{l rr rrrrrrr r}", r"\toprule",
-             "model (pretraining) & LMB ppl & LMB & " +
+             r"\begin{tabular}{l r rrrrrrr r}", r"\toprule",
+             "model (pretraining) & LMB & " +
              " & ".join(t[1] for t in TASKS) + r" & Avg\\", r"\midrule"]
     group = None
     n = 0
@@ -62,17 +62,15 @@ def main():
             continue
         if grp != group:
             group = grp
-            lines.append(r"\multicolumn{11}{@{}l}{%s}\\" % grp)
+            lines.append(r"\multicolumn{10}{@{}l}{%s}\\" % grp)
         lmb = d.get("lambada_openai", {})
-        ppl = lmb.get("perplexity,none")
         lacc = lmb.get("acc,none")
         cells = [acc(d, t[0]) for t in TASKS]
         got = [c for c in cells if c is not None]
         allacc = got + ([100.0 * lacc] if lacc is not None else [])
         avg = sum(allacc) / len(allacc) if allacc else float("nan")
-        row = "%s & %s & %s & %s & %.1f" % (
+        row = "%s & %s & %s & %.1f" % (
             label,
-            ("%.2f" % ppl) if ppl is not None else "---",
             ("%.1f" % (100.0 * lacc)) if lacc is not None else "---",
             " & ".join(("%.1f" % c) if c is not None else "---" for c in cells),
             avg)
@@ -83,9 +81,9 @@ def main():
 pretrained \emph{from scratch} under each mask: 341M parameters, 15B FineWeb tokens, Llama-2
 vocabulary, global batch $0.5$M tokens, train context $C{=}2048$, window $W{=}1024$, identical
 data order and budget across rows. Task columns are scored under each model's own deploy (full
-attention for A, constant-memory sliding at $W{=}1024$ for the rest). Avg $=$ mean of the
-accuracy tasks. LMB ppl $=$ LAMBADA perplexity ($\downarrow$); all other columns accuracy in \%
-($\uparrow$). We follow SWAT's protocol \citep{swat2025} in model size, token budget, batch and
+attention for A, constant-memory sliding at $W{=}1024$ for the rest). Every column is accuracy in \% ($\uparrow$): length-normalised accuracy for PIQA, HellaSwag
+and both ARC splits, plain accuracy for LAMBADA, WinoGrande, SIQA and BoolQ. Avg $=$ mean of the
+eight. We follow SWAT's protocol \citep{swat2025} in model size, token budget, batch and
 vocabulary, but train at $C{=}2048$ rather than $4096$ and on FineWeb rather than their corpus,
 so these rows are comparable to each other and not to their published numbers. All rows are
 sink-free: they isolate the loss rule.}""",
