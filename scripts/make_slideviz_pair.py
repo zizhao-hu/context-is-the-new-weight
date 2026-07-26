@@ -35,8 +35,9 @@ ATT2, P2 = d2["trained_win"], d2["trained_prob_win"]
 DATT = ATT2 - ATT1                                   # S-SWA minus SWA
 DPROB = np.asarray(P2, dtype=float) - np.asarray(P1, dtype=float)
 
-# rows sit at the three largest and three smallest per-token probability changes
-_ok = np.arange(L)[(np.arange(L) >= W)]
+# rows sit at the largest and smallest probability changes inside a compact query range
+QLO, QHI = 110, 140
+_ok = np.arange(max(W, QLO), min(L, QHI + 1))
 _order = _ok[np.argsort(DPROB[_ok])]
 ROWQ = sorted(int(q) for q in list(_order[:3]) + list(_order[-3:]))
 X0 = max(0, min(ROWQ) - W)                   # view starts at the first row's window edge
@@ -84,7 +85,7 @@ ax.set_xticks([]); ax.set_yticks([])
 for sp in ax.spines.values():
     sp.set_visible(False)
 for t in range(X0, X1):
-    ax.text(t + 0.5, -0.55, toks[t].replace(" ", "·"), fontsize=6.2,
+    ax.text(t + 0.5, -0.55, toks[t].replace(" ", "·"), fontsize=8.0,
             rotation=90, ha="center", va="top", color="0.25")
 
 fig.subplots_adjust(left=0.015, right=0.995, top=0.97, bottom=0.02)
