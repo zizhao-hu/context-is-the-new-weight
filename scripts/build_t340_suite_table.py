@@ -25,6 +25,8 @@ ROWS = [
     ("mix10", "sliding", r"\quad coverage mix $\alpha{=}.10$", "Ours: symmetric SWA"),
     ("mix50", "sliding", r"\quad coverage mix $\alpha{=}.50$", "Ours: symmetric SWA"),
     ("mix75", "sliding", r"\quad coverage mix $\alpha{=}.75$", "Ours: symmetric SWA"),
+    ("mix0_n8", "sliding", r"\quad coverage only, $n{=}8$ unscored", "Ours: symmetric SWA"),
+    ("mix0_n256", "sliding", r"\quad coverage only, $n{=}256$ unscored", "Ours: symmetric SWA"),
 ]
 TASKS = [("piqa", "PIQA"), ("hellaswag", "Hella"), ("winogrande", "Wino"),
          ("arc_easy", "ARC-e"), ("arc_challenge", "ARC-c"), ("siqa_pq", "SIQA"),
