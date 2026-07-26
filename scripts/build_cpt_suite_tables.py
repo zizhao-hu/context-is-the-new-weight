@@ -116,31 +116,32 @@ ALPHA1 = {"base": "sswa", "tok": "sswa_token", "pref": "sswa_prefix", "scal": "s
 def grid_table():
     L = [r"\begin{table*}[t]", r"\centering", r"\footnotesize",
          r"\setlength{\tabcolsep}{4.6pt}",
-         r"\begin{tabular*}{\textwidth}{@{}l@{\extracolsep{\fill}} rrr rrr rrr r@{}}", r"\toprule",
-         r" & \multicolumn{3}{c}{$n{=}4$ unscored rows} & \multicolumn{3}{c}{$n{=}8$} & "
-         r"\multicolumn{3}{c}{$n{=}16$} & \multicolumn{1}{c}{S-SWA}\\",
-         r"\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}\cmidrule(l){11-11}",
-         r"sink design & \multicolumn{1}{c}{$\alpha{=}.10$} & \multicolumn{1}{c}{$.50$} & "
+         r"\begin{tabular*}{\textwidth}{@{}l@{\extracolsep{\fill}} r rrr rrr rrr r@{}}", r"\toprule",
+         r" & \multicolumn{1}{c}{SWA} & \multicolumn{3}{c}{$n{=}4$ unscored rows} & "
+         r"\multicolumn{3}{c}{$n{=}8$} & \multicolumn{3}{c}{$n{=}16$} & \multicolumn{1}{c}{S-SWA}\\",
+         r"\cmidrule(lr){2-2}\cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-11}\cmidrule(l){12-12}",
+         r"sink design & \multicolumn{1}{c}{$\alpha{=}0$} & \multicolumn{1}{c}{$\alpha{=}.10$} & \multicolumn{1}{c}{$.50$} & "
          r"\multicolumn{1}{c}{$.75$} & \multicolumn{1}{c}{$.10$} & \multicolumn{1}{c}{$.50$} & "
          r"\multicolumn{1}{c}{$.75$} & \multicolumn{1}{c}{$.10$} & \multicolumn{1}{c}{$.50$} & "
          r"\multicolumn{1}{c}{$.75$} & \multicolumn{1}{c}{$\alpha{=}1$}\\", r"\midrule"]
     for key, label in DESIGNS:
-        row = []
+        row = [grid_avg("a0_%s" % key)]                       # alpha=0 endpoint, same family
         for n in (4, 8, 16):
             for al in (10, 50, 75):
-                v = grid_avg("n%d_a%d_%s" % (n, al, key))
-                row.append("%.1f" % v if v is not None else "---")
-        ref = cells(ALPHA1[key])
-        refv = "---"
-        if ref:
-            ok = [x for x in ref if x is not None]
-            refv = "%.1f" % (sum(ok) / len(ok))
-        L.append("%s & %s & %s\\\\" % (label, " & ".join(row), refv))
+                row.append(grid_avg("n%d_a%d_%s" % (n, al, key)))
+        row.append(grid_avg("a100_%s" % key))                 # alpha=1 endpoint, same family
+        if row[-1] is None:                                   # fall back to the main-family S-SWA row
+            ref = cells(ALPHA1[key])
+            if ref:
+                ok = [x for x in ref if x is not None]
+                row[-1] = sum(ok) / len(ok)
+        L.append("%s & %s\\\\" % (label, " & ".join("%.1f" % v if v is not None else "---" for v in row)))
     L += [r"\bottomrule", r"\end{tabular*}",
           r"""\caption{Commonsense-suite average across the coverage grid (Llama-3.2-3B CPT, sliding
 deploy at $W{=}1024$; $\alpha$ $=$ fraction of symmetric steps, the remaining steps score all but
-the first $n$ context rows; the $\alpha{=}1$ column is pure S-SWA from
-Tab.~\ref{tab:commonsense}), same metric rule as that table. Any coverage at all recovers most of
+the first $n$ context rows. Both endpoints are run in this same family: $\alpha{=}0$ scores every
+row (plain SWA) and $\alpha{=}1$ scores only full-window rows (pure S-SWA), so the sweep is paired
+throughout. Same metric rule as Tab.~\ref{tab:commonsense}. Any coverage at all recovers most of
 pure S-SWA's short-context damage: every mixed cell scores $47$--$57$ versus bare S-SWA's $40.9$.
 Beyond that the grid resolves little: neither $n$ nor $\alpha$ shows a monotone trend, each cell is
 a single run without repeats, and nominally similar cells differ by up to $9$ points, so read the
