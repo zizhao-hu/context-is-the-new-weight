@@ -35,14 +35,10 @@ ATT2, P2 = d2["trained_win"], d2["trained_prob_win"]
 DATT = ATT2 - ATT1                                   # S-SWA minus SWA
 DPROB = np.asarray(P2, dtype=float) - np.asarray(P1, dtype=float)
 
-# rows sit at the prediction positions of the passage's content words, in order
-TARGETS = ["4", "Frem", "Main", "M", "Stewart"]
-ROWQ = []
-_floor = W
-for _tgt in TARGETS:
-    _cand = [i for i in range(_floor, L) if toks[i].strip() == _tgt]
-    if _cand:
-        ROWQ.append(_cand[0]); _floor = _cand[0] + 1
+# rows sit at the three largest and three smallest per-token probability changes
+_ok = np.arange(L)[(np.arange(L) >= W)]
+_order = _ok[np.argsort(DPROB[_ok])]
+ROWQ = sorted(int(q) for q in list(_order[:3]) + list(_order[-3:]))
 X0 = max(0, min(ROWQ) - W)                   # view starts at the first row's window edge
 X1 = min(L, max(ROWQ) + 2)
 
@@ -66,8 +62,11 @@ for t in range(X0, X1):
     ax.add_patch(Rectangle((t + 0.05, base), 0.9, h, zorder=3,
                            fc=("#b2182b" if v >= 0 else "#2166ac"), ec="none"))
 ax.text(X0 - 0.7, base, r"$\Delta p$  ", fontsize=12, ha="right", va="center", color="0.25")
-ax.text(X1 + 0.2, base + BARH * 0.82, "%+.2f" % PMAX, fontsize=9.5, ha="right", va="center", color="#b2182b")
-ax.text(X1 + 0.2, base - BARH * 0.82, "%+.2f" % -PMAX, fontsize=9.5, ha="right", va="center", color="#2166ac")
+for _q in ROWQ:                               # mark the bars the rows were chosen from
+    _h = BARH * float(DPROB[_q]) / PMAX
+    ax.add_patch(Rectangle((_q + 0.05, base), 0.9, _h, fill=False, ec="0.25", lw=0.9, zorder=4))
+ax.text(X0 - 0.7, base + BARH * 0.82, "%+.2f " % PMAX, fontsize=9.5, ha="right", va="center", color="#b2182b")
+ax.text(X0 - 0.7, base - BARH * 0.82, "%+.2f " % -PMAX, fontsize=9.5, ha="right", va="center", color="#2166ac")
 
 # staircase of attention differences
 for r, q in enumerate(ROWQ):
@@ -77,7 +76,7 @@ for r, q in enumerate(ROWQ):
                                ec="white", lw=0.3))
     ax.add_patch(Rectangle((q, y), 1, 0.92, fill=False, ec="#1f77b4", lw=1.6))
     ax.text(q - W - 0.45, y + 0.46, "%d" % q, fontsize=10, ha="right", va="center",
-            color="0.3")
+            color=("#b2182b" if DPROB[q] >= 0 else "#2166ac"), fontweight="bold")
 
 ax.set_xlim(X0 - 4.2, X1 + 0.5)
 ax.set_ylim(-5.7, base + BARH + 0.5)
@@ -85,7 +84,7 @@ ax.set_xticks([]); ax.set_yticks([])
 for sp in ax.spines.values():
     sp.set_visible(False)
 for t in range(X0, X1):
-    ax.text(t + 0.5, -0.55, toks[t].replace(" ", "·"), fontsize=8.5,
+    ax.text(t + 0.5, -0.55, toks[t].replace(" ", "·"), fontsize=6.2,
             rotation=90, ha="center", va="top", color="0.25")
 
 fig.subplots_adjust(left=0.015, right=0.995, top=0.97, bottom=0.02)
