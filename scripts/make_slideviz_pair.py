@@ -41,15 +41,15 @@ def klass(t):
     if re.fullmatch(r"[^\w\s]+", s):
         return "punctuation"
     if s.isdigit():
-        return "digit"
+        return "content word"          # digits carry content, whether or not word-initial
     if not t.startswith(" "):
         return "subword piece"
     return "function word" if s.lower() in STOP else "content word"
 
 
-ORDER = ["function word", "content word", "punctuation", "digit", "subword piece"]
+ORDER = ["function word", "content word", "punctuation", "subword piece"]
 COL = {"function word": "#4C72B0", "content word": "#55A868", "punctuation": "#DD5B45",
-       "digit": "#C39B3E", "subword piece": "#8A6BBE", "whitespace": "0.7"}
+       "subword piece": "#8A6BBE", "whitespace": "0.7"}
 
 # ---------------------------------------------------------------- top panel data
 a = np.load(T + "slideviz_L200h.npz", allow_pickle=True)
@@ -99,7 +99,7 @@ ax.set_xticks([])
 for sp in ("top", "right", "bottom"):
     ax.spines[sp].set_visible(False)
 ax.legend(handles=[Patch(facecolor=COL[k], label=k) for k in ORDER],
-          loc="upper center", bbox_to_anchor=(0.5, 1.22), ncol=5, frameon=False,
+          loc="upper center", bbox_to_anchor=(0.5, 1.22), ncol=4, frameon=False,
           fontsize=10, handlelength=1.1, handleheight=0.9, columnspacing=1.4,
           handletextpad=0.4)
 
