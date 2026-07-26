@@ -77,14 +77,16 @@ def main():
         lines.append(row + r"\\")
         n += 1
     lines += [r"\bottomrule", r"\end{tabular}",
-              r"""\caption{\textbf{Commonsense-reasoning suite} (lm-evaluation-harness, zero-shot) on
-models pretrained \emph{from scratch} under each mask: 341M parameters, 15B FineWeb tokens,
-train context $C{=}2048$, window $W{=}1024$, identical data order and budget across rows. Task
-columns are scored under each model's own deploy (full attention for A, constant-memory sliding
-at $W{=}1024$ for the rest). Avg $=$ mean of the accuracy tasks. LMB ppl $=$ LAMBADA perplexity
-($\downarrow$); all other columns accuracy in \% ($\uparrow$). Same suite and scale as SWAT
-\citep{swat2025}, so rows here are comparable to their from-scratch setting rather than to our
-continued-pretraining tables.}""",
+              r"""\caption{\textbf{Commonsense-reasoning suite} (lm-evaluation-harness, zero-shot) on models
+pretrained \emph{from scratch} under each mask: 341M parameters, 15B FineWeb tokens, Llama-2
+vocabulary, global batch $0.5$M tokens, train context $C{=}2048$, window $W{=}1024$, identical
+data order and budget across rows. Task columns are scored under each model's own deploy (full
+attention for A, constant-memory sliding at $W{=}1024$ for the rest). Avg $=$ mean of the
+accuracy tasks. LMB ppl $=$ LAMBADA perplexity ($\downarrow$); all other columns accuracy in \%
+($\uparrow$). We follow SWAT's protocol \citep{swat2025} in model size, token budget, batch and
+vocabulary, but train at $C{=}2048$ rather than $4096$ and on FineWeb rather than their corpus,
+so these rows are comparable to each other and not to their published numbers. All rows are
+sink-free: they isolate the loss rule.}""",
               r"\label{tab:t340suite}", r"\end{table*}", ""]
     open(OUT, "w").write("\n".join(lines))
     print("wrote %s (%d data rows)" % (OUT, n))

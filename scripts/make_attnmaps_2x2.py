@@ -3,6 +3,7 @@ attn4_dump.py on the cluster: Qwen2.5-0.5B, W=256, passage chosen for strongest
 base p0 sink). Panels: base full / base sliding / windowed CPT / startup CPT.
 32-token bin means of row-normalised attention; log color scale; borderless.
 """
+import os
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
@@ -12,7 +13,8 @@ from matplotlib.patches import Rectangle
 import matplotlib.cm as cm
 
 NPZ = "/Users/zizhaohu/.claude/jobs/f25a34dc/tmp/attn4.npz"
-OUT = "/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/paper/attention-sink/figures/attn_binned_2x2.png"
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                   "paper/attention-sink/figures/attn_binned_2x2.png")
 T, W, P, BIN = 1536, 256, 256, 32
 NBIN = T // BIN
 d = np.load(NPZ)
@@ -37,7 +39,7 @@ PANELS = [
     ("symmetric sliding window",        binmap(d["windowed"], slide, blank_rows=W)),
     ("$+$ trainable sink tokens",       binmap(d["startup"], slide_pfx, blank_rows=W + NP)),
 ]
-ANNOT = {2: "history accum.\n(no prediction)", 3: "8 trainable sink tokens\n(always attended)"}
+ANNOT = {2: "no prediction", 3: "8 trainable sink tokens\n(always attended)"}
 CYAN = "#1899c2"
 norm = LogNorm(vmin=2e-4, vmax=0.5, clip=True)
 
