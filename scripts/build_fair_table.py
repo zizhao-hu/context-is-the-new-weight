@@ -67,6 +67,11 @@ def ds(model, kind):   # DSTREAM deep
 def rgv(tag):          # RESULT_REGDEPLOY sliding deep
     return f(r"RESULT_REGDEPLOY mask=\S+ tag=%s reg=\S+/sliding \| avg [\d.]+ deep ([\d.]+)" % re.escape(tag))
 
+# E rows under a full-attention deploy, deep bin: measured, but out of distribution
+# (trained at W=1024, deployed with 2048 of reach). From the bin0 and ccx runs.
+E_FULL = {"e": 13.87, "f_tok": 13.38, "f_pref": 104.58, "f_scal": 9.65,
+          "g_rtok": 9.52, "g_rpref": 9.78}
+
 pplS = {  # value, marker: s=StreamingLLM, w=own sliding, r=registers
     "a":      (ds("a", "streamingLLM"), "s"),
     "a_tok":  (rgv("j_iid"), "r"),
@@ -189,7 +194,7 @@ for gname, members in ROWS:
     for k, label in members:
         tC, tS, tsem, tmark = toy[k]
         cC, cCs = pplC.get(k), pplC_sem.get(k)
-        if k in ("e", "f_tok", "f_pref", "f_scal", "g_rtok", "g_rpref"): cC = cCs = None
+        if k in E_FULL: cC, cCs = E_FULL[k], None
         sV, sM = pplS[k]
         F1f, Accf, F1s, Accs = task[k]
         cells = [(tC, None), (tS, tsem), (cC, cCs), (sV, None),
@@ -234,7 +239,7 @@ tex = """\\begin{table*}[!t]
 \\toprule
  & \\multicolumn{2}{c}{Pretraining} & \\multicolumn{6}{c}{Continued pretraining: Llama-3.2-3B}\\\\
 \\cmidrule(lr){2-3}\\cmidrule(lr){4-9}
- & \\multicolumn{2}{c}{\\footnotesize WikiText ($\\downarrow$)} & \\multicolumn{2}{c}{\\footnotesize WikiText ($\\downarrow$)} & \\multicolumn{4}{c}{\\footnotesize HotpotQA, zero-shot ($\\uparrow$)}\\\\
+ & \\multicolumn{2}{c}{\\footnotesize \\textbf{task:} WikiText ($\\downarrow$)} & \\multicolumn{2}{c}{\\footnotesize \\textbf{task:} WikiText ($\\downarrow$)} & \\multicolumn{4}{c}{\\footnotesize \\textbf{knowledge-retain:} HotpotQA, zero-shot ($\\uparrow$)}\\\\
 \\cmidrule(lr){2-3}\\cmidrule(lr){4-5}\\cmidrule(lr){6-9}
  & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream} & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream} & \\multicolumn{2}{c}{\\footnotesize full} & \\multicolumn{2}{c}{\\footnotesize stream}\\\\
 \\cmidrule(lr){6-7}\\cmidrule(lr){8-9}
@@ -253,8 +258,10 @@ ppl$_{>C_{\\max}}$ streams $30$k tokens ($30$-bin chunked cache, last bin) at th
 superscript marks the deploy used for that row (not an error or significance mark): $^{r}$
 sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink), $^{s}$
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
-S-SWA and its sink variants (E) never score the first $W$ rows of a chunk, so their
-within-context cells are left empty. SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
+S-SWA and its sink variants (E) never score the first $W$ rows of a chunk; their
+within-context cells are measured but out of distribution, since a full-attention deploy lets them
+reach $2048$ tokens back when they only ever trained at $W{=}1024$, and two of the fixed-sink rows
+break outright under it. SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
 ppl$_{<C_{\\max}}$ and CPT ppl$_{>C_{\\max}}$ are single pooled estimates. The base row is Llama-3.2-3B-Instruct with no CPT, the checkpoint every CPT row starts from, at the same deploy budget; it is a reference, not a competitor, so bolding marks the best CPT row only. Remaining asymmetry, stated plainly:
 at matched loss tokens ($10$M) the S-SWA rows consume $2\\times$ the data tokens of the SWA rows
 ($20$M vs $10$M); bold marks the best point estimate per column.}
