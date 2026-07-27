@@ -144,17 +144,23 @@ for arg in sys.argv[2:]:
 ROWS = [
     ("base", [
         ("BASE", "base (no CPT)")]),
-    ("baselines", [                                   # A-D and B-C read as one block, no internal rule
-        ("a", "A.\\ full causal"), ("a_tok", "\\quad$+$sink token"), ("a_scal", "\\quad$+$sink scalar"),
-        ("a_pref", "\\quad$+$sink prefix"),
-        ("d", "D.\\ Transformer-XL"),
-        ("b", "B.\\ SWA"), ("b_tok", "\\quad$+$sink token"), ("b_scal", "\\quad$+$sink scalar"),
-        ("b_pref", "\\quad$+$sink prefix"), ("b_rtok", "\\quad$+$riding sink token"),
-        ("b_rpref", "\\quad$+$riding sink prefix"), ("c", "C.\\ SWAA (sink$+$window)")]),
+    ("baselines", [                                   # A-E in order, no internal rule among the baselines
+        ("a", "A.\\ full causal"),
+        ("a_tok", "\\quad$+$trainable sink token"), ("a_scal", "\\quad$+$trainable sink scalar"),
+        ("a_pref", "\\quad$+$trainable sink prefix"),
+        ("b", "B.\\ SWA"),
+        ("b_tok", "\\quad$+$trainable sink token"), ("b_scal", "\\quad$+$trainable sink scalar"),
+        ("b_pref", "\\quad$+$trainable sink prefix"),
+        ("b_rtok", "\\quad$+$trainable riding sink token"),
+        ("b_rpref", "\\quad$+$trainable riding sink prefix"),
+        ("c", "C.\\ SWAA (sink$+$window)"),
+        ("d", "D.\\ Transformer-XL")]),
     ("ours", [
-        ("e", "E.\\ S-SWA"), ("f_tok", "\\quad$+$fixed sink token"), ("f_pref", "\\quad$+$fixed sink prefix"),
-        ("f_scal", "\\quad$+$fixed sink scalar"), ("g_rtok", "\\quad$+$riding sink token"),
-        ("g_rpref", "\\quad$+$riding sink prefix")]),
+        ("e", "E.\\ S-SWA"),
+        ("f_tok", "\\quad$+$trainable fixed sink token"), ("f_pref", "\\quad$+$trainable fixed sink prefix"),
+        ("f_scal", "\\quad$+$trainable fixed sink scalar"),
+        ("g_rtok", "\\quad$+$trainable riding sink token"),
+        ("g_rpref", "\\quad$+$trainable riding sink prefix")]),
 ]
 
 def fmt(v, dec=2, sem=None):
@@ -232,24 +238,25 @@ tex = """\\begin{table*}[!t]
 \\cmidrule(lr){2-3}\\cmidrule(lr){4-5}\\cmidrule(lr){6-9}
  & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream} & \\multicolumn{1}{c}{\\footnotesize full} & \\multicolumn{1}{c}{\\footnotesize stream} & \\multicolumn{2}{c}{\\footnotesize full} & \\multicolumn{2}{c}{\\footnotesize stream}\\\\
 \\cmidrule(lr){6-7}\\cmidrule(lr){8-9}
-mask (training) & \\multicolumn{1}{c}{ppl$_{<C}$} & \\multicolumn{1}{c}{ppl$_{>C}$} & \\multicolumn{1}{c}{ppl$_{<C}$} & \\multicolumn{1}{c}{ppl$_{>C}$} & \\multicolumn{1}{c}{F1} & \\multicolumn{1}{c}{Acc} & \\multicolumn{1}{c}{F1} & \\multicolumn{1}{c}{Acc}\\\\
+mask (training) & \\multicolumn{1}{c}{ppl$_{<C_{\\mathrm{skip}}}$} & \\multicolumn{1}{c}{ppl$_{>C_{\\mathrm{skip}}}$} & \\multicolumn{1}{c}{ppl$_{<C_{\\mathrm{skip}}}$} & \\multicolumn{1}{c}{ppl$_{>C_{\\mathrm{skip}}}$} & \\multicolumn{1}{c}{F1} & \\multicolumn{1}{c}{Acc} & \\multicolumn{1}{c}{F1} & \\multicolumn{1}{c}{Acc}\\\\
 \\midrule
 %s
 \\bottomrule
 \\end{tabular*}
 \\caption{\\textbf{One picture across pretraining, continued pretraining, and a downstream task,
-window-matched.} Every row shares the training chunk ($C{=}256$ toy, $2048$ CPT) and the deploy
+window-matched.} $C_{\\mathrm{skip}}$ is the number of context rows the loss skips: $0$ for A--D,
+the window $W$ for S-SWA (E). Every row shares the training chunk ($256$ toy, $2048$ CPT) and the deploy
 budget ($W{=}128$ toy, $1024$ CPT); the SWA family is retrained at the matched window. Pretraining:
 an $8$-layer GPT from scratch on WikiText; CPT: Llama-3.2-3B on WikiText under each mask, scored
-zero-shot on HotpotQA ($n{=}150$; F1 $=$ token overlap, Acc $=$ containment). ppl$_{<C}$ is the
+zero-shot on HotpotQA ($n{=}150$; F1 $=$ token overlap, Acc $=$ containment). ppl$_{<C_{\\mathrm{skip}}}$ is the
 full-attention deploy within the training length (register-aware for token/prefix rows);
-ppl$_{>C}$ streams $30$k tokens ($30$-bin chunked cache, last bin) at the stated budget; its
+ppl$_{>C_{\\mathrm{skip}}}$ streams $30$k tokens ($30$-bin chunked cache, last bin) at the stated budget; its
 superscript marks the deploy used for that row (not an error or significance mark): $^{r}$
 sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink), $^{s}$
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
-S-SWA and its sink variants (E) train only full-window queries, so its ppl$_{<C}$ is undefined ($C/2$ context rows
-unscored). SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
-ppl$_{<C}$ and CPT ppl$_{>C}$ are single pooled estimates. The base row is Llama-3.2-3B-Instruct with no CPT, the checkpoint every CPT row starts from, at the same deploy budget; it is a reference, not a competitor, so bolding marks the best CPT row only. Remaining asymmetry, stated plainly:
+S-SWA and its sink variants (E) skip $C_{\\mathrm{skip}}{=}W$ rows, so a within-context
+number would score positions their loss never trained; those cells are left empty. SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
+ppl$_{<C_{\\mathrm{skip}}}$ and CPT ppl$_{>C_{\\mathrm{skip}}}$ are single pooled estimates. The base row is Llama-3.2-3B-Instruct with no CPT, the checkpoint every CPT row starts from, at the same deploy budget; it is a reference, not a competitor, so bolding marks the best CPT row only. Remaining asymmetry, stated plainly:
 at matched loss tokens ($10$M) the S-SWA rows consume $2\\times$ the data tokens of the SWA rows
 ($20$M vs $10$M); bold marks the best point estimate per column.}
 \\label{tab:toydeploy}
