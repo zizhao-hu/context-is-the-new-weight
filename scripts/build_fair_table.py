@@ -151,21 +151,21 @@ ROWS = [
         ("BASE", "base (no CPT)")]),
     ("baselines", [                                   # A-E in order, no internal rule among the baselines
         ("a", "A.\\ full causal"),
-        ("a_tok", "\\quad$+$trainable sink token"), ("a_scal", "\\quad$+$trainable sink scalar"),
-        ("a_pref", "\\quad$+$trainable sink prefix"),
+        ("a_tok", "\\quad$+$trainable p0 sink token"), ("a_scal", "\\quad$+$trainable p0 sink scalar"),
+        ("a_pref", "\\quad$+$trainable p0 sink prefix"),
         ("b", "B.\\ SWA"),
-        ("b_tok", "\\quad$+$trainable sink token"), ("b_scal", "\\quad$+$trainable sink scalar"),
-        ("b_pref", "\\quad$+$trainable sink prefix"),
-        ("b_rtok", "\\quad$+$trainable riding sink token"),
-        ("b_rpref", "\\quad$+$trainable riding sink prefix"),
+        ("b_tok", "\\quad$+$trainable p0 sink token"), ("b_scal", "\\quad$+$trainable p0 sink scalar"),
+        ("b_pref", "\\quad$+$trainable p0 sink prefix"),
+        ("b_rtok", "\\quad$+$trainable sliding sink token"),
+        ("b_rpref", "\\quad$+$trainable sliding sink prefix"),
         ("c", "C.\\ SWAA (sink$+$window)"),
         ("d", "D.\\ Transformer-XL")]),
     ("ours", [
         ("e", "E.\\ S-SWA"),
-        ("f_tok", "\\quad$+$trainable fixed sink token"), ("f_pref", "\\quad$+$trainable fixed sink prefix"),
-        ("f_scal", "\\quad$+$trainable fixed sink scalar"),
-        ("g_rtok", "\\quad$+$trainable riding sink token"),
-        ("g_rpref", "\\quad$+$trainable riding sink prefix")]),
+        ("f_tok", "\\quad$+$trainable p0 sink token"), ("f_pref", "\\quad$+$trainable p0 sink prefix"),
+        ("f_scal", "\\quad$+$trainable p0 sink scalar"),
+        ("g_rtok", "\\quad$+$trainable sliding sink token"),
+        ("g_rpref", "\\quad$+$trainable sliding sink prefix")]),
 ]
 
 def fmt(v, dec=2, sem=None):

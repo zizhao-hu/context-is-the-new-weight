@@ -19,22 +19,22 @@ HEAD = ["LMB", "PIQA", "Hella", "Wino", "ARC-e", "ARC-c", "SIQA", "BoolQ"]
 SUITE = [  # (json stem, printed label, group heading or None)
     ("base",         "base (no CPT)",                  "Full-attention baselines"),
     ("a",            "A.\\ full causal",               None),
-    ("a_token",      "\\quad$+$sink token",            None),
-    ("a_prefix",     "\\quad$+$sink prefix",           None),
-    ("a_scalar",     "\\quad$+$sink scalar",           None),
+    ("a_token",      "\\quad$+$p0 sink token",            None),
+    ("a_prefix",     "\\quad$+$p0 sink prefix",           None),
+    ("a_scalar",     "\\quad$+$p0 sink scalar",           None),
     ("b",            "B.\\ SWA",                       "Sliding-window baselines"),
-    ("b_token",      "\\quad$+$sink token",            None),
-    ("b_prefix",     "\\quad$+$sink prefix",           None),
-    ("b_scalar",     "\\quad$+$sink scalar",           None),
-    ("b_ridtok",     "\\quad$+$riding token",          None),
-    ("b_ridpref",    "\\quad$+$riding prefix",         None),
+    ("b_token",      "\\quad$+$p0 sink token",            None),
+    ("b_prefix",     "\\quad$+$p0 sink prefix",           None),
+    ("b_scalar",     "\\quad$+$p0 sink scalar",           None),
+    ("b_ridtok",     "\\quad$+$sliding token",          None),
+    ("b_ridpref",    "\\quad$+$sliding prefix",         None),
     ("c",            "C.\\ SWAA",                      None),
     ("sswa",         "E.\\ S-SWA",                     "Ours: symmetric SWA"),
-    ("sswa_token",   "\\quad$+$sink token",            None),
-    ("sswa_prefix",  "\\quad$+$sink prefix",           None),
-    ("sswa_scalar",  "\\quad$+$sink scalar",           None),
-    ("sswa_ridtok",  "\\quad$+$riding token",          None),
-    ("sswa_ridpref", "\\quad$+$riding prefix",         None),
+    ("sswa_token",   "\\quad$+$p0 sink token",            None),
+    ("sswa_prefix",  "\\quad$+$p0 sink prefix",           None),
+    ("sswa_scalar",  "\\quad$+$p0 sink scalar",           None),
+    ("sswa_ridtok",  "\\quad$+$sliding token",          None),
+    ("sswa_ridpref", "\\quad$+$sliding prefix",         None),
     ("dose10",       "\\quad coverage, $10$ unscored rows", None),
     ("mix1",         "\\quad coverage mix $\\alpha{=}.99$", None),
     ("mix5",         "\\quad coverage mix $\\alpha{=}.95$", None),
@@ -107,8 +107,8 @@ def grid_avg(stem):
     return sum(v) / len(v) if v else None
 
 
-DESIGNS = [("base", "no sink"), ("tok", "$+$sink token"), ("pref", "$+$sink prefix"),
-           ("scal", "$+$sink scalar"), ("rtok", "$+$riding token"), ("rpref", "$+$riding prefix")]
+DESIGNS = [("base", "no sink"), ("tok", "$+$p0 sink token"), ("pref", "$+$p0 sink prefix"),
+           ("scal", "$+$p0 sink scalar"), ("rtok", "$+$sliding token"), ("rpref", "$+$sliding prefix")]
 ALPHA1 = {"base": "sswa", "tok": "sswa_token", "pref": "sswa_prefix", "scal": "sswa_scalar",
           "rtok": "sswa_ridtok", "rpref": "sswa_ridpref"}
 
