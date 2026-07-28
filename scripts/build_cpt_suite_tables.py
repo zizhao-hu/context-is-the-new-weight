@@ -142,9 +142,11 @@ def grid_table():
     L += [r"\bottomrule", r"\end{tabular*}",
           r"""\caption{Commonsense-suite average across the coverage grid (Llama-3.2-3B CPT, sliding
 deploy at $W{=}1024$; $\alpha$ $=$ fraction of T-SWA steps, the remaining steps score all but
-the first $n$ context rows. Both endpoints are run in this same family: $\alpha{=}0$ scores every
-row (plain SWA) and $\alpha{=}1$ scores only full-window rows (pure T-SWA), so the sweep is paired
-throughout. Same metric rule and the same inert-window caveat as Tab.~\ref{tab:commonsense}. Any coverage at all recovers most of
+the first $n$ context rows. The endpoints are $\alpha{=}0$, which scores every row (plain SWA), and $\alpha{=}1$, which scores
+only full-window rows (pure T-SWA). The $\alpha{=}1$ column is the main-family T-SWA run at the same
+step count, which is the identical objective since no coverage steps remain; the $\alpha{=}0$ column
+is still training and is left blank rather than filled with the main SWA run, which uses half the
+steps and so would not be step-matched to the grid. Same metric rule and the same inert-window caveat as Tab.~\ref{tab:commonsense}. Any coverage at all recovers most of
 pure T-SWA's short-context damage: every mixed cell scores $47$--$57$ versus bare T-SWA's $40.9$.
 Beyond that the grid resolves little: neither $n$ nor $\alpha$ shows a monotone trend, each cell is
 a single run without repeats, and nominally similar cells differ by up to $9$ points, so read the
