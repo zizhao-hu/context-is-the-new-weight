@@ -260,7 +260,7 @@ sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink),
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
 S-SWA and its sink variants (E) never score the first $W$ rows of a chunk; their
 within-context cells are measured but out of distribution, since a full-attention deploy lets them
-reach $2048$ tokens back when they only ever trained at $W{=}1024$, and two of the fixed-sink rows
+reach $2048$ tokens back when they only ever trained at $W{=}1024$, and two of the p0-sink rows
 break outright under it. SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
 ppl$_{<C_{\\max}}$ and CPT ppl$_{>C_{\\max}}$ are single pooled estimates. The base row is Llama-3.2-3B-Instruct with no CPT, the checkpoint every CPT row starts from, at the same deploy budget; it is a reference, not a competitor, so bolding marks the best CPT row only. Remaining asymmetry, stated plainly:
 at matched loss tokens ($10$M) the S-SWA rows consume $2\\times$ the data tokens of the SWA rows
