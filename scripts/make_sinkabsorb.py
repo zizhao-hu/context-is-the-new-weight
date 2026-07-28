@@ -27,55 +27,42 @@ SWAFAM  = [("SWA",          0.1197, 0.0019, 0.0000, 0.0000, 0.0743, 0.0022),
            ("+sink prefix", 0.0090, 0.0002, 0.5238, 0.0042, 0.0203, 0.0011)]
 
 C_P0, C_REG, C_SEP, C_CT = "#4C72B0", "#DD5B45", "#55A868", "#D3D3D3"
-plt.rcParams.update({"font.size": 12, "axes.linewidth": 0.9})
-fig, axes = plt.subplots(1, 2, figsize=(9.4, 3.65), sharey=True)
+plt.rcParams.update({"font.size": 9, "axes.linewidth": 0.8})
 
-for ax, rows, ttl in ((axes[0], FULLFAM, "full-causal base"),
-                      (axes[1], SWAFAM, "SWA base")):
-    x = np.arange(len(rows))
-    labs = [r[0] for r in rows]
-    p0 = np.array([r[1] for r in rows]); p0s = np.array([r[2] for r in rows])
-    rg = np.array([r[3] for r in rows]); rgs = np.array([r[4] for r in rows])
-    sp = np.array([r[5] for r in rows]); sps = np.array([r[6] for r in rows])
-    ct = 1.0 - p0 - rg - sp
-    w = 0.80
-    ax.bar(x, rg, w, color=C_REG, edgecolor="white", linewidth=0.6)
-    ax.bar(x, p0, w, bottom=rg, color=C_P0, edgecolor="white", linewidth=0.6)
-    ax.bar(x, sp, w, bottom=rg + p0, color=C_SEP, edgecolor="white", linewidth=0.6)
-    ax.bar(x, ct, w, bottom=rg + p0 + sp, color=C_CT, edgecolor="white", linewidth=0.6)
-    edges = np.stack([rg, rg + p0, rg + p0 + sp], axis=1)
-    sv = np.stack([rgs, p0s, sps], axis=1)
-    for j in range(3):
-        ax.errorbar(x, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
-                    elinewidth=0.9, capsize=2.0, capthick=0.9, zorder=5)
-    MINGAP = 0.075                       # chip height in axis units, keeps thin layers legible
-    for xx, a_, b_, c_ in zip(x, rg, p0, sp):
-        placed = []
-        for yy, v in ((a_ / 2, a_), (a_ + b_ / 2, b_), (a_ + b_ + c_ / 2, c_)):
-            if v < 0.01:
-                continue
-            if placed and yy < placed[-1] + MINGAP:
-                yy = placed[-1] + MINGAP
-            placed.append(yy)
-            ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=9.8,
-                    color="0.1", fontweight="bold", zorder=7,
-                    bbox=dict(boxstyle="round,pad=0.18", fc="white", ec="0.45", lw=0.8, alpha=0.9))
-    ax.set_ylim(0, 1); ax.set_xticks(x)
-    ax.set_xticklabels(labs, fontsize=10.8)
-    ax.set_xlim(-0.60, len(rows) - 0.40)
-    ax.set_title(ttl, fontsize=12, fontweight="bold", pad=4)
-    ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(length=3.5, labelsize=10.6)
-    ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-axes[0].set_ylabel("attention mass", fontsize=11.6)
+# one panel, both bases in a row; the first bar of each base is its own training with no sink
+ROWS = [("full", ) + FULLFAM[0][1:]] + [("f " + r[0].replace("+sink ", "+"),) + r[1:] for r in FULLFAM[1:]]      + [("SWA", ) + SWAFAM[0][1:]] + [("s " + r[0].replace("+sink ", "+"),) + r[1:] for r in SWAFAM[1:]]
+labs = [r[0] for r in ROWS]
+p0 = np.array([r[1] for r in ROWS]); p0s = np.array([r[2] for r in ROWS])
+rg = np.array([r[3] for r in ROWS]); rgs = np.array([r[4] for r in ROWS])
+sp = np.array([r[5] for r in ROWS]); sps = np.array([r[6] for r in ROWS])
+ct = 1.0 - p0 - rg - sp
+x = np.arange(len(ROWS))
 
-plt.tight_layout(rect=(0, 0, 1, 0.90))
-_cx = (axes[0].get_position().x0 + axes[1].get_position().x1) / 2
+fig, ax = plt.subplots(figsize=(3.34, 2.5))            # single column
+w = 0.80
+ax.bar(x, rg, w, color=C_REG, edgecolor="white", linewidth=0.5)
+ax.bar(x, p0, w, bottom=rg, color=C_P0, edgecolor="white", linewidth=0.5)
+ax.bar(x, sp, w, bottom=rg + p0, color=C_SEP, edgecolor="white", linewidth=0.5)
+ax.bar(x, ct, w, bottom=rg + p0 + sp, color=C_CT, edgecolor="white", linewidth=0.5)
+edges = np.stack([rg, rg + p0, rg + p0 + sp], axis=1)
+sv = np.stack([rgs, p0s, sps], axis=1)
+for j in range(3):
+    ax.errorbar(x, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
+                elinewidth=0.7, capsize=1.2, capthick=0.7, zorder=5)
+ax.axvline(3.5, color="0.35", lw=0.8, ls=":")          # full-causal base | SWA base
+ax.set_ylim(0, 1); ax.set_xticks(x)
+ax.set_xticklabels(labs, fontsize=7, rotation=38, ha="right")
+ax.set_xlim(-0.6, len(ROWS) - 0.4)
+ax.set_ylabel("attention mass", fontsize=8.5)
+ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(labelsize=8, length=2.5)
+ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 fig.legend(handles=[Patch(facecolor=C_REG, label="trainable sink"),
                     Patch(facecolor=C_P0, label="p0 sink"),
                     Patch(facecolor=C_SEP, label="distributed sink"),
                     Patch(facecolor=C_CT, label="content")],
-           loc="upper center", bbox_to_anchor=(_cx, 1.0), bbox_transform=fig.transFigure,
-           ncol=4, frameon=False, fontsize=10.8, handlelength=1.1, handleheight=0.9,
-           columnspacing=1.2, handletextpad=0.35, borderpad=0.0, borderaxespad=0.0)
+           loc="upper center", bbox_to_anchor=(0.5, 1.13), ncol=2, frameon=False,
+           fontsize=7.4, handlelength=0.9, handleheight=0.8, columnspacing=0.9,
+           handletextpad=0.35, labelspacing=0.2)
+plt.tight_layout(rect=(0, 0, 1, 0.88))
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)

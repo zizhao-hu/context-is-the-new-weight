@@ -34,24 +34,22 @@ for key, _, _ in MODELS:
     d = json.load(open(T + "rankprof_%s.json" % key))
     data[key] = {int(k): v for k, v in d.items()}
 
-plt.rcParams.update({"font.size": 11, "axes.linewidth": 0.9})
-fig, axes = plt.subplots(1, 3, figsize=(10.4, 2.9), sharey=True)
+plt.rcParams.update({"font.size": 9.5, "axes.linewidth": 0.8})
+fig, ax = plt.subplots(figsize=(3.34, 2.25))          # single column
 x = np.arange(len(RANKS))
-SHAPE = {"full": "concentrated on the nearest",
-         "swa": "spread across the window",
-         "sswa": "flat"}
-for ax, (key, label, col) in zip(axes, MODELS):
+w = 0.27
+for i, (key, label, col) in enumerate(MODELS):
     m = [data[key].get(r, {}).get("mean", np.nan) for r in RANKS]
     e = [data[key].get(r, {}).get("sem", np.nan) for r in RANKS]
-    ax.bar(x, m, 0.74, yerr=e, color=col,
-           error_kw=dict(elinewidth=0.9, capsize=2.0, capthick=0.9, ecolor="0.2"))
-    ax.set_title("%s\n%s" % (label, SHAPE[key]), fontsize=10.5, pad=6, color="0.2")
-    ax.set_xticks(x); ax.set_xticklabels([str(r) for r in RANKS], fontsize=9)
-    ax.tick_params(labelsize=9.5, length=3)
-    ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-axes[0].set_ylabel("share of sink mass", fontsize=10.5)
-fig.supxlabel("distributed sink rank inside the window   "
-              r"($1 =$ nearest to the query $\rightarrow$ furthest back)", fontsize=10.5, y=-0.02)
+    ax.bar(x + (i - 1) * w, m, w, yerr=e, color=col, label=label,
+           error_kw=dict(elinewidth=0.7, capsize=1.2, capthick=0.7, ecolor="0.25"))
+ax.set_xticks(x); ax.set_xticklabels([str(r) for r in RANKS], fontsize=8)
+ax.set_xlabel("sink rank in window (1 $=$ nearest)", fontsize=8.5)
+ax.set_ylabel("share of sink mass", fontsize=8.5)
+ax.tick_params(labelsize=8, length=2.5)
+ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
+ax.legend(frameon=False, fontsize=7.6, handlelength=0.9, handleheight=0.8,
+          labelspacing=0.25, borderpad=0.1, loc="upper right")
 plt.tight_layout()
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
