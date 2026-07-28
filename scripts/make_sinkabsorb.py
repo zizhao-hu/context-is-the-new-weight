@@ -29,40 +29,43 @@ SWAFAM  = [("SWA",          0.1197, 0.0019, 0.0000, 0.0000, 0.0743, 0.0022),
 C_P0, C_REG, C_SEP, C_CT = "#4C72B0", "#DD5B45", "#55A868", "#D3D3D3"
 plt.rcParams.update({"font.size": 9, "axes.linewidth": 0.8})
 
-# one panel, both bases in a row; the first bar of each base is its own training with no sink
-ROWS = [("full", ) + FULLFAM[0][1:]] + [("f " + r[0].replace("+sink ", "+"),) + r[1:] for r in FULLFAM[1:]]      + [("SWA", ) + SWAFAM[0][1:]] + [("s " + r[0].replace("+sink ", "+"),) + r[1:] for r in SWAFAM[1:]]
-labs = [r[0] for r in ROWS]
-p0 = np.array([r[1] for r in ROWS]); p0s = np.array([r[2] for r in ROWS])
-rg = np.array([r[3] for r in ROWS]); rgs = np.array([r[4] for r in ROWS])
-sp = np.array([r[5] for r in ROWS]); sps = np.array([r[6] for r in ROWS])
-ct = 1.0 - p0 - rg - sp
-x = np.arange(len(ROWS))
+# four designs, two bars per group: full-causal base and SWA base side by side
+DESIGNS = ["base", "+p0 token", "+p0 scalar", "+p0 prefix"]
+def col(fam, i):
+    r = fam[i]
+    return np.array([r[1], r[2], r[3], r[4], r[5], r[6]], dtype=float)
 
-fig, ax = plt.subplots(figsize=(3.34, 2.5))            # single column
-w = 0.80
-ax.bar(x, rg, w, color=C_REG, edgecolor="white", linewidth=0.5)
-ax.bar(x, p0, w, bottom=rg, color=C_P0, edgecolor="white", linewidth=0.5)
-ax.bar(x, sp, w, bottom=rg + p0, color=C_SEP, edgecolor="white", linewidth=0.5)
-ax.bar(x, ct, w, bottom=rg + p0 + sp, color=C_CT, edgecolor="white", linewidth=0.5)
-edges = np.stack([rg, rg + p0, rg + p0 + sp], axis=1)
-sv = np.stack([rgs, p0s, sps], axis=1)
-for j in range(3):
-    ax.errorbar(x, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
-                elinewidth=0.7, capsize=1.2, capthick=0.7, zorder=5)
-ax.axvline(3.5, color="0.35", lw=0.8, ls=":")          # full-causal base | SWA base
+fig, ax = plt.subplots(figsize=(3.34, 2.05))            # single column
+x = np.arange(len(DESIGNS))
+w, dx = 0.36, 0.20
+for k, (fam, hatch) in enumerate(((FULLFAM, None), (SWAFAM, "///"))):
+    p0 = np.array([fam[i][1] for i in range(4)]); p0s = np.array([fam[i][2] for i in range(4)])
+    rg = np.array([fam[i][3] for i in range(4)]); rgs = np.array([fam[i][4] for i in range(4)])
+    sp = np.array([fam[i][5] for i in range(4)]); sps = np.array([fam[i][6] for i in range(4)])
+    ct = 1.0 - p0 - rg - sp
+    xx = x + (dx if k else -dx)
+    ax.bar(xx, rg, w, color=C_REG, edgecolor="white", linewidth=0.5, hatch=hatch)
+    ax.bar(xx, p0, w, bottom=rg, color=C_P0, edgecolor="white", linewidth=0.5, hatch=hatch)
+    ax.bar(xx, sp, w, bottom=rg + p0, color=C_SEP, edgecolor="white", linewidth=0.5, hatch=hatch)
+    ax.bar(xx, ct, w, bottom=rg + p0 + sp, color=C_CT, edgecolor="white", linewidth=0.5, hatch=hatch)
+    edges = np.stack([rg, rg + p0, rg + p0 + sp], axis=1)
+    sv = np.stack([rgs, p0s, sps], axis=1)
+    for j in range(3):
+        ax.errorbar(xx, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
+                    elinewidth=0.7, capsize=1.2, capthick=0.7, zorder=5)
 ax.set_ylim(0, 1); ax.set_xticks(x)
-ax.set_xticklabels(labs, fontsize=7, rotation=38, ha="right")
-ax.set_xlim(-0.6, len(ROWS) - 0.4)
+ax.set_xticklabels(DESIGNS, fontsize=8)
+ax.set_xlim(-0.55, len(DESIGNS) - 0.45)
 ax.set_ylabel("attention mass", fontsize=8.5)
 ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(labelsize=8, length=2.5)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-fig.legend(handles=[Patch(facecolor=C_REG, label="trainable sink"),
-                    Patch(facecolor=C_P0, label="p0 sink"),
-                    Patch(facecolor=C_SEP, label="distributed sink"),
-                    Patch(facecolor=C_CT, label="content")],
-           loc="upper center", bbox_to_anchor=(0.5, 1.13), ncol=2, frameon=False,
-           fontsize=7.4, handlelength=0.9, handleheight=0.8, columnspacing=0.9,
-           handletextpad=0.35, labelspacing=0.2)
-plt.tight_layout(rect=(0, 0, 1, 0.88))
+h = [Patch(facecolor=C_REG, label="trainable sink"), Patch(facecolor=C_P0, label="p0 sink"),
+     Patch(facecolor=C_SEP, label="distributed"), Patch(facecolor=C_CT, label="content"),
+     Patch(facecolor="0.75", label="left: full causal"),
+     Patch(facecolor="0.75", hatch="///", label="right: SWA")]
+fig.legend(handles=h, loc="upper center", bbox_to_anchor=(0.5, 1.10), ncol=3, frameon=False,
+           fontsize=7.0, handlelength=0.9, handleheight=0.8, columnspacing=0.8,
+           handletextpad=0.3, labelspacing=0.2)
+plt.tight_layout(rect=(0, 0, 1, 0.92))
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
