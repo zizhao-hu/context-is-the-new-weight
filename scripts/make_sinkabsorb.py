@@ -27,8 +27,14 @@ SWAFAM  = [("SWA",          0.1197, 0.0019, 0.0000, 0.0000, 0.0743, 0.0022),
            ("+sink prefix", 0.0090, 0.0002, 0.5238, 0.0042, 0.0203, 0.0011)]
 
 C_P0, C_REG, C_SEP, C_CT = "#4C72B0", "#DD5B45", "#55A868", "#D3D3D3"
-plt.rcParams.update({"font.size": 9, "axes.linewidth": 0.8, "hatch.linewidth": 0.5,
-                     "hatch.color": "0.25"})
+plt.rcParams.update({"font.size": 9, "axes.linewidth": 0.8})
+
+
+def pale(c, f=0.45):
+    """same hue, lighter: distinguishes the SWA bar without a texture"""
+    import matplotlib.colors as mc
+    r, g, b = mc.to_rgb(c)
+    return (r + (1 - r) * f, g + (1 - g) * f, b + (1 - b) * f)
 
 # four designs, two bars per group: full-causal base and SWA base side by side
 DESIGNS = ["base", "+p0 token", "+p0 scalar", "+p0 prefix"]
@@ -39,23 +45,27 @@ def col(fam, i):
 fig, ax = plt.subplots(figsize=(3.34, 2.05))            # single column
 x = np.arange(len(DESIGNS))
 w, dx = 0.36, 0.20
-for k, (fam, hatch) in enumerate(((FULLFAM, None), (SWAFAM, "///"))):
+for k, fam in enumerate((FULLFAM, SWAFAM)):
+    tint = (lambda c: c) if k == 0 else pale
     p0 = np.array([fam[i][1] for i in range(4)]); p0s = np.array([fam[i][2] for i in range(4)])
     rg = np.array([fam[i][3] for i in range(4)]); rgs = np.array([fam[i][4] for i in range(4)])
     sp = np.array([fam[i][5] for i in range(4)]); sps = np.array([fam[i][6] for i in range(4)])
     ct = 1.0 - p0 - rg - sp
     xx = x + (dx if k else -dx)
-    ax.bar(xx, rg, w, color=C_REG, edgecolor="black", linewidth=0.6, hatch=hatch, zorder=3)
-    ax.bar(xx, p0, w, bottom=rg, color=C_P0, edgecolor="black", linewidth=0.6, hatch=hatch, zorder=3)
-    ax.bar(xx, sp, w, bottom=rg + p0, color=C_SEP, edgecolor="black", linewidth=0.6, hatch=hatch, zorder=3)
-    ax.bar(xx, ct, w, bottom=rg + p0 + sp, color=C_CT, edgecolor="black", linewidth=0.6, hatch=hatch, zorder=3)
+    ax.bar(xx, rg, w, color=tint(C_REG), edgecolor="black", linewidth=0.6, zorder=3)
+    ax.bar(xx, p0, w, bottom=rg, color=tint(C_P0), edgecolor="black", linewidth=0.6, zorder=3)
+    ax.bar(xx, sp, w, bottom=rg + p0, color=tint(C_SEP), edgecolor="black", linewidth=0.6, zorder=3)
+    ax.bar(xx, ct, w, bottom=rg + p0 + sp, color=tint(C_CT), edgecolor="black", linewidth=0.6, zorder=3)
     edges = np.stack([rg, rg + p0, rg + p0 + sp], axis=1)
     sv = np.stack([rgs, p0s, sps], axis=1)
     for j in range(3):
         ax.errorbar(xx, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
                     elinewidth=0.7, capsize=1.2, capthick=0.7, zorder=6)
-ax.set_ylim(0, 1); ax.set_xticks(x)
+ax.set_ylim(0, 1.06); ax.set_xticks(x)
 ax.set_xticklabels(DESIGNS, fontsize=8)
+for xi in x:
+    ax.text(xi - dx, 1.015, "F", fontsize=6.5, ha="center", va="bottom", color="0.35")
+    ax.text(xi + dx, 1.015, "S", fontsize=6.5, ha="center", va="bottom", color="0.35")
 ax.set_xlim(-0.55, len(DESIGNS) - 0.45)
 ax.set_ylabel("attention mass", fontsize=8.5)
 ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(labelsize=8, length=2.5)
@@ -64,8 +74,8 @@ h = [Patch(facecolor=C_REG, edgecolor="black", lw=0.6, label="trainable sink"),
      Patch(facecolor=C_P0, edgecolor="black", lw=0.6, label="p0 sink"),
      Patch(facecolor=C_SEP, edgecolor="black", lw=0.6, label="distributed"),
      Patch(facecolor=C_CT, edgecolor="black", lw=0.6, label="content"),
-     Patch(facecolor="0.85", edgecolor="black", lw=0.6, label="left: full causal"),
-     Patch(facecolor="0.85", edgecolor="black", lw=0.6, hatch="///", label="right: SWA")]
+     Patch(facecolor="0.55", edgecolor="black", lw=0.6, label="F: full causal"),
+     Patch(facecolor=pale("0.55"), edgecolor="black", lw=0.6, label="S: SWA")]
 fig.legend(handles=h, loc="upper center", bbox_to_anchor=(0.5, 1.10), ncol=3, frameon=False,
            fontsize=7.0, handlelength=0.9, handleheight=0.8, columnspacing=0.8,
            handletextpad=0.3, labelspacing=0.2)
