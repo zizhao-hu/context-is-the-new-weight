@@ -1,12 +1,12 @@
 """Regenerate paper Figure 2 (regimes.png): attention-mask panels in ONE compact row.
 Literature (a. Triangle, b. SWA, c. SWAA, d. Transformer-XL) then IN THIS WORK (e,f,g).
 
-S-SWA (e): ONE chunk of the standard training size C, window W = C/2, ordinary sliding causal
+T-SWA (e): ONE chunk of the standard training size C, window W = C/2, ordinary sliding causal
 band, NO carried history. Loss is taken on every query that has a FULL window, i.e. q >= W-1 =
 C/2-1 -- context = C/2-1 unscored rows, loss = C/2+1 scored rows, every scored token sees exactly
 W = C/2 real tokens (removes the (W-1)/L context starvation of naive SWA).
-f: S-SWA + a FIXED trainable sink (token/prefix) -- always-attended prepended register (vertical).
-g: S-SWA + a RIDING trainable sink (token/prefix) -- attended at a CONSTANT relative offset, so it
+f: T-SWA + a FIXED trainable sink (token/prefix) -- always-attended prepended register (vertical).
+g: T-SWA + a RIDING trainable sink (token/prefix) -- attended at a CONSTANT relative offset, so it
    rides the window's trailing (oldest) edge (diagonal) rather than sitting at a fixed position.
 
 Run: python scripts/make_regimes.py
@@ -54,7 +54,7 @@ def band(q, c, off=0):
     cc = c - off
     if not inwin(cc, q): return None
     return blue
-def band_ride(q, c, off=0):          # S-SWA window (blue) + an ADDITIONAL riding register (orange)
+def band_ride(q, c, off=0):          # T-SWA window (blue) + an ADDITIONAL riding register (orange)
     if q < LOSS0: return None        # attended one step OLDER than the window, at a CONSTANT offset,
     cc = c - off                     # so it rides the trailing edge as a separate slot (its own column)
     if inwin(cc, q): return blue
@@ -76,7 +76,7 @@ ox = place("c", Q);     panel(ox, "C. SWAA", Q, lambda q, c: blue if (c == 0 or 
                               brackets=[(0, 1, "sink", dk)])
 ox = place("d", Q + 2); panel(ox, "D. Transformer-XL", Q + 2, lambda q, c: blue if c <= q + 2 else None,
                               brackets=[(0, 2, "history", dk)])
-ox = place("e", Q, GBIG); panel(ox, "E. S-SWA", Q, lambda q, c: band(q, c), loss_from=LOSS0)
+ox = place("e", Q, GBIG); panel(ox, "E. T-SWA", Q, lambda q, c: band(q, c), loss_from=LOSS0)
 ox = place("f", nP + Q, G);  panel(ox, "E $+$ fixed sink", nP + Q,
                                 lambda q, c: (orange if q >= LOSS0 else None) if c < nP else band(q, c, nP),
                                 brackets=[(0, nP, "trainable sink", orange)], loss_from=LOSS0)
@@ -89,7 +89,7 @@ T = x
 lit_x0 = POS["a"][0]; lit_x1 = POS["d"][0] + POS["d"][1]
 our_x0 = POS["e"][0] - 1.6; our_x1 = POS["g"][0] + POS["g"][1]
 ax.text((lit_x0 + lit_x1) / 2.0, ry + Q + 2.05, "Existing literature", ha="center", fontsize=HFS, fontweight="bold")
-ax.text((our_x0 + our_x1) / 2.0, ry + Q + 2.05, "This work: symmetric sliding window attention",
+ax.text((our_x0 + our_x1) / 2.0, ry + Q + 2.05, "This work: truncated sliding window attention",
         ha="center", fontsize=HFS, fontweight="bold")
 # divider between literature and ours
 xd = (POS["d"][0] + POS["d"][1] + POS["e"][0] - 1.6) / 2.0
@@ -125,4 +125,4 @@ for o in OUT:
     x0 = max(cols[0] - pad, 0); x1 = min(cols[-1] + pad + 1, im.width)
     y0 = max(rows[0] - pad, 0); y1 = min(rows[-1] + pad + 1, im.height)
     im.crop((x0, y0, x1, y1)).save(o)
-print("wrote regimes.png (a,b,c,d literature | e,f,g in-this-work S-SWA; W=C/2, loss on q>=C/2-1)")
+print("wrote regimes.png (a,b,c,d literature | e,f,g in-this-work T-SWA; W=C/2, loss on q>=C/2-1)")

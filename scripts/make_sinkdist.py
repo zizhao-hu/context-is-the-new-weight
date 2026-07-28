@@ -6,7 +6,7 @@ q-k and the attention mass column k receives from query q. Points are averaged i
 distance bins, +-1 SEM, with the rank correlation over the raw pairs in the legend.
 
 Full-causal training grades the mass by recency, nearest separator first. Window training
-inverts that: SWA loads the far edge of its window, the tokens about to be evicted. S-SWA is
+inverts that: SWA loads the far edge of its window, the tokens about to be evicted. T-SWA is
 nearly flat, with a shallow mid-window hump.
 
 Data: sinkdist_{full,swa,sswa}.npz from sink_dist.py (Llama-3.2-3B CPT, W=1024, C=2048,
@@ -26,7 +26,7 @@ OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 
 MODELS = [("full", "A. full causal", "#4C72B0", "o"),
           ("swa", "B. SWA", "#DD5B45", "s"),
-          ("sswa", "E. S-SWA", "#55A868", "^")]
+          ("sswa", "E. T-SWA", "#55A868", "^")]
 EDGES = np.unique(np.round(np.logspace(0, np.log10(1024), 13)).astype(int))
 
 plt.rcParams.update({"font.size": 9.5, "axes.linewidth": 0.8})

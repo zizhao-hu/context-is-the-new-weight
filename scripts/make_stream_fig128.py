@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """fig:toystream, FAIR version: all masks streamed to 30k at the matched W=128 budget.
-Literature A-D dashed; ours (E S-SWA, F +prefix regs, G +riding regs) solid.
+Literature A-D dashed; ours (E T-SWA, F +prefix regs, G +riding regs) solid.
 Parses CURVE lines from curves128.txt (harvested from the fair-run logs)."""
 import re, sys
 import numpy as np
@@ -25,7 +25,7 @@ ORDER = [(("plain", "a_w128"),   "A. full causal",          "--", "#7f7f7f"),
          (("plain", "b_w128"),   "B. SWA",                  "--", "#1f77b4"),
          (("plain", "c_w128"),   "C. SWAA",                 "--", "#2ca02c"),
          (("plain", "e_B_w128"), "D. Transformer-XL",       "--", "#d62728"),
-         (("plain", "b_w128_fw"),"E. S-SWA",                "-",  "#9467bd"),
+         (("plain", "b_w128_fw"),"E. T-SWA",                "-",  "#9467bd"),
          (("regs", "k_w128_fw"), "E $+$ fixed sink token",        "-",  "#e377c2"),
          (("regs", "m_w128_fw"), "E $+$ fixed sink prefix",       "-",  "#ff7f0e"),
          (("regs", "n_w128_fw"), "E $+$ riding sink token", "-",  "#8c564b"),

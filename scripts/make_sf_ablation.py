@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SWA -> S-SWA loss-mask ablation as BAR charts with trend curves.
+"""SWA -> T-SWA loss-mask ablation as BAR charts with trend curves.
 
 Left: sink distribution per dose -- stacked bars (p0 + separator) with trend curves
       tracing the p0 drain and the total.
@@ -84,15 +84,15 @@ for ax in (a1, a2):
     ax.tick_params(length=3.5, labelsize=9.5)
     ax.text(0, -0.22, "SWA", ha="center", fontsize=10, fontweight="bold",
             color="#333", transform=ax.get_xaxis_transform())
-    ax.text(nsf - 1, -0.22, "S-SWA", ha="center", fontsize=10, fontweight="bold",
+    ax.text(nsf - 1, -0.22, "T-SWA", ha="center", fontsize=10, fontweight="bold",
             color="#333", transform=ax.get_xaxis_transform())
     ax.text((nsf - 1) / 2, -0.34, "unscored context rows", ha="center", fontsize=11,
             transform=ax.get_xaxis_transform())
-    ax.text(np.mean(mx), -0.34, "mix ratio $\\alpha$ (fraction of S-SWA steps)", ha="center", fontsize=11,
+    ax.text(np.mean(mx), -0.34, "mix ratio $\\alpha$ (fraction of T-SWA steps)", ha="center", fontsize=11,
             transform=ax.get_xaxis_transform())
     ax.text(mx[0], -0.22, "SWA", ha="center", fontsize=10, fontweight="bold",
             color="#333", transform=ax.get_xaxis_transform())
-    ax.text(mx[-1], -0.22, "S-SWA", ha="center", fontsize=10, fontweight="bold",
+    ax.text(mx[-1], -0.22, "T-SWA", ha="center", fontsize=10, fontweight="bold",
             color="#333", transform=ax.get_xaxis_transform())
 
 plt.tight_layout()

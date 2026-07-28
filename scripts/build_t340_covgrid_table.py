@@ -2,9 +2,9 @@
 """Build tables/t340covgrid.tex: coverage grid at from-scratch pretraining scale.
 
 Axes actually run at 341M/15B scale:
-  alpha (fraction of symmetric steps) in {0, .10, .50, .75, 1} at n=8 unscored rows
+  alpha (fraction of T-SWA steps) in {0, .10, .50, .75, 1} at n=8 unscored rows
   n (unscored rows) in {4, 8, 16} at alpha=.50
-alpha=0 is the SWA run, alpha=1 is the S-SWA run, so the sweep is anchored at both ends.
+alpha=0 is the SWA run, alpha=1 is the T-SWA run, so the sweep is anchored at both ends.
 
 Reads the same lm-eval JSONs as build_t340_suite_table.py and reports the suite average
 (mean over the accuracy tasks), matching the CPT coverage grid's metric.
@@ -22,7 +22,7 @@ ALPHA_ROW = [("swa", "sliding", r"$\alpha{=}0$ (SWA)"),
              ("mix10", "sliding", r"$.10$"),
              ("mix50", "sliding", r"$.50$"),
              ("mix75", "sliding", r"$.75$"),
-             ("sswa", "sliding", r"$1$ (S-SWA)")]
+             ("sswa", "sliding", r"$1$ (T-SWA)")]
 N_ROW = [("mix50_n4", "sliding", r"$n{=}4$"),
          ("mix50", "sliding", r"$n{=}8$"),
          ("mix50_n16", "sliding", r"$n{=}16$")]
@@ -70,8 +70,8 @@ def main():
          "suite avg & " + " & ".join([c[1] for c in nr] + ["" for _ in range(len(al) - len(nr))]) + r"\\",
          r"\bottomrule", r"\end{tabular}",
          r"""\caption{Coverage grid at from-scratch pretraining scale (341M, 15B FineWeb tokens,
-$C{=}2048$, $W{=}1024$, sliding deploy). $\alpha$ is the fraction of symmetric steps; the
-remaining steps leave the first $n$ context rows unscored. Endpoints are the SWA and S-SWA runs
+$C{=}2048$, $W{=}1024$, sliding deploy). $\alpha$ is the fraction of T-SWA steps; the
+remaining steps leave the first $n$ context rows unscored. Endpoints are the SWA and T-SWA runs
 of Tab.~\ref{tab:t340suite}. Suite avg $=$ mean accuracy over the tasks of that table.}""",
          r"\label{tab:t340covgrid}", r"\end{table}", ""]
     open(OUT, "w").write("\n".join(L))

@@ -36,7 +36,7 @@ slide_pfx = (causal & (k > q - W)) | (causal & (k < NP))    # registers always v
 PANELS = [
     ("full context",                    binmap(d["base_full"], causal)),
     ("sliding window",                  binmap(d["base_slide"], slide)),
-    ("symmetric sliding window",        binmap(d["windowed"], slide, blank_rows=W)),
+    ("truncated sliding window",        binmap(d["windowed"], slide, blank_rows=W)),
     ("$+$ trainable sink tokens",       binmap(d["startup"], slide_pfx, blank_rows=W + NP)),
 ]
 ANNOT = {2: "no prediction", 3: "8 trainable sink tokens\n(always attended)"}

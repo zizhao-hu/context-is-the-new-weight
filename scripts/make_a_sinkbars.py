@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Finding 1 bar chart: the mask decides WHICH sink forms; a trainable sink intercepts it.
 
-Columns: full (causal) | SWA (sliding window) | S-SWA (symmetric SWA: constant context) -- three TRAINING
+Columns: full (causal) | SWA (sliding window) | T-SWA (truncated SWA: constant context) -- three TRAINING
 regimes, no trainable sinks. "pos-0" is the FIRST TOKEN IN THE WINDOW (the oldest visible column,
 q-W+1), which under full causal is column 0; scoring absolute column 0 instead would make b/e
 exactly 0 at depth by construction.
@@ -37,7 +37,7 @@ sem_cold, sem_deep = sems[:, 0:2], sems[:, 2:4]
 
 # short x labels -- the long forms don't fit under vertical bars
 SHORT = {"a. full causal": "full", "b. sliding window": "SWA",
-         "e. cc sliding": "S-SWA"}
+         "e. cc sliding": "T-SWA"}
 xl = [SHORT.get(l, l) for l in labels]
 
 C_P0, C_REG, C_SEP, C_CT = "#4C72B0", "#DD5B45", "#55A868", "#D3D3D3"

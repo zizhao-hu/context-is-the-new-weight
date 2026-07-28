@@ -2,15 +2,17 @@
 """Build tables/covgrid.tex from the 54-cell coverage grid (covgrid.tsv).
 
 Layout: rows = sink design (6), column groups = unscored rows n in {4,8,16},
-columns within group = alpha (S-SWA fraction) in {.10,.50,.75}; cell = suite avg.
-Reference column: pure S-SWA (alpha=1) values from the existing cceq rows.
+columns within group = alpha (T-SWA fraction) in {.10,.50,.75}; cell = suite avg.
+Reference column: pure T-SWA (alpha=1) values from the existing cceq rows.
 """
 import collections
 
 TSV = "/Users/zizhaohu/.claude/jobs/f25a34dc/tmp/covgrid.tsv"
-OUT = "/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/paper/attention-sink/tables/covgrid.tex"
+import os
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                   "paper/attention-sink/tables/covgrid.tex")
 
-# alpha=1 (pure S-SWA) suite averages from tab:commonsense rows
+# alpha=1 (pure T-SWA) suite averages from tab:commonsense rows
 REF = {"base": 41.0, "tok": 49.6, "pref": 52.4, "scal": 47.2, "rtok": 52.6, "rpref": 48.5}
 SINKROW = [("base", "no sink"), ("tok", "$+$sink token"), ("pref", "$+$sink prefix"),
            ("scal", "$+$sink scalar"), ("rtok", "$+$riding token"), ("rpref", "$+$riding prefix")]
@@ -38,14 +40,14 @@ tex = """\\begin{table*}[t]
 \\setlength{\\tabcolsep}{4.6pt}
 \\begin{tabular*}{\\textwidth}{@{}l@{\\extracolsep{\\fill}} rrr rrr rrr r@{}}
 \\toprule
- & \\multicolumn{3}{c}{$n{=}4$ unscored rows} & \\multicolumn{3}{c}{$n{=}8$} & \\multicolumn{3}{c}{$n{=}16$} & \\multicolumn{1}{c}{S-SWA}\\\\
+ & \\multicolumn{3}{c}{$n{=}4$ unscored rows} & \\multicolumn{3}{c}{$n{=}8$} & \\multicolumn{3}{c}{$n{=}16$} & \\multicolumn{1}{c}{T-SWA}\\\\
 \\cmidrule(lr){2-4}\\cmidrule(lr){5-7}\\cmidrule(lr){8-10}\\cmidrule(l){11-11}
 sink design & \\multicolumn{1}{c}{$\\alpha{=}.10$} & \\multicolumn{1}{c}{$.50$} & \\multicolumn{1}{c}{$.75$} & \\multicolumn{1}{c}{$.10$} & \\multicolumn{1}{c}{$.50$} & \\multicolumn{1}{c}{$.75$} & \\multicolumn{1}{c}{$.10$} & \\multicolumn{1}{c}{$.50$} & \\multicolumn{1}{c}{$.75$} & \\multicolumn{1}{c}{$\\alpha{=}1$}\\\\
 \\midrule
 %s
 \\bottomrule
 \\end{tabular*}
-\\caption{Commonsense-suite average across the coverage grid (Llama-3.2-3B CPT, sliding deploy at $W{=}1024$; $\\alpha$ $=$ fraction of symmetric steps, the remaining steps score all but the first $n$ context rows; the $\\alpha{=}1$ column is pure S-SWA from Tab.~\\ref{tab:commonsense}). Any coverage at all recovers most of pure S-SWA's short-context damage: every mixed cell scores $48$--$57$ versus bare S-SWA's $41.0$, with the sink design worth a few points and no strong dependence on $n$ or $\\alpha$ below $1$.}
+\\caption{Commonsense-suite average across the coverage grid (Llama-3.2-3B CPT, sliding deploy at $W{=}1024$; $\\alpha$ $=$ fraction of T-SWA steps, the remaining steps score all but the first $n$ context rows; the $\\alpha{=}1$ column is pure T-SWA from Tab.~\\ref{tab:commonsense}). Any coverage at all recovers most of pure T-SWA's short-context damage: every mixed cell scores $48$--$57$ versus bare T-SWA's $41.0$, with the sink design worth a few points and no strong dependence on $n$ or $\\alpha$ below $1$.}
 \\label{tab:covgrid}
 \\end{table*}
 """ % "\n".join(body)

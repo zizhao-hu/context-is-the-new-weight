@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Build tables/dose.tex: the SWA -> S-SWA transition in one table, sink and task together.
+"""Build tables/dose.tex: the SWA -> T-SWA transition in one table, sink and task together.
 
-Sweeps C_skip, the number of context rows the loss skips, from 0 (plain SWA) to W (pure S-SWA)
+Sweeps C_skip, the number of context rows the loss skips, from 0 (plain SWA) to W (pure T-SWA)
 at fixed window, data and scored-token budget (steps scale as C_max/(C_max-C_skip)). Reports the
 sink decomposition and the downstream numbers side by side, which is what the toy ablation figure
 shows for perplexity only.
@@ -30,7 +30,7 @@ SINK = {
 # ppl within context (full deploy, deep bin) from the RESULT lines of each run
 PPL = {0: 9.21, 10: 9.10, 256: 9.14, 512: 9.09, 768: 9.15, 1023: None}
 STEM = {0: "b", 10: "dose10", 256: "dose256", 512: "dose512", 768: "dose768", 1023: "sswa"}
-LABEL = {0: "$0$ (SWA)", 1023: "$W$ (S-SWA)"}
+LABEL = {0: "$0$ (SWA)", 1023: "$W$ (T-SWA)"}
 
 
 def suite(stem):
@@ -63,7 +63,7 @@ def main():
             ("%.1f" % s) if s is not None else "---"))
         n += 1
     L += [r"\bottomrule", r"\end{tabular}",
-          r"""\caption{The SWA to S-SWA transition in one sweep (Llama-3.2-3B CPT, $W{=}1024$,
+          r"""\caption{The SWA to T-SWA transition in one sweep (Llama-3.2-3B CPT, $W{=}1024$,
 $C_{\max}{=}2048$). $C_{\mathrm{skip}}$ is how many context rows the loss skips; steps scale as
 $C_{\max}/(C_{\max}-C_{\mathrm{skip}})$ so every row trains on the same number of scored tokens.
 Sink columns are attention mass under the sliding deploy ($\pm1$ SEM over $12$ passages); ppl is

@@ -29,7 +29,7 @@ SUITE = [  # (json stem, printed label, group heading or None)
     ("b_ridtok",     "\\quad$+$sliding token",          None),
     ("b_ridpref",    "\\quad$+$sliding prefix",         None),
     ("c",            "C.\\ SWAA",                      None),
-    ("sswa",         "E.\\ S-SWA",                     "Ours: symmetric SWA"),
+    ("sswa",         "E.\\ T-SWA",                     "Ours: truncated SWA"),
     ("sswa_token",   "\\quad$+$p0 sink token",            None),
     ("sswa_prefix",  "\\quad$+$p0 sink prefix",           None),
     ("sswa_scalar",  "\\quad$+$p0 sink scalar",           None),
@@ -81,7 +81,10 @@ def suite_table():
     L += [r"\bottomrule", r"\end{tabular}",
           r"""\caption{\textbf{Commonsense-reasoning suite} (lm-evaluation-harness, zero-shot) on the
 continued-pretraining checkpoints (Llama-3.2-3B, WikiText CPT under each mask), scored under the
-constant-memory sliding deploy at $W{=}1024$. Every column is accuracy in \% ($\uparrow$):
+constant-memory sliding deploy at $W{=}1024$, though no item in this suite reaches that
+window (longest is BoolQ at $723$ tokens, per-task means $8$ to $136$), so the window never binds
+and these rows isolate what each training scheme did to the weights rather than how it deploys.
+Constant-memory deployment is measured in Tab.~\\ref{tab:ppl05b} and Tab.~\\ref{tab:toydeploy}. Every column is accuracy in \% ($\uparrow$):
 length-normalised accuracy for PIQA, HellaSwag and both ARC splits, plain accuracy elsewhere;
 Avg is the mean of the eight. Greyed cells sit at or below the task's random or majority-class
 baseline. Same suite as SWAT \citep{swat2025}; this is continued pretraining of a 3B model, so
@@ -118,7 +121,7 @@ def grid_table():
          r"\setlength{\tabcolsep}{4.6pt}",
          r"\begin{tabular*}{\textwidth}{@{}l@{\extracolsep{\fill}} r rrr rrr rrr r@{}}", r"\toprule",
          r" & \multicolumn{1}{c}{SWA} & \multicolumn{3}{c}{$n{=}4$ unscored rows} & "
-         r"\multicolumn{3}{c}{$n{=}8$} & \multicolumn{3}{c}{$n{=}16$} & \multicolumn{1}{c}{S-SWA}\\",
+         r"\multicolumn{3}{c}{$n{=}8$} & \multicolumn{3}{c}{$n{=}16$} & \multicolumn{1}{c}{T-SWA}\\",
          r"\cmidrule(lr){2-2}\cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-11}\cmidrule(l){12-12}",
          r"sink design & \multicolumn{1}{c}{$\alpha{=}0$} & \multicolumn{1}{c}{$\alpha{=}.10$} & \multicolumn{1}{c}{$.50$} & "
          r"\multicolumn{1}{c}{$.75$} & \multicolumn{1}{c}{$.10$} & \multicolumn{1}{c}{$.50$} & "
@@ -130,7 +133,7 @@ def grid_table():
             for al in (10, 50, 75):
                 row.append(grid_avg("n%d_a%d_%s" % (n, al, key)))
         row.append(grid_avg("a100_%s" % key))                 # alpha=1 endpoint, same family
-        if row[-1] is None:                                   # fall back to the main-family S-SWA row
+        if row[-1] is None:                                   # fall back to the main-family T-SWA row
             ref = cells(ALPHA1[key])
             if ref:
                 ok = [x for x in ref if x is not None]
@@ -138,11 +141,11 @@ def grid_table():
         L.append("%s & %s\\\\" % (label, " & ".join("%.1f" % v if v is not None else "---" for v in row)))
     L += [r"\bottomrule", r"\end{tabular*}",
           r"""\caption{Commonsense-suite average across the coverage grid (Llama-3.2-3B CPT, sliding
-deploy at $W{=}1024$; $\alpha$ $=$ fraction of symmetric steps, the remaining steps score all but
+deploy at $W{=}1024$; $\alpha$ $=$ fraction of T-SWA steps, the remaining steps score all but
 the first $n$ context rows. Both endpoints are run in this same family: $\alpha{=}0$ scores every
-row (plain SWA) and $\alpha{=}1$ scores only full-window rows (pure S-SWA), so the sweep is paired
-throughout. Same metric rule as Tab.~\ref{tab:commonsense}. Any coverage at all recovers most of
-pure S-SWA's short-context damage: every mixed cell scores $47$--$57$ versus bare S-SWA's $40.9$.
+row (plain SWA) and $\alpha{=}1$ scores only full-window rows (pure T-SWA), so the sweep is paired
+throughout. Same metric rule and the same inert-window caveat as Tab.~\ref{tab:commonsense}. Any coverage at all recovers most of
+pure T-SWA's short-context damage: every mixed cell scores $47$--$57$ versus bare T-SWA's $40.9$.
 Beyond that the grid resolves little: neither $n$ nor $\alpha$ shows a monotone trend, each cell is
 a single run without repeats, and nominally similar cells differ by up to $9$ points, so read the
 recovery, not the ranking within it.}""",

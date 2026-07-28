@@ -26,8 +26,8 @@ GROUPS = [
         ("j_iid_pl", "\\quad$+$sink prefix")]),
     ("Sliding-window baselines", [
         ("b", "B. SWA"), ("h_iid_pl", "\\quad$+$sink prefix"), ("c", "C. SWAA")]),
-    ("Ours: symmetric SWA", [
-        ("base", "E. S-SWA"), ("token", "\\quad$+$sink token"),
+    ("Ours: truncated SWA", [
+        ("base", "E. T-SWA"), ("token", "\\quad$+$sink token"),
         ("prefix", "\\quad$+$sink prefix"), ("scalar", "\\quad$+$sink scalar")]),
 ]
 

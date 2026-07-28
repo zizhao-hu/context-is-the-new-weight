@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Paper Fig 5: what the symmetric loss rule does to next-token probability.
+"""Paper Fig 5: what the truncated loss rule does to next-token probability.
 
-Top: per-token change in p(token | window), S-SWA minus SWA, on one real WikiText
+Top: per-token change in p(token | window), T-SWA minus SWA, on one real WikiText
 sequence, with each token coloured by its class (function word, content word,
 punctuation, digit, subword piece).
 
@@ -99,7 +99,7 @@ ax.set_xlim(X0 - 0.6, X1 + 0.4)
 ax.set_ylim(-PMAX * 2.05, PMAX * 1.12)
 ax.set_yticks([-round(PMAX, 1), 0, round(PMAX, 1)])
 ax.tick_params(labelsize=9, length=3)
-ax.set_ylabel(r"$\Delta p$   (S-SWA $-$ SWA)", fontsize=10)
+ax.set_ylabel(r"$\Delta p$   (T-SWA $-$ SWA)", fontsize=10)
 ax.set_xticks([])
 for sp in ("top", "right", "bottom"):
     ax.spines[sp].set_visible(False)

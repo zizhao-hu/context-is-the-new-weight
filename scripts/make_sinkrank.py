@@ -7,7 +7,7 @@ total sink mass is recorded. Bars are means over queries with +-1 SEM.
 
 Full-causal training concentrates sink mass on the nearest column and decays away from it.
 Window-trained models do not: SWA peaks one step back and keeps substantial mass deep into the
-window, and S-SWA is nearly flat, spreading across whatever separators are present.
+window, and T-SWA is nearly flat, spreading across whatever separators are present.
 
 Data: rankprof_{full,swa,sswa}.json from sink_rank2.py (Llama-3.2-3B CPT, W=1024, 5x-uniform
 criterion, held-out WikiText).
@@ -26,7 +26,7 @@ OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 
 MODELS = [("full", "A. full causal", "#4C72B0"),
           ("swa", "B. SWA", "#DD5B45"),
-          ("sswa", "E. S-SWA", "#55A868")]
+          ("sswa", "E. T-SWA", "#55A868")]
 RANKS = list(range(1, 9))
 
 data = {}

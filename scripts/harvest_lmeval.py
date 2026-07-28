@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Harvest lmeval_out/*.json -> tables/commonsense.tex (SWAT-Table-1-style suite).
 
-Rows grouped like Table 9 (full-attention baselines / SWA baselines / ours S-SWA).
+Rows grouped like Table 9 (full-attention baselines / SWA baselines / ours T-SWA).
 Task columns from the SLIDING (constant-memory) deploy; final two columns give the
 suite average under sliding and under full deploy. Values +/- are lm-eval stderr.
 
@@ -32,8 +32,8 @@ GROUPS = [
     ("Sliding-window baselines", [
         ("b", "B. SWA"), ("b_token", "\\quad$+$sink token"), ("b_prefix", "\\quad$+$sink prefix"),
         ("b_scalar", "\\quad$+$sink scalar"), ("c", "C. SWAA")]),
-    ("Ours: symmetric SWA", [
-        ("sswa", "E. S-SWA"), ("sswa_token", "\\quad$+$sink token"),
+    ("Ours: truncated SWA", [
+        ("sswa", "E. T-SWA"), ("sswa_token", "\\quad$+$sink token"),
         ("sswa_prefix", "\\quad$+$sink prefix"), ("sswa_scalar", "\\quad$+$sink scalar")]),
 ]
 

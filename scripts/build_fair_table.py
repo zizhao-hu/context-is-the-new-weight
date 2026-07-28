@@ -161,7 +161,7 @@ ROWS = [
         ("c", "C.\\ SWAA (sink$+$window)"),
         ("d", "D.\\ Transformer-XL")]),
     ("ours", [
-        ("e", "E.\\ S-SWA"),
+        ("e", "E.\\ T-SWA"),
         ("f_tok", "\\quad$+$trainable p0 sink token"), ("f_pref", "\\quad$+$trainable p0 sink prefix"),
         ("f_scal", "\\quad$+$trainable p0 sink scalar"),
         ("g_rtok", "\\quad$+$trainable sliding sink token"),
@@ -258,12 +258,12 @@ ppl$_{>C_{\\max}}$ streams $30$k tokens ($30$-bin chunked cache, last bin) at th
 superscript marks the deploy used for that row (not an error or significance mark): $^{r}$
 sliding with the trained registers re-attached, $^{w}$ plain sliding (own sink), $^{s}$
 StreamingLLM (kept first tokens; used where it beats plain sliding for sink-free rows).
-S-SWA and its sink variants (E) never score the first $W$ rows of a chunk; their
+T-SWA and its sink variants (E) never score the first $W$ rows of a chunk; their
 within-context cells are measured but out of distribution, since a full-attention deploy lets them
 reach $2048$ tokens back when they only ever trained at $W{=}1024$, and two of the p0-sink rows
 break outright under it. SEM shown as $\\pm$ (toy stream $n{=}128$ segments; task $n{=}150$ questions); toy
 ppl$_{<C_{\\max}}$ and CPT ppl$_{>C_{\\max}}$ are single pooled estimates. The base row is Llama-3.2-3B-Instruct with no CPT, the checkpoint every CPT row starts from, at the same deploy budget; it is a reference, not a competitor, so bolding marks the best CPT row only. Remaining asymmetry, stated plainly:
-at matched loss tokens ($10$M) the S-SWA rows consume $2\\times$ the data tokens of the SWA rows
+at matched loss tokens ($10$M) the T-SWA rows consume $2\\times$ the data tokens of the SWA rows
 ($20$M vs $10$M); bold marks the best point estimate per column.}
 \\label{tab:toydeploy}
 \\end{table*}

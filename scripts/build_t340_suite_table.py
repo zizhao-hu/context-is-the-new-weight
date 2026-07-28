@@ -21,12 +21,12 @@ OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 ROWS = [
     ("full",  "full",    "A. full causal",                    "Full-attention pretraining"),
     ("swa",   "sliding", "B. SWA",                            "Sliding-window pretraining"),
-    ("sswa",  "sliding", "E. S-SWA",                          "Ours: symmetric SWA"),
-    ("mix10", "sliding", r"\quad coverage mix $\alpha{=}.10$", "Ours: symmetric SWA"),
-    ("mix50", "sliding", r"\quad coverage mix $\alpha{=}.50$", "Ours: symmetric SWA"),
-    ("mix75", "sliding", r"\quad coverage mix $\alpha{=}.75$", "Ours: symmetric SWA"),
-    ("mix0_n8", "sliding", r"\quad coverage only, $n{=}8$ unscored", "Ours: symmetric SWA"),
-    ("mix0_n256", "sliding", r"\quad coverage only, $n{=}256$ unscored", "Ours: symmetric SWA"),
+    ("sswa",  "sliding", "E. T-SWA",                          "Ours: truncated SWA"),
+    ("mix10", "sliding", r"\quad coverage mix $\alpha{=}.10$", "Ours: truncated SWA"),
+    ("mix50", "sliding", r"\quad coverage mix $\alpha{=}.50$", "Ours: truncated SWA"),
+    ("mix75", "sliding", r"\quad coverage mix $\alpha{=}.75$", "Ours: truncated SWA"),
+    ("mix0_n8", "sliding", r"\quad coverage only, $n{=}8$ unscored", "Ours: truncated SWA"),
+    ("mix0_n256", "sliding", r"\quad coverage only, $n{=}256$ unscored", "Ours: truncated SWA"),
 ]
 TASKS = [("piqa", "PIQA"), ("hellaswag", "Hella"), ("winogrande", "Wino"),
          ("arc_easy", "ARC-e"), ("arc_challenge", "ARC-c"), ("siqa_pq", "SIQA"),
@@ -90,7 +90,8 @@ def main():
 pretrained \emph{from scratch} under each mask: 341M parameters, 15B FineWeb tokens, Llama-2
 vocabulary, global batch $0.5$M tokens, train context $C{=}2048$, window $W{=}1024$, identical
 data order and budget across rows. Task columns are scored under each model's own deploy (full
-attention for A, constant-memory sliding at $W{=}1024$ for the rest). Every column is accuracy in \% ($\uparrow$): length-normalised accuracy for PIQA, HellaSwag
+attention for A, constant-memory sliding at $W{=}1024$ for the rest), but no item is long
+enough to reach that window, so the deploy is inert here and the columns compare weights. Every column is accuracy in \% ($\uparrow$): length-normalised accuracy for PIQA, HellaSwag
 and both ARC splits, plain accuracy for LAMBADA, WinoGrande, SIQA and BoolQ. Avg $=$ mean of the
 eight. Greyed cells sit at or below the task's random or majority-class baseline, where the
 ordering between rows carries no signal. We follow SWAT's protocol \citep{swat2025} in model size, token budget, batch and
