@@ -27,7 +27,8 @@ SWAFAM  = [("SWA",          0.1197, 0.0019, 0.0000, 0.0000, 0.0743, 0.0022),
            ("+sink prefix", 0.0090, 0.0002, 0.5238, 0.0042, 0.0203, 0.0011)]
 
 C_P0, C_REG, C_SEP, C_CT = "#4C72B0", "#DD5B45", "#55A868", "#D3D3D3"
-plt.rcParams.update({"font.size": 9, "axes.linewidth": 0.8})
+plt.rcParams.update({"font.size": 9, "axes.linewidth": 0.8, "hatch.linewidth": 0.5,
+                     "hatch.color": "0.25"})
 
 # four designs, two bars per group: full-causal base and SWA base side by side
 DESIGNS = ["base", "+p0 token", "+p0 scalar", "+p0 prefix"]
@@ -44,25 +45,27 @@ for k, (fam, hatch) in enumerate(((FULLFAM, None), (SWAFAM, "///"))):
     sp = np.array([fam[i][5] for i in range(4)]); sps = np.array([fam[i][6] for i in range(4)])
     ct = 1.0 - p0 - rg - sp
     xx = x + (dx if k else -dx)
-    ax.bar(xx, rg, w, color=C_REG, edgecolor="white", linewidth=0.5, hatch=hatch)
-    ax.bar(xx, p0, w, bottom=rg, color=C_P0, edgecolor="white", linewidth=0.5, hatch=hatch)
-    ax.bar(xx, sp, w, bottom=rg + p0, color=C_SEP, edgecolor="white", linewidth=0.5, hatch=hatch)
-    ax.bar(xx, ct, w, bottom=rg + p0 + sp, color=C_CT, edgecolor="white", linewidth=0.5, hatch=hatch)
+    ax.bar(xx, rg, w, color=C_REG, edgecolor="black", linewidth=0.6, hatch=hatch, zorder=3)
+    ax.bar(xx, p0, w, bottom=rg, color=C_P0, edgecolor="black", linewidth=0.6, hatch=hatch, zorder=3)
+    ax.bar(xx, sp, w, bottom=rg + p0, color=C_SEP, edgecolor="black", linewidth=0.6, hatch=hatch, zorder=3)
+    ax.bar(xx, ct, w, bottom=rg + p0 + sp, color=C_CT, edgecolor="black", linewidth=0.6, hatch=hatch, zorder=3)
     edges = np.stack([rg, rg + p0, rg + p0 + sp], axis=1)
     sv = np.stack([rgs, p0s, sps], axis=1)
     for j in range(3):
         ax.errorbar(xx, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
-                    elinewidth=0.7, capsize=1.2, capthick=0.7, zorder=5)
+                    elinewidth=0.7, capsize=1.2, capthick=0.7, zorder=6)
 ax.set_ylim(0, 1); ax.set_xticks(x)
 ax.set_xticklabels(DESIGNS, fontsize=8)
 ax.set_xlim(-0.55, len(DESIGNS) - 0.45)
 ax.set_ylabel("attention mass", fontsize=8.5)
 ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(labelsize=8, length=2.5)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-h = [Patch(facecolor=C_REG, label="trainable sink"), Patch(facecolor=C_P0, label="p0 sink"),
-     Patch(facecolor=C_SEP, label="distributed"), Patch(facecolor=C_CT, label="content"),
-     Patch(facecolor="0.75", label="left: full causal"),
-     Patch(facecolor="0.75", hatch="///", label="right: SWA")]
+h = [Patch(facecolor=C_REG, edgecolor="black", lw=0.6, label="trainable sink"),
+     Patch(facecolor=C_P0, edgecolor="black", lw=0.6, label="p0 sink"),
+     Patch(facecolor=C_SEP, edgecolor="black", lw=0.6, label="distributed"),
+     Patch(facecolor=C_CT, edgecolor="black", lw=0.6, label="content"),
+     Patch(facecolor="0.85", edgecolor="black", lw=0.6, label="left: full causal"),
+     Patch(facecolor="0.85", edgecolor="black", lw=0.6, hatch="///", label="right: SWA")]
 fig.legend(handles=h, loc="upper center", bbox_to_anchor=(0.5, 1.10), ncol=3, frameon=False,
            fontsize=7.0, handlelength=0.9, handleheight=0.8, columnspacing=0.8,
            handletextpad=0.3, labelspacing=0.2)
