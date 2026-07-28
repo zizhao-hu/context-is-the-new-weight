@@ -27,7 +27,8 @@ SWAFAM  = [("SWA",          0.1197, 0.0019, 0.0000, 0.0000, 0.0743, 0.0022),
            ("+sink prefix", 0.0090, 0.0002, 0.5238, 0.0042, 0.0203, 0.0011)]
 
 C_P0, C_REG, C_SEP, C_CT = "#4C72B0", "#DD5B45", "#55A868", "#D3D3D3"
-plt.rcParams.update({"font.size": 9, "axes.linewidth": 0.8})
+plt.rcParams.update({"font.size": 9, "axes.linewidth": 0.8,
+                     "hatch.linewidth": 0.35, "hatch.color": "0.15"})
 
 
 def pale(c, f=0.45):
@@ -47,15 +48,16 @@ x = np.arange(len(DESIGNS))
 w, dx = 0.36, 0.20
 for k, fam in enumerate((FULLFAM, SWAFAM)):
     tint = (lambda c: c) if k == 0 else pale
+    hat = None if k == 0 else "////"
     p0 = np.array([fam[i][1] for i in range(4)]); p0s = np.array([fam[i][2] for i in range(4)])
     rg = np.array([fam[i][3] for i in range(4)]); rgs = np.array([fam[i][4] for i in range(4)])
     sp = np.array([fam[i][5] for i in range(4)]); sps = np.array([fam[i][6] for i in range(4)])
     ct = 1.0 - p0 - rg - sp
     xx = x + (dx if k else -dx)
-    ax.bar(xx, rg, w, color=tint(C_REG), edgecolor="black", linewidth=0.6, zorder=3)
-    ax.bar(xx, p0, w, bottom=rg, color=tint(C_P0), edgecolor="black", linewidth=0.6, zorder=3)
-    ax.bar(xx, sp, w, bottom=rg + p0, color=tint(C_SEP), edgecolor="black", linewidth=0.6, zorder=3)
-    ax.bar(xx, ct, w, bottom=rg + p0 + sp, color=tint(C_CT), edgecolor="black", linewidth=0.6, zorder=3)
+    ax.bar(xx, rg, w, color=tint(C_REG), edgecolor="black", linewidth=0.6, hatch=hat, zorder=3)
+    ax.bar(xx, p0, w, bottom=rg, color=tint(C_P0), edgecolor="black", linewidth=0.6, hatch=hat, zorder=3)
+    ax.bar(xx, sp, w, bottom=rg + p0, color=tint(C_SEP), edgecolor="black", linewidth=0.6, hatch=hat, zorder=3)
+    ax.bar(xx, ct, w, bottom=rg + p0 + sp, color=tint(C_CT), edgecolor="black", linewidth=0.6, hatch=hat, zorder=3)
     edges = np.stack([rg, rg + p0, rg + p0 + sp], axis=1)
     sv = np.stack([rgs, p0s, sps], axis=1)
     for j in range(3):
@@ -75,7 +77,7 @@ h = [Patch(facecolor=C_REG, edgecolor="black", lw=0.6, label="trainable sink"),
      Patch(facecolor=C_SEP, edgecolor="black", lw=0.6, label="distributed"),
      Patch(facecolor=C_CT, edgecolor="black", lw=0.6, label="content"),
      Patch(facecolor="0.55", edgecolor="black", lw=0.6, label="F: full causal"),
-     Patch(facecolor=pale("0.55"), edgecolor="black", lw=0.6, label="S: SWA")]
+     Patch(facecolor=pale("0.55"), edgecolor="black", lw=0.6, hatch="////", label="S: SWA")]
 fig.legend(handles=h, loc="upper center", bbox_to_anchor=(0.5, 1.10), ncol=3, frameon=False,
            fontsize=7.0, handlelength=0.9, handleheight=0.8, columnspacing=0.8,
            handletextpad=0.3, labelspacing=0.2)
