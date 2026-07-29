@@ -126,12 +126,20 @@ for sp in ax.spines.values():
 ax.set_title("one WikiText passage, shaded by $\\Delta p$ (T-SWA $-$ SWA)",
              fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
 
-cb = fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax, orientation="horizontal",
-                  fraction=0.09, pad=0.05, aspect=42)
-cb.set_ticks([-PMAX, 0, PMAX])
-cb.set_ticklabels(["$-$%.2f" % PMAX, "0", "$+$%.2f" % PMAX])
-cb.ax.tick_params(labelsize=figstyle.FS_TICK - 1.2, length=2)
-cb.outline.set_linewidth(0.5)
+# colour key inline, in the space left over after the last token, so it costs no extra row
+_r = len(lines) - 1
+_end = lines[-1][-1][0] + lines[-1][-1][1]
+_x0 = _end + 9
+_w = min(17, NCOL - _x0 - 8)
+if _w > 6:
+    _g = np.linspace(-PMAX, PMAX, 128)[None, :]
+    ax.imshow(_g, extent=[_x0, _x0 + _w, -_r - 0.32, -_r + 0.32], cmap=cmap, norm=norm,
+              aspect="auto", zorder=1)
+    ax.add_patch(Rectangle((_x0, -_r - 0.32), _w, 0.64, fc="none", ec="0.35", lw=0.5, zorder=3))
+    ax.text(_x0 - 1.4, -_r, "$-$%.2f" % PMAX, ha="right", va="center",
+            fontsize=figstyle.FS_TICK - 1.8, color="0.35")
+    ax.text(_x0 + _w + 1.4, -_r, "$+$%.2f" % PMAX, ha="left", va="center",
+            fontsize=figstyle.FS_TICK - 1.8, color="0.35")
 
 # class summary beside it; the tick labels carry the class colours, so no legend is needed
 bx = fig.add_subplot(gs[0, 1])
