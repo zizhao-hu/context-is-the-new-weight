@@ -44,8 +44,8 @@ nsf = len(sf)
 labels = ["%d" % v for v in sf] + ["0" if a == 0 else ("1" if a == 1 else ("%.2f" % a).lstrip("0").rstrip("0")) for a in mal]
 
 C_P0, C_SEP, C_SHORT, C_STREAM = "#4C72B0", "#55A868", "#B04C4C", "#555555"
-f1, a1 = plt.subplots(figsize=(figstyle.COL, 2.05))       # single column
-f2, a2 = plt.subplots(figsize=(figstyle.COL, 2.05))
+f1, a1 = plt.subplots(figsize=(figstyle.COL, 1.92))       # single column
+f2, a2 = plt.subplots(figsize=(figstyle.COL, 1.92))
 
 # ---- left: sink distribution ----
 w = 0.72

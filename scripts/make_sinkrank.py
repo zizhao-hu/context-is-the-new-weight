@@ -39,7 +39,7 @@ for key, _, _, _ in MODELS:
     d = json.load(open(T + "rankprof_%s.json" % key))
     data[key] = {int(k): v for k, v in d.items()}
 
-fig, ax = plt.subplots(figsize=(figstyle.COL, 1.95))          # matches the lifetime figure
+fig, ax = plt.subplots(figsize=(figstyle.COL, 1.86))          # matches the lifetime figure
 for key, label, col, mk in MODELS:
     m = [data[key].get(r, {}).get("mean", np.nan) for r in RANKS]
     e = [data[key].get(r, {}).get("sem", np.nan) for r in RANKS]

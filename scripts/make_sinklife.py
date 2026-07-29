@@ -32,7 +32,7 @@ MODELS = [("full", "A. full causal", "#4C72B0", "o"),
           ("sswa", "E. T-SWA", "#55A868", "^")]
 EDGES = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1025]
 
-fig, ax = plt.subplots(figsize=(figstyle.COL, 1.95))
+fig, ax = plt.subplots(figsize=(figstyle.COL, 1.86))
 for key, label, col, mk in MODELS:
     C = np.load(T + "sinklife64_%s.npz" % key)["curves"].astype(float)
     cx, cy, ce = [], [], []
