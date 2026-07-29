@@ -55,7 +55,10 @@ for i, (skip, title, sub) in enumerate(PANELS):
     mask(ax, 0, 0, skip)
     ax.plot([-1.05, -1.05], [0, Q - skip], color=DK, lw=1.2, clip_on=False)   # scored block
     ax.text(Q / 2.0, -0.55, sub, ha="center", va="top", fontsize=FS - 0.8, color="0.35")
-    ax.set_xlim(-1.7, Q + 0.15); ax.set_ylim(-2.2, Q + 0.15)
+    if i == 0:                                   # name the bracket once
+        ax.text(-1.95, Q / 2.0, "loss", rotation=90, ha="center", va="center",
+                fontsize=FS - 0.6, color=DK, fontweight="bold")
+    ax.set_xlim(-2.6, Q + 0.15); ax.set_ylim(-2.2, Q + 0.15)
     ax.set_aspect("equal"); ax.axis("off")
     ax.set_title(title, fontsize=FS, pad=1.5, color="0.2")
 
