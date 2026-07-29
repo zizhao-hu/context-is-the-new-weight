@@ -2,9 +2,8 @@
 """Method figure for Finding 2: the dose is how many context rows go unscored.
 
 Four panels of the same sliding band on one chunk (C=8, W=4), differing only in which query rows
-carry loss. SWA scores every row, including the starved ones at the chunk start. Every panel with
-a nonzero dose is T-SWA; the last, at W-1 unscored, is the fully symmetric case where every
-scored query sees exactly W tokens.
+carry loss. SWA scores every row, including the starved ones at the chunk start. Every panel with a nonzero dose is T-SWA; at W-1 unscored every scored query sees
+exactly W real tokens.
 
 Colour follows regimes.png: filled cells are attended, blue rows are scored, pale rows are
 context-only. The bracket marks the scored block.
@@ -28,10 +27,10 @@ PALE = (0.80, 0.86, 0.93)          # context-only row, in window
 DK = "#333"
 Q = 8                              # chunk length C
 W = 4                              # window
-PANELS = [(0, "b. SWA\n$0$ unscored"),
+PANELS = [(0, "SWA\n$0$ unscored"),
           (1, "T-SWA\n$1$ unscored"),
           (2, "T-SWA\n$2$ unscored"),
-          (W - 1, "symmetric\n$W{-}1$ unscored")]
+          (W - 1, "T-SWA\n$W{-}1$ unscored")]
 
 fig, axes = plt.subplots(1, len(PANELS), figsize=(figstyle.COL, 1.34))
 for ax, (skip, title) in zip(axes, PANELS):
