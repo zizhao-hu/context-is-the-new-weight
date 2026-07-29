@@ -48,7 +48,7 @@ for key, label, col, mk in MODELS:
     e = [d.get(r, {}).get("sem", np.nan) for r in RANKS]
     ax.errorbar(RANKS, m, yerr=e, color=col, marker=mk, ms=2.4, lw=1.0,
                 elinewidth=0.6, capsize=1.0, capthick=0.6)
-ax.set_xticks([1, 4, 8])
+ax.set_xticks(RANKS)          # every rank, 1 through 8
 ax.set_yticks([0.0, 0.2, 0.4])
 ax.set_xlabel("sink rank", fontsize=figstyle.FS_AXIS)
 
