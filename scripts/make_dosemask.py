@@ -55,7 +55,7 @@ for i, (skip, title, sub) in enumerate(PANELS):
     mask(ax, 0, 0, skip)
     ax.plot([-0.55, -0.55], [0, Q - skip], color=DK, lw=1.2, clip_on=False)   # scored block
     ax.text(Q / 2.0, -0.55, sub, ha="center", va="top", fontsize=FS - 0.8, color="0.35")
-    ax.set_xlim(-1.1, Q + 0.1); ax.set_ylim(-2.4, Q + 0.1)
+    ax.set_xlim(-1.15, Q + 0.15); ax.set_ylim(-2.2, Q + 0.15)
     ax.set_aspect("equal"); ax.axis("off")
     ax.set_title(title, fontsize=FS, pad=1.5, color="0.2")
 
@@ -64,18 +64,28 @@ arr.set_xlim(0, 1); arr.set_ylim(0, 1)
 arr.add_patch(FancyArrow(0.0, 0.5, 1.0, 0, width=0.028, head_width=0.22, head_length=0.02,
                          length_includes_head=True, color="0.35"))
 
-GAP = 2.6
-for k, (a, lab) in enumerate(((0.25, r"$\alpha{=}0.25$"), (0.75, r"$\alpha{=}0.75$"))):
-    bx = fig.add_subplot(gs[2, 2 * k:2 * k + 2])
+GAP, SPLIT = 2.2, 7.0
+bx = fig.add_subplot(gs[2, :])                     # one axes, so the row fills the width
+step = Q + GAP
+groups = [(0.25, r"$\alpha{=}0.25$"), (0.75, r"$\alpha{=}0.75$")]
+xs = []
+x = 0.0
+for gi, (a, lab) in enumerate(groups):
     n4 = int(round(4 * a))                                   # steps taken with panel 4
-    order = [0] * (4 - n4) + [W - 1] * n4                    # step 1 or step 4, in order
-    span = 4 * Q + 3 * GAP
-    for j, skip in enumerate(order):
-        mask(bx, j * (Q + GAP), 0, skip, cell=1.0, lw=0.12, frame=0.45)
-    bx.text(span / 2.0, -2.4, lab, ha="center", va="top", fontsize=FS, color="0.2")
-    bx.set_xlim(-0.6, span + 0.6); bx.set_ylim(-5.2, Q + 3.0)
-    bx.set_aspect("equal"); bx.axis("off")
-
+    order = [0] * (4 - n4) + [W - 1] * n4
+    x0 = x
+    for skip in order:
+        mask(bx, x, 0, skip, cell=1.0, lw=0.12, frame=0.45)
+        x += step
+    bx.text(x0 + (4 * step - GAP) / 2.0, -2.2, lab, ha="center", va="top",
+            fontsize=FS, color="0.2")
+    xs.append(x - GAP)
+    if gi == 0:
+        bx.plot([x - GAP + SPLIT / 2, x - GAP + SPLIT / 2], [-1.2, Q + 0.6],
+                color="0.75", lw=0.9, ls=":")
+        x += SPLIT
+bx.set_xlim(-0.4, x - GAP + 0.4); bx.set_ylim(-4.2, Q + 0.7)
+bx.set_aspect("equal"); bx.axis("off")
 
 _pa = arr.get_position()
 _ay = _pa.y0 + 0.5 * (_pa.y1 - _pa.y0)          # the arrow line itself, not the axes edge
@@ -83,10 +93,5 @@ fig.text(_pa.x0, _ay + 0.012, "truncate", ha="left", va="bottom",
          fontsize=FS, color=DK, fontweight="bold")
 fig.text(_pa.x0, _ay - 0.012, "mix", ha="left", va="top",
          fontsize=FS, color=DK, fontweight="bold")
-_axs = [a for a in fig.axes]
-_p0, _p1 = _axs[-2].get_position(), _axs[-1].get_position()
-_xm = (_p0.x1 + _p1.x0) / 2
-fig.add_artist(Line2D([_xm, _xm], [_p0.y0 + 0.03, _p0.y1], color="0.75", lw=0.9,
-                      ls=":", transform=fig.transFigure))
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
