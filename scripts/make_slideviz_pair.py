@@ -129,13 +129,13 @@ ax.set_title("WikiText passage token probability",
 # colour key inline, in the space left over after the last token, so it costs no extra row
 _r = len(lines) - 1
 _end = lines[-1][-1][0] + lines[-1][-1][1]
-_x0 = _end + 9
-_w = min(17, NCOL - _x0 - 8)
-if _w > 6:
+_w = 15
+_x0 = NCOL - _w - 7                          # right-aligned on the last line
+if _x0 > _end + 4:
     _g = np.linspace(-PMAX, PMAX, 128)[None, :]
-    ax.imshow(_g, extent=[_x0, _x0 + _w, -_r - 0.32, -_r + 0.32], cmap=cmap, norm=norm,
+    ax.imshow(_g, extent=[_x0, _x0 + _w, -_r - 0.20, -_r + 0.20], cmap=cmap, norm=norm,
               aspect="auto", zorder=1)
-    ax.add_patch(Rectangle((_x0, -_r - 0.32), _w, 0.64, fc="none", ec="0.35", lw=0.5, zorder=3))
+    ax.add_patch(Rectangle((_x0, -_r - 0.20), _w, 0.40, fc="none", ec="0.35", lw=0.5, zorder=3))
     ax.text(_x0 - 1.4, -_r, "$-$%.2f" % PMAX, ha="right", va="center",
             fontsize=figstyle.FS_TICK - 1.8, color="0.35")
     ax.text(_x0 + _w + 1.4, -_r, "$+$%.2f" % PMAX, ha="left", va="center",
@@ -154,8 +154,6 @@ for xx, (k, n, e, sem, noise) in zip(x, rows):
 bx.set_xticks(x)
 bx.set_xticklabels(["func", "cont", "punc", "sub"],
                    fontsize=figstyle.FS_TICK - 1.5)
-for lab, (k, *_ ) in zip(bx.get_xticklabels(), rows):
-    lab.set_color(COL[k])
 bx.set_ylim(-nz * 1.25, nz * 1.25)
 bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
 figstyle.clean(bx)
@@ -165,5 +163,8 @@ bx.set_title("by token class", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="lef
 bx.text(0.99, 0.97, "grey $=$ seed spread", transform=bx.transAxes, ha="right", va="top",
         fontsize=figstyle.FS_TICK - 1.2, color="0.45")
 
+_pa, _pb = ax.get_position(), bx.get_position()
+_y0 = _pa.y0 + 0.105                          # room for the right panel's tick labels
+bx.set_position([_pb.x0, _y0, _pb.width, (_pb.y0 + _pb.height) - _y0])
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
