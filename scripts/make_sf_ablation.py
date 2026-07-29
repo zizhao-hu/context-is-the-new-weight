@@ -75,8 +75,8 @@ a2.errorbar(x + bw / 2, ppl, yerr=ppl_sem, fmt="none", ecolor="0.1",
             elinewidth=0.9, capsize=2, zorder=6)
 a2.set_ylim(30, max(short) * 1.15)
 
-a2.legend(handles=[Patch(facecolor=C_SHORT, label="in-context (len 64)"),
-                   Patch(facecolor=C_STREAM, label="streaming (30k)")],
+a2.legend(handles=[Patch(facecolor=C_SHORT, label="in context (0-256)"),
+                   Patch(facecolor=C_STREAM, label="out of context (256-30k)")],
           frameon=False, fontsize=figstyle.FS_LEGEND, ncol=2, loc="upper right", borderpad=0.1,
           handlelength=1.1, columnspacing=0.9, handletextpad=0.4)
 
