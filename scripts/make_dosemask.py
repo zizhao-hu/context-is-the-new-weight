@@ -16,6 +16,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, FancyArrow
+from matplotlib.lines import Line2D
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import figstyle
 figstyle.apply()
@@ -28,7 +29,8 @@ PALE = (0.80, 0.86, 0.93)          # attended but not scored
 DK = "#333"
 Q, W = 8, 4
 FS = figstyle.FS_TICK - 0.6
-PANELS = [(0, "1. SWA"), (1, "2. T-SWA"), (2, "3. T-SWA"), (W - 1, "4. ST-SWA")]
+PANELS = [(0, "1. SWA", "$0$ skipped"), (1, "2. T-SWA", "$1$ skipped"),
+          (2, "3. T-SWA", "$2$ skipped"), (W - 1, "4. ST-SWA", "$W{-}1$ skipped")]
 
 
 def mask(ax, ox, oy, skip, cell=1.0, lw=0.3, frame=0.8):
@@ -43,22 +45,23 @@ def mask(ax, ox, oy, skip, cell=1.0, lw=0.3, frame=0.8):
                            edgecolor="black", lw=frame, zorder=5))
 
 
-fig = plt.figure(figsize=(3.30, 1.98))
-gs = fig.add_gridspec(3, 4, height_ratios=[2.15, 0.20, 1.55],
-                      hspace=0.06, wspace=0.10,
-                      left=0.115, right=0.995, top=0.90, bottom=0.02)
+fig = plt.figure(figsize=(3.20, 2.05))
+gs = fig.add_gridspec(3, 4, height_ratios=[2.45, 0.75, 1.45],
+                      hspace=0.04, wspace=0.10,
+                      left=0.012, right=0.995, top=0.90, bottom=0.02)
 
-for i, (skip, title) in enumerate(PANELS):
+for i, (skip, title, sub) in enumerate(PANELS):
     ax = fig.add_subplot(gs[0, i])
     mask(ax, 0, 0, skip)
     ax.plot([-0.55, -0.55], [0, Q - skip], color=DK, lw=1.2, clip_on=False)   # scored block
-    ax.set_xlim(-1.1, Q + 0.1); ax.set_ylim(-0.1, Q + 0.1)
+    ax.text(Q / 2.0, -0.55, sub, ha="center", va="top", fontsize=FS - 0.8, color="0.35")
+    ax.set_xlim(-1.1, Q + 0.1); ax.set_ylim(-2.4, Q + 0.1)
     ax.set_aspect("equal"); ax.axis("off")
     ax.set_title(title, fontsize=FS, pad=1.5, color="0.2")
 
 arr = fig.add_subplot(gs[1, :]); arr.axis("off")
 arr.set_xlim(0, 1); arr.set_ylim(0, 1)
-arr.add_patch(FancyArrow(0.0, 0.5, 1.0, 0, width=0.07, head_width=0.55, head_length=0.02,
+arr.add_patch(FancyArrow(0.0, 0.5, 1.0, 0, width=0.028, head_width=0.22, head_length=0.02,
                          length_includes_head=True, color="0.35"))
 
 GAP = 2.6
@@ -70,12 +73,19 @@ for k, (a, lab) in enumerate(((0.25, r"$\alpha{=}0.25$"), (0.75, r"$\alpha{=}0.7
     for j, skip in enumerate(order):
         mask(bx, j * (Q + GAP), 0, skip, cell=1.0, lw=0.12, frame=0.45)
     bx.text(span / 2.0, -2.4, lab, ha="center", va="top", fontsize=FS, color="0.2")
-    bx.set_xlim(-0.6, span + 0.6); bx.set_ylim(-6.0, Q + 0.4)
+    bx.set_xlim(-0.6, span + 0.6); bx.set_ylim(-6.0, Q + 3.4)
     bx.set_aspect("equal"); bx.axis("off")
 
-fig.text(0.055, 0.60, "truncate", ha="center", va="center", fontsize=FS, color=DK,
-         fontweight="bold", rotation=90)
-fig.text(0.055, 0.16, "mix", ha="center", va="center", fontsize=FS, color=DK,
-         fontweight="bold", rotation=90)
+
+_pa = arr.get_position()
+fig.text(_pa.x0, _pa.y1 + 0.015, "truncate", ha="left", va="bottom",
+         fontsize=FS, color=DK, fontweight="bold")
+fig.text(_pa.x0, _pa.y0 - 0.015, "mix", ha="left", va="top",
+         fontsize=FS, color=DK, fontweight="bold")
+_axs = [a for a in fig.axes]
+_p0, _p1 = _axs[-2].get_position(), _axs[-1].get_position()
+_xm = (_p0.x1 + _p1.x0) / 2
+fig.add_artist(Line2D([_xm, _xm], [_p0.y0 + 0.03, _p0.y1], color="0.75", lw=0.9,
+                      ls=":", transform=fig.transFigure))
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
