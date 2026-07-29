@@ -66,7 +66,7 @@ bx.set_xticks([1, 10, 100, 1000])
 bx.set_xticklabels(["1", "10", "100", "1000"])      # plain numbers, not 10^n
 bx.set_ylim(0.0, 0.10)
 bx.set_yticks([0.0, 0.1])
-bx.set_xlabel("token age", fontsize=figstyle.FS_AXIS)
+bx.set_xlabel("sink distance from q", fontsize=figstyle.FS_AXIS)
 
 for a in (ax, bx):
     figstyle.clean(a)
