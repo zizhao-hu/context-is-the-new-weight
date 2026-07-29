@@ -89,26 +89,24 @@ for k in ORDER:
     rows.append((k, n, e.mean(), sem, noise))
 
 # ------------------------------------------------------------------------ figure
-plt.rcParams.update({"font.size": 10.5, "axes.linewidth": 0.9})
-fig, (ax, bx) = plt.subplots(1, 2, figsize=(figstyle.FULL, 2.1),
-                             gridspec_kw={"width_ratios": [2.55, 1.0], "wspace": 0.30})
+fig, (ax, bx) = plt.subplots(1, 2, figsize=(figstyle.FULL, 2.9),
+                             gridspec_kw={"width_ratios": [2.9, 1.0], "wspace": 0.22})
 
 PMAX = float(np.abs(dp[X0:X1]).max())
 ax.axhline(0, color="0.55", lw=0.8, zorder=2)
 for t in range(X0, X1):
     k = klass(toks[t])
     ax.add_patch(Rectangle((t + 0.08, 0), 0.84, float(dp[t]), fc=COL[k], ec="none", zorder=3))
-    ax.text(t + 0.5, -PMAX * 1.10, toks[t].replace(" ", "\u00b7"), fontsize=7.2, rotation=90,
+    ax.text(t + 0.5, -PMAX * 1.10, toks[t].replace(" ", "\u00b7"), fontsize=figstyle.FS_TICK - 1.0, rotation=90,
             ha="center", va="top", color=COL[k])
 ax.set_xlim(X0 - 0.6, X1 + 0.4)
-ax.set_ylim(-PMAX * 2.05, PMAX * 1.12)
+ax.set_ylim(-PMAX * 1.95, PMAX * 1.12)
 ax.set_yticks([-round(PMAX, 1), 0, round(PMAX, 1)])
-ax.tick_params(labelsize=9, length=3)
-ax.set_ylabel(r"$\Delta p$   (T-SWA $-$ SWA)", fontsize=10)
+ax.tick_params(labelsize=figstyle.FS_TICK, length=3)
 ax.set_xticks([])
 for sp in ("top", "right", "bottom"):
     ax.spines[sp].set_visible(False)
-ax.set_title("per token, one passage", fontsize=10.5, pad=6, loc="left", color="0.25")
+ax.set_title("per token, one passage", fontsize=figstyle.FS_TITLE, pad=4, loc="left", color="0.25")
 
 x = np.arange(len(rows))
 nz = max(r[4] for r in rows)
@@ -119,25 +117,23 @@ for xx, (k, n, e, sem, noise) in zip(x, rows):
     bx.errorbar(xx, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=1.0,
                 capsize=2.2, capthick=0.9, zorder=4)
 bx.set_xticks(x)
-SHORT = {"function word": "function\nword", "content word": "content\nword",
-         "punctuation & space": "punct.\n& space", "subword piece": "subword\npiece"}
-bx.set_xticklabels([SHORT[r[0]] for r in rows], fontsize=8.8, linespacing=1.2)
-for xx, r in zip(x, rows):
-    bx.text(xx, -nz * 0.93, "n=%s" % (("%.1fk" % (r[1] / 1000)) if r[1] >= 1000 else r[1]),
-            fontsize=7.6, ha="center", va="center", color="0.45")
+SHORT = {"function word": "function", "content word": "content",
+         "punctuation & space": "punct.", "subword piece": "subword"}
+bx.set_xticklabels([SHORT[r[0]] for r in rows], fontsize=figstyle.FS_TICK, rotation=90)
 bx.set_ylim(-nz * 1.12, nz * 1.12)
 bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
-bx.tick_params(labelsize=9, length=3)
-bx.set_ylabel(r"mean $\Delta p$", fontsize=10)
-bx.set_title("held-out chunks, 2 runs per rule", fontsize=10.5, pad=6, loc="left", color="0.25")
-bx.text(len(rows) - 0.52, nz * 0.97, "grey $=$ same-rule\nseed spread, per class", fontsize=8.2,
+bx.tick_params(labelsize=figstyle.FS_TICK, length=3)
+bx.set_title("held-out chunks, 2 runs per rule", fontsize=figstyle.FS_TITLE, pad=4, loc="left", color="0.25")
+bx.text(len(rows) - 0.52, nz * 0.97, "grey $=$ same-rule\nseed spread, per class", fontsize=figstyle.FS_TICK - 0.5,
         ha="right", va="top", color="0.45", linespacing=1.15)
 for sp in ("top", "right", "bottom"):
     bx.spines[sp].set_visible(False)
 
+figstyle.yname(ax, r"$\Delta p$  (T-SWA $-$ SWA)")
+figstyle.yname(bx, r"mean $\Delta p$")
 fig.legend(handles=[Patch(facecolor=COL[k], label=k) for k in ORDER],
            loc="upper center", bbox_to_anchor=(0.5, 1.10), ncol=4, frameon=False,
-           fontsize=10, handlelength=1.1, handleheight=0.9, columnspacing=1.6,
+           fontsize=figstyle.FS_LEGEND, handlelength=1.1, handleheight=0.9, columnspacing=1.6,
            handletextpad=0.4)
 fig.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
