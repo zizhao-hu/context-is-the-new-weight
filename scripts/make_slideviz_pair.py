@@ -100,7 +100,7 @@ PMAX = max(abs(v) for _, v in seg)
 norm = TwoSlopeNorm(vmin=-PMAX, vcenter=0.0, vmax=PMAX)
 cmap = plt.get_cmap("RdBu_r")
 
-NCOL = 108                                   # characters per line at this font size
+NCOL = 78                                    # characters per line in the narrower left panel
 lines, cur = [], []
 col = 0
 for tk, v in seg:
@@ -111,16 +111,15 @@ for tk, v in seg:
 if cur:
     lines.append(cur)
 
-fig = plt.figure(figsize=(figstyle.FULL, 1.05 + 0.22 * len(lines)))
-gs = fig.add_gridspec(2, 2, height_ratios=[0.30 * len(lines), 1.0], width_ratios=[1.7, 1.0],
-                      hspace=0.75, wspace=0.10)
-ax = fig.add_subplot(gs[0, :])
+fig = plt.figure(figsize=(figstyle.FULL, 1.75))
+gs = fig.add_gridspec(1, 2, width_ratios=[2.45, 1.0], wspace=0.14)
+ax = fig.add_subplot(gs[0, 0])
 for r, ln in enumerate(lines):
     for c, w, tk, v in ln:
         ax.add_patch(Rectangle((c, -r - 0.44), w, 0.88, fc=cmap(norm(v)), ec="none", zorder=1))
         ax.text(c + w / 2.0, -r, tk.replace(" ", "·"), family="monospace",
-                fontsize=4.6, ha="center", va="center", color="0.05", zorder=2)
-ax.set_xlim(-0.5, NCOL + 0.5); ax.set_ylim(-len(lines) + 0.4, 0.75)
+                fontsize=4.4, ha="center", va="center", color="0.05", zorder=2)
+ax.set_xlim(-0.5, NCOL + 0.5); ax.set_ylim(-len(lines) + 0.35, 0.75)
 ax.set_xticks([]); ax.set_yticks([])
 for sp in ax.spines.values():
     sp.set_visible(False)
@@ -128,14 +127,14 @@ ax.set_title("one WikiText passage, shaded by $\\Delta p$ (T-SWA $-$ SWA)",
              fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
 
 cb = fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax, orientation="horizontal",
-                  fraction=0.16, pad=0.06, aspect=45)
+                  fraction=0.09, pad=0.05, aspect=42)
 cb.set_ticks([-PMAX, 0, PMAX])
 cb.set_ticklabels(["$-$%.2f" % PMAX, "0", "$+$%.2f" % PMAX])
-cb.ax.tick_params(labelsize=figstyle.FS_TICK - 1.0, length=2)
+cb.ax.tick_params(labelsize=figstyle.FS_TICK - 1.2, length=2)
 cb.outline.set_linewidth(0.5)
 
-# class summary: the same difference averaged, against the same-rule seed spread
-bx = fig.add_subplot(gs[1, 0])
+# class summary beside it; the tick labels carry the class colours, so no legend is needed
+bx = fig.add_subplot(gs[0, 1])
 x = np.arange(len(rows))
 nz = max(r[4] for r in rows)
 bx.axhline(0, color="0.45", lw=0.9, zorder=2)
@@ -145,21 +144,17 @@ for xx, (k, n, e, sem, noise) in zip(x, rows):
     bx.errorbar(xx, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=0.9,
                 capsize=2.0, capthick=0.8, zorder=4)
 bx.set_xticks(x)
-bx.set_xticklabels(["function", "content", "punct.", "subword"], fontsize=figstyle.FS_TICK - 0.8)
+bx.set_xticklabels(["function", "content", "punct.", "subword"],
+                   fontsize=figstyle.FS_TICK - 1.0, rotation=90)
+for lab, (k, *_ ) in zip(bx.get_xticklabels(), rows):
+    lab.set_color(COL[k])
 bx.set_ylim(-nz * 1.25, nz * 1.25)
 bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
 figstyle.clean(bx)
-figstyle.yname(bx, r"mean $\Delta p$", pad=0.055)
-bx.set_title("averaged by token class", fontsize=figstyle.FS_TITLE - 1.0, pad=3,
-             loc="left", color="0.25")
-bx.text(0.99, 0.97, "grey $=$ same-rule seed spread", transform=bx.transAxes,
-        ha="right", va="top", fontsize=figstyle.FS_TICK - 1.0, color="0.45")
-
-# legend for the class colours, in the free cell beside the summary
-lg = fig.add_subplot(gs[1, 1]); lg.axis("off")
-lg.legend(handles=[Patch(facecolor=COL[k], edgecolor="black", lw=0.5, label=k) for k in ORDER],
-          loc="center left", frameon=False, fontsize=figstyle.FS_LEGEND,
-          handlelength=1.0, handleheight=0.85, labelspacing=0.35, borderpad=0.0)
+figstyle.yname(bx, r"mean $\Delta p$", pad=0.075)
+bx.set_title("by token class", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
+bx.text(0.99, 0.97, "grey $=$ seed spread", transform=bx.transAxes, ha="right", va="top",
+        fontsize=figstyle.FS_TICK - 1.2, color="0.45")
 
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
