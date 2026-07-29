@@ -18,6 +18,11 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import sys, os as _os
+sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle
+figstyle.apply()
+
 from scipy.stats import spearmanr
 
 T = os.path.expanduser("~/.claude/jobs/f25a34dc/tmp/sdist/")
@@ -29,7 +34,6 @@ MODELS = [("full", "A. full causal", "#4C72B0", "o"),
           ("sswa", "E. T-SWA", "#55A868", "^")]
 EDGES = np.unique(np.round(np.logspace(0, np.log10(1024), 13)).astype(int))
 
-plt.rcParams.update({"font.size": 9.5, "axes.linewidth": 0.8})
 fig, ax = plt.subplots(figsize=(3.34, 2.25))
 for key, label, col, mk in MODELS:
     d = np.load(T + "sinkdist_%s.npz" % key)
@@ -47,12 +51,13 @@ for key, label, col, mk in MODELS:
                 elinewidth=0.7, capsize=1.2, capthick=0.7,
                 label=r"%s  $\rho{=}%+.2f$" % (label, rho))
 ax.set_xscale("log")
-ax.set_xlabel("distance back from query (tokens)", fontsize=8.5)
-ax.set_ylabel("sink mass per column", fontsize=8.5)
-ax.tick_params(labelsize=8, length=2.5)
+ax.set_xlabel("distance back from query (tokens)", fontsize=figstyle.FS_AXIS)
+ax.text(0.015, 0.99, "sink mass per column", transform=ax.transAxes,
+        ha="left", va="top", fontsize=figstyle.FS_AXIS)
+ax.tick_params(labelsize=figstyle.FS_TICK, length=3.0)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-ax.legend(frameon=False, fontsize=7.2, handlelength=1.4, labelspacing=0.25,
-          borderpad=0.1, loc="upper center", ncol=1)
+ax.legend(frameon=False, fontsize=figstyle.FS_LEGEND, handlelength=1.4, labelspacing=0.25,
+          borderpad=0.1, loc="upper right", ncol=1)
 plt.tight_layout()
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)

@@ -19,6 +19,11 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import sys, os as _os
+sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle
+figstyle.apply()
+
 
 T = os.path.expanduser("~/.claude/jobs/f25a34dc/tmp/")
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -34,7 +39,6 @@ for key, _, _ in MODELS:
     d = json.load(open(T + "rankprof_%s.json" % key))
     data[key] = {int(k): v for k, v in d.items()}
 
-plt.rcParams.update({"font.size": 9.5, "axes.linewidth": 0.8})
 fig, ax = plt.subplots(figsize=(3.34, 2.25))          # single column
 x = np.arange(len(RANKS))
 w = 0.27
@@ -43,12 +47,13 @@ for i, (key, label, col) in enumerate(MODELS):
     e = [data[key].get(r, {}).get("sem", np.nan) for r in RANKS]
     ax.bar(x + (i - 1) * w, m, w, yerr=e, color=col, label=label,
            error_kw=dict(elinewidth=0.7, capsize=1.2, capthick=0.7, ecolor="0.25"))
-ax.set_xticks(x); ax.set_xticklabels([str(r) for r in RANKS], fontsize=8)
-ax.set_xlabel("sink rank in window (1 $=$ nearest)", fontsize=8.5)
-ax.set_ylabel("share of sink mass", fontsize=8.5)
-ax.tick_params(labelsize=8, length=2.5)
+ax.set_xticks(x); ax.set_xticklabels([str(r) for r in RANKS], fontsize=figstyle.FS_AXIS)
+ax.set_xlabel("sink rank in window (1 $=$ nearest)", fontsize=figstyle.FS_AXIS)
+ax.text(0.015, 0.99, "share of sink mass", transform=ax.transAxes,
+        ha="left", va="top", fontsize=figstyle.FS_AXIS)          # inside the axes: the left margin is dead space
+ax.tick_params(labelsize=figstyle.FS_TICK, length=3.0)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-ax.legend(frameon=False, fontsize=7.6, handlelength=0.9, handleheight=0.8,
+ax.legend(frameon=False, fontsize=figstyle.FS_LEGEND, handlelength=0.9, handleheight=0.8,
           labelspacing=0.25, borderpad=0.1, loc="upper right")
 plt.tight_layout()
 plt.savefig(OUT, dpi=300, bbox_inches="tight")

@@ -18,6 +18,11 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import sys, os as _os
+sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle
+figstyle.apply()
+
 from matplotlib.patches import Rectangle, Patch
 
 T = "/Users/zizhaohu/.claude/jobs/f25a34dc/tmp/"
@@ -85,7 +90,7 @@ for k in ORDER:
 
 # ------------------------------------------------------------------------ figure
 plt.rcParams.update({"font.size": 10.5, "axes.linewidth": 0.9})
-fig, (ax, bx) = plt.subplots(1, 2, figsize=(13.2, 3.15),
+fig, (ax, bx) = plt.subplots(1, 2, figsize=(figstyle.FULL, 2.1),
                              gridspec_kw={"width_ratios": [2.55, 1.0], "wspace": 0.30})
 
 PMAX = float(np.abs(dp[X0:X1]).max())

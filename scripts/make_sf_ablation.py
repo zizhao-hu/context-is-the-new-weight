@@ -10,6 +10,11 @@ Data: figures/sf_ablation.tsv (measured; refuses to plot without it).
 import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
+import sys, os as _os
+sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle
+figstyle.apply()
+
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 
@@ -39,9 +44,8 @@ nsf = len(sf)
 labels = ["%d" % v for v in sf] + ["0" if a == 0 else ("1" if a == 1 else ("%.2f" % a).lstrip("0").rstrip("0")) for a in mal]
 
 C_P0, C_SEP, C_SHORT, C_STREAM = "#4C72B0", "#55A868", "#B04C4C", "#555555"
-plt.rcParams.update({"font.size": 9, "axes.linewidth": 0.8})
-f1, a1 = plt.subplots(figsize=(3.34, 2.5))       # single column
-f2, a2 = plt.subplots(figsize=(3.34, 2.5))
+f1, a1 = plt.subplots(figsize=(figstyle.COL, 2.5))       # single column
+f2, a2 = plt.subplots(figsize=(figstyle.COL, 2.5))
 
 # ---- left: sink distribution ----
 w = 0.72
@@ -53,12 +57,12 @@ for sl in (slice(0, nsf), slice(nsf, None)):
 a1.errorbar(x, p0, yerr=p0s, fmt="none", ecolor="0.15", elinewidth=0.9, capsize=2, zorder=6)
 a1.errorbar(x, tot, yerr=np.sqrt(p0s**2 + seps**2), fmt="none", ecolor="0.15",
             elinewidth=0.9, capsize=2, zorder=6)
-a1.set_ylabel("attention mass", fontsize=8)
+a1.text(0.015, 0.99, "attention mass", transform=a1.transAxes, ha="left", va="top", fontsize=figstyle.FS_AXIS)
 a1.set_ylim(0, max(tot) * 1.28)
 
 a1.legend(handles=[Patch(facecolor=C_P0, label="p0 sink"),
                    Patch(facecolor=C_SEP, label="distributed sink")],
-          frameon=False, fontsize=6.6, ncol=2, loc="upper right", borderpad=0.1,
+          frameon=False, fontsize=figstyle.FS_LEGEND, ncol=2, loc="upper right", borderpad=0.1,
           handlelength=1.2, columnspacing=0.9, handletextpad=0.4)
 
 # ---- right: perplexity (grouped bars: in-context vs streaming) ----
@@ -70,12 +74,12 @@ for sl in (slice(0, nsf), slice(nsf, None)):
     a2.plot(x[sl] + bw / 2, ppl[sl], "-o", color="#2b2b2b", ms=4, lw=1.8, zorder=5)
 a2.errorbar(x + bw / 2, ppl, yerr=ppl_sem, fmt="none", ecolor="0.1",
             elinewidth=0.9, capsize=2, zorder=6)
-a2.set_ylabel("perplexity", fontsize=8)
+a2.text(0.015, 0.99, "perplexity", transform=a2.transAxes, ha="left", va="top", fontsize=figstyle.FS_AXIS)
 a2.set_ylim(30, max(short) * 1.15)
 
 a2.legend(handles=[Patch(facecolor=C_SHORT, label="in-context (len 64)"),
                    Patch(facecolor=C_STREAM, label="streaming (30k)")],
-          frameon=False, fontsize=6.6, ncol=2, loc="upper center", borderpad=0.1,
+          frameon=False, fontsize=figstyle.FS_LEGEND, ncol=2, loc="upper right", borderpad=0.1,
           handlelength=1.1, columnspacing=0.9, handletextpad=0.4)
 
 div = nsf - 1 + GAP / 2 + 0.5
@@ -83,7 +87,7 @@ for ax in (a1, a2):
     ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=5.6, rotation=90)
     ax.axvline(div, color="0.75", lw=0.9, ls=":")
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-    ax.tick_params(length=2.5, labelsize=7)
+    ax.tick_params(length=2.5, labelsize=figstyle.FS_TICK)
     ax.text((nsf - 1) / 2, -0.34, "unscored rows", ha="center", fontsize=7,
             transform=ax.get_xaxis_transform())
     ax.text(np.mean(mx), -0.34, "mix $\\alpha$", ha="center", fontsize=7,

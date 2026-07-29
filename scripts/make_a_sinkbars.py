@@ -14,6 +14,11 @@ Error bars are +/-1 SEM over the n independent eval segments.
 import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
+import sys, os as _os
+sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+import figstyle
+figstyle.apply()
+
 from matplotlib.patches import Patch
 
 DATA = "figures/a_sinkdecomp.tsv"
@@ -41,11 +46,10 @@ SHORT = {"a. full causal": "full", "b. sliding window": "SWA",
 xl = [SHORT.get(l, l) for l in labels]
 
 C_P0, C_REG, C_SEP, C_CT = "#4C72B0", "#DD5B45", "#55A868", "#D3D3D3"
-plt.rcParams.update({"font.size": 12, "axes.linewidth": 0.9})
-fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.65), sharey=True)   # tall enough to label every segment
+fig, axes = plt.subplots(1, 2, figsize=(figstyle.COL, 2.45), sharey=True)   # tall enough to label every segment
 
-T_LO = "sequence length $<$ max context"
-T_HI = "sequence length $>$ max context"
+T_LO = "within max context"
+T_HI = "past max context"
 for ax, vals, sv, ttl in ((axes[0], cold, sem_cold, T_LO),
                           (axes[1], deep, sem_deep, T_HI)):
     x = np.arange(len(labels))
@@ -57,21 +61,21 @@ for ax, vals, sv, ttl in ((axes[0], cold, sem_cold, T_LO),
     edges = np.stack([fiw, fiw + sep], axis=1)
     for j in range(2):
         ax.errorbar(x, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
-                    elinewidth=0.9, capsize=2.0, capthick=0.9, zorder=5)
+                    elinewidth=0.9, capsize=1.6, capthick=0.8, zorder=5)
     # label the three sink classes; content is the remainder to 1 and needs no number
     for xx, a_, b_ in zip(x, fiw, sep):
         for yy, v in ((a_ / 2, a_), (a_ + b_ / 2, b_)):
             if v >= 0.01:
-                ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=9.8,
+                ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=figstyle.FS_CHIP,
                         color="0.1", fontweight="bold", zorder=7,
-                        bbox=dict(boxstyle="round,pad=0.18", fc="white", ec="0.45", lw=0.8, alpha=0.9))
+                        bbox=dict(boxstyle="round,pad=0.16", fc="white", ec="0.45", lw=0.7, alpha=0.92))
     ax.set_ylim(0, 1); ax.set_xticks(x)
-    ax.set_xticklabels(xl, fontsize=11.6)
+    ax.set_xticklabels(xl, fontsize=figstyle.FS_TICK)
     ax.set_xlim(-0.60, len(labels) - 0.40)
-    ax.set_title(ttl, fontsize=11.6, fontweight="bold", pad=3)
-    ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(length=3.5, labelsize=10.6)
+    ax.set_title(ttl, fontsize=figstyle.FS_TICK, fontweight="bold", pad=3)
+    ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(length=3.5, labelsize=figstyle.FS_TICK)
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-axes[0].set_ylabel("attention mass", fontsize=11.6)
+figstyle.yname(axes[0], "attention mass")
 
 plt.tight_layout(rect=(0, 0, 1, 0.90))
 _cx = (axes[0].get_position().x0 + axes[1].get_position().x1) / 2   # centre over the panels only
@@ -79,7 +83,7 @@ fig.legend(handles=[Patch(facecolor=C_P0, label="first-in-window sink"),
                     Patch(facecolor=C_SEP, label="distributed sink"),
                     Patch(facecolor=C_CT, label="content")],
            loc="upper center", bbox_to_anchor=(_cx, 1.0), bbox_transform=fig.transFigure,
-           ncol=3, frameon=False, fontsize=11.0, handlelength=1.15, handleheight=0.9,
-           columnspacing=1.6, handletextpad=0.4, borderpad=0.0, borderaxespad=0.0)
+           ncol=3, frameon=False, fontsize=figstyle.FS_LEGEND, handlelength=1.15, handleheight=0.9,
+           columnspacing=1.0, handletextpad=0.4, borderpad=0.0, borderaxespad=0.0)
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
