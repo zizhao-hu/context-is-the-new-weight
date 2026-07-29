@@ -93,7 +93,7 @@ fig, (ax, bx) = plt.subplots(1, 2, figsize=(figstyle.FULL, 2.15),
                              gridspec_kw={"width_ratios": [2.9, 1.0], "wspace": 0.12})
 
 PMAX = float(np.abs(dp[X0:X1]).max())
-ax.axhline(0, xmin=0.055, color="0.55", lw=0.8, zorder=2)
+ax.axhline(0, color="0.55", lw=0.8, zorder=2)
 for t in range(X0, X1):
     k = klass(toks[t])
     ax.add_patch(Rectangle((t + 0.08, 0), 0.84, float(dp[t]), fc=COL[k], ec="none", zorder=3))
@@ -110,13 +110,12 @@ ax.set_title("per token", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", c
 
 x = np.arange(len(rows))
 nz = max(r[4] for r in rows)
-bx.axhline(0, xmin=0.115, color="0.45", lw=0.9, zorder=2)
+bx.axhline(0, color="0.45", lw=0.9, zorder=2)
 for xx, (k, n, e, sem, noise) in zip(x, rows):
     bx.bar(xx, 2 * noise, width=0.84, bottom=-noise, color="0.90", zorder=0, lw=0)
     bx.bar(xx, e, width=0.58, color=COL[k], zorder=3)
     bx.errorbar(xx, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=1.0,
                 capsize=2.2, capthick=0.9, zorder=4)
-bx.set_xlim(-1.05, len(rows) - 0.35)          # empty strip so bars clear the inside numbers
 bx.set_xticks([])
 bx.set_ylim(-nz * 1.30, nz * 1.30)
 bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
@@ -131,10 +130,8 @@ ax.legend(handles=[Patch(facecolor=COL[k], label=k) for k in ORDER],
           loc="upper right", ncol=2, frameon=False, fontsize=figstyle.FS_LEGEND - 0.6,
           handlelength=1.0, handleheight=0.85, columnspacing=0.9,
           handletextpad=0.35, labelspacing=0.25, borderaxespad=0.2)
-ax.set_ylabel(r"$\Delta p$  (T-SWA $-$ SWA)", fontsize=figstyle.FS_AXIS, labelpad=1)
-bx.set_ylabel(r"mean $\Delta p$", fontsize=figstyle.FS_AXIS, labelpad=1)
-figstyle.yticks_inside(ax, x=0.010, size=figstyle.FS_TICK - 1.2)
-figstyle.yticks_inside(bx, x=0.020, size=figstyle.FS_TICK - 1.2)
+figstyle.yname(ax, r"$\Delta p$  (T-SWA $-$ SWA)")
+figstyle.yname(bx, r"mean $\Delta p$", pad=0.16)
 fig.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
 for k, n, e, sem, noise in rows:

@@ -94,10 +94,8 @@ for ax in (a1, a2):
 from matplotlib.ticker import MaxNLocator
 for _a in (a1, a2):
     _a.yaxis.set_major_locator(MaxNLocator(nbins=3))
-figstyle.yname(a1, "attention mass", pad=0.115)
-figstyle.yname(a2, "perplexity", pad=0.115)
-figstyle.yticks_inside(a1, x=0.062, size=figstyle.FS_TICK - 0.8)
-figstyle.yticks_inside(a2, x=0.062, size=figstyle.FS_TICK - 0.8)
+figstyle.yname(a1, "attention mass")
+figstyle.yname(a2, "perplexity")
 for f, o in ((f1, OUT_SINK), (f2, OUT_PPL)):
     f.tight_layout()
     f.savefig(o, dpi=300, bbox_inches="tight")
