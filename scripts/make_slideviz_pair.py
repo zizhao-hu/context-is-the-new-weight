@@ -89,52 +89,77 @@ for k in ORDER:
     rows.append((k, n, e.mean(), sem, noise))
 
 # ------------------------------------------------------------------------ figure
-fig, (ax, bx) = plt.subplots(1, 2, figsize=(figstyle.FULL, 2.15),
-                             gridspec_kw={"width_ratios": [2.9, 1.0], "wspace": 0.12})
+# Read the passage, do not decode a bar chart: every token is drawn as text on a patch
+# shaded by its own dp, so where the two loss rules differ is legible in the sentence.
+from matplotlib.colors import TwoSlopeNorm
+from matplotlib.cm import ScalarMappable
 
-PMAX = float(np.abs(dp[X0:X1]).max())
-ax.axhline(0, color="0.55", lw=0.8, zorder=2)
-for t in range(X0, X1):
-    k = klass(toks[t])
-    ax.add_patch(Rectangle((t + 0.08, 0), 0.84, float(dp[t]), fc=COL[k], ec="none", zorder=3))
-    ax.text(t + 0.5, -PMAX * 1.10, toks[t].replace(" ", "\u00b7"), fontsize=figstyle.FS_TICK - 1.0, rotation=90,
-            ha="center", va="top", color=COL[k])
-ax.set_xlim(X0 - 0.6, X1 + 0.4)
-ax.set_ylim(-PMAX * 1.95, PMAX * 1.12)
-ax.set_yticks([-round(PMAX, 1), 0, round(PMAX, 1)])
-ax.tick_params(labelsize=figstyle.FS_TICK, length=3)
-ax.set_xticks([])
-for sp in ("top", "right", "bottom", "left"):
-    ax.spines[sp].set_visible(True)
-    ax.spines[sp].set_linewidth(figstyle.LW_AXES)
-ax.set_title("per token", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
+X0, X1 = 104, min(L, 168)
+seg = [(toks[t], float(dp[t])) for t in range(X0, X1)]
+PMAX = max(abs(v) for _, v in seg)
+norm = TwoSlopeNorm(vmin=-PMAX, vcenter=0.0, vmax=PMAX)
+cmap = plt.get_cmap("RdBu_r")
 
+NCOL = 108                                   # characters per line at this font size
+lines, cur = [], []
+col = 0
+for tk, v in seg:
+    w = max(len(tk), 1)
+    if col + w > NCOL:
+        lines.append(cur); cur = []; col = 0
+    cur.append((col, w, tk, v)); col += w
+if cur:
+    lines.append(cur)
+
+fig = plt.figure(figsize=(figstyle.FULL, 1.05 + 0.22 * len(lines)))
+gs = fig.add_gridspec(2, 2, height_ratios=[0.30 * len(lines), 1.0], width_ratios=[1.7, 1.0],
+                      hspace=0.75, wspace=0.10)
+ax = fig.add_subplot(gs[0, :])
+for r, ln in enumerate(lines):
+    for c, w, tk, v in ln:
+        ax.add_patch(Rectangle((c, -r - 0.44), w, 0.88, fc=cmap(norm(v)), ec="none", zorder=1))
+        ax.text(c + w / 2.0, -r, tk.replace(" ", "·"), family="monospace",
+                fontsize=4.6, ha="center", va="center", color="0.05", zorder=2)
+ax.set_xlim(-0.5, NCOL + 0.5); ax.set_ylim(-len(lines) + 0.4, 0.75)
+ax.set_xticks([]); ax.set_yticks([])
+for sp in ax.spines.values():
+    sp.set_visible(False)
+ax.set_title("one WikiText passage, shaded by $\\Delta p$ (T-SWA $-$ SWA)",
+             fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
+
+cb = fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=ax, orientation="horizontal",
+                  fraction=0.16, pad=0.06, aspect=45)
+cb.set_ticks([-PMAX, 0, PMAX])
+cb.set_ticklabels(["$-$%.2f" % PMAX, "0", "$+$%.2f" % PMAX])
+cb.ax.tick_params(labelsize=figstyle.FS_TICK - 1.0, length=2)
+cb.outline.set_linewidth(0.5)
+
+# class summary: the same difference averaged, against the same-rule seed spread
+bx = fig.add_subplot(gs[1, 0])
 x = np.arange(len(rows))
 nz = max(r[4] for r in rows)
 bx.axhline(0, color="0.45", lw=0.9, zorder=2)
 for xx, (k, n, e, sem, noise) in zip(x, rows):
-    bx.bar(xx, 2 * noise, width=0.84, bottom=-noise, color="0.90", zorder=0, lw=0)
-    bx.bar(xx, e, width=0.58, color=COL[k], zorder=3)
-    bx.errorbar(xx, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=1.0,
-                capsize=2.2, capthick=0.9, zorder=4)
-bx.set_xticks([])
-bx.set_ylim(-nz * 1.30, nz * 1.30)
+    bx.bar(xx, 2 * noise, width=0.86, bottom=-noise, color="0.90", zorder=0, lw=0)
+    bx.bar(xx, e, width=0.52, color=COL[k], edgecolor="black", linewidth=0.5, zorder=3)
+    bx.errorbar(xx, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=0.9,
+                capsize=2.0, capthick=0.8, zorder=4)
+bx.set_xticks(x)
+bx.set_xticklabels(["function", "content", "punct.", "subword"], fontsize=figstyle.FS_TICK - 0.8)
+bx.set_ylim(-nz * 1.25, nz * 1.25)
 bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
-bx.tick_params(labelsize=figstyle.FS_TICK, length=3)
-bx.set_title("token probability diff", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
-bx.text(len(rows) - 0.52, nz * 0.97, "grey $=$ same-rule\nseed spread, per class", fontsize=figstyle.FS_TICK - 0.5,
-        ha="right", va="top", color="0.45", linespacing=1.15)
-for sp in ("top", "right", "bottom", "left"):
-    bx.spines[sp].set_visible(True)
-    bx.spines[sp].set_linewidth(figstyle.LW_AXES)
+figstyle.clean(bx)
+figstyle.yname(bx, r"mean $\Delta p$", pad=0.055)
+bx.set_title("averaged by token class", fontsize=figstyle.FS_TITLE - 1.0, pad=3,
+             loc="left", color="0.25")
+bx.text(0.99, 0.97, "grey $=$ same-rule seed spread", transform=bx.transAxes,
+        ha="right", va="top", fontsize=figstyle.FS_TICK - 1.0, color="0.45")
 
-ax.legend(handles=[Patch(facecolor=COL[k], label=k) for k in ORDER],
-          loc="upper right", ncol=2, frameon=False, fontsize=figstyle.FS_LEGEND - 0.6,
-          handlelength=1.0, handleheight=0.85, columnspacing=0.9,
-          handletextpad=0.35, labelspacing=0.25, borderaxespad=0.2)
-figstyle.yname(ax, r"$\Delta p$  (T-SWA $-$ SWA)")
-figstyle.yname(bx, r"mean $\Delta p$", pad=0.16)
-fig.savefig(OUT, dpi=300, bbox_inches="tight")
+# legend for the class colours, in the free cell beside the summary
+lg = fig.add_subplot(gs[1, 1]); lg.axis("off")
+lg.legend(handles=[Patch(facecolor=COL[k], edgecolor="black", lw=0.5, label=k) for k in ORDER],
+          loc="center left", frameon=False, fontsize=figstyle.FS_LEGEND,
+          handlelength=1.0, handleheight=0.85, labelspacing=0.35, borderpad=0.0)
+
+plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
-for k, n, e, sem, noise in rows:
-    print("  %-15s n=%6d  eff %+.4f +- %.4f   seed-noise %+.4f" % (k, n, e, sem, noise))
