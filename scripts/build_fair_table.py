@@ -68,8 +68,10 @@ def rgv(tag):          # RESULT_REGDEPLOY sliding deep
     return f(r"RESULT_REGDEPLOY mask=\S+ tag=%s reg=\S+/sliding \| avg [\d.]+ deep ([\d.]+)" % re.escape(tag))
 
 # E rows under a full-attention deploy, deep bin: measured, but out of distribution
-# (trained at W=1024, deployed with 2048 of reach). From the bin0 and ccx runs.
-E_FULL = {"e": 13.87, "f_tok": 13.38, "f_pref": 104.58, "f_scal": 9.65,
+# (trained at W=1024, deployed with 2048 of reach). e is re-measured eval-only from
+# cc_ckpts/base (job 5277176): deep 14.5680, deep_sem 2.0583. The others still come
+# from the older bin0/ccx runs and carry no SEM.
+E_FULL = {"e": 14.57, "f_tok": 13.38, "f_pref": 104.58, "f_scal": 9.65,
           "g_rtok": 9.52, "g_rpref": 9.78}
 
 pplS = {  # value, marker: s=StreamingLLM, w=own sliding, r=registers
