@@ -52,12 +52,11 @@ for key, label, col, mk in MODELS:
                 label=r"%s  $\rho{=}%+.2f$" % (label, rho))
 ax.set_xscale("log")
 ax.set_xlabel("distance back from query (tokens)", fontsize=figstyle.FS_AXIS)
-ax.text(0.015, 0.99, "sink mass per column", transform=ax.transAxes,
-        ha="left", va="top", fontsize=figstyle.FS_AXIS)
 ax.tick_params(labelsize=figstyle.FS_TICK, length=3.0)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 ax.legend(frameon=False, fontsize=figstyle.FS_LEGEND, handlelength=1.4, labelspacing=0.25,
-          borderpad=0.1, loc="upper right", ncol=1)
+          borderpad=0.1, loc="upper left", ncol=1, borderaxespad=0.15)
+figstyle.yname(ax, "sink mass per column")
 plt.tight_layout()
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)

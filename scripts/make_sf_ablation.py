@@ -57,7 +57,6 @@ for sl in (slice(0, nsf), slice(nsf, None)):
 a1.errorbar(x, p0, yerr=p0s, fmt="none", ecolor="0.15", elinewidth=0.9, capsize=2, zorder=6)
 a1.errorbar(x, tot, yerr=np.sqrt(p0s**2 + seps**2), fmt="none", ecolor="0.15",
             elinewidth=0.9, capsize=2, zorder=6)
-a1.text(0.015, 0.99, "attention mass", transform=a1.transAxes, ha="left", va="top", fontsize=figstyle.FS_AXIS)
 a1.set_ylim(0, max(tot) * 1.28)
 
 a1.legend(handles=[Patch(facecolor=C_P0, label="p0 sink"),
@@ -74,7 +73,6 @@ for sl in (slice(0, nsf), slice(nsf, None)):
     a2.plot(x[sl] + bw / 2, ppl[sl], "-o", color="#2b2b2b", ms=4, lw=1.8, zorder=5)
 a2.errorbar(x + bw / 2, ppl, yerr=ppl_sem, fmt="none", ecolor="0.1",
             elinewidth=0.9, capsize=2, zorder=6)
-a2.text(0.015, 0.99, "perplexity", transform=a2.transAxes, ha="left", va="top", fontsize=figstyle.FS_AXIS)
 a2.set_ylim(30, max(short) * 1.15)
 
 a2.legend(handles=[Patch(facecolor=C_SHORT, label="in-context (len 64)"),
@@ -93,6 +91,8 @@ for ax in (a1, a2):
     ax.text(np.mean(mx), -0.34, "mix $\\alpha$", ha="center", fontsize=7,
             transform=ax.get_xaxis_transform())
 
+figstyle.yname(a1, "attention mass")
+figstyle.yname(a2, "perplexity")
 for f, o in ((f1, OUT_SINK), (f2, OUT_PPL)):
     f.tight_layout()
     f.savefig(o, dpi=300, bbox_inches="tight")

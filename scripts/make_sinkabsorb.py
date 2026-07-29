@@ -61,22 +61,17 @@ for k, fam in enumerate((FULLFAM, SWAFAM)):
     ax.bar(xx, p0, w, bottom=rg, color=tint(C_P0), edgecolor="black", linewidth=0.6, hatch=hat, zorder=3)
     ax.bar(xx, sp, w, bottom=rg + p0, color=tint(C_SEP), edgecolor="black", linewidth=0.6, hatch=hat, zorder=3)
     ax.bar(xx, ct, w, bottom=rg + p0 + sp, color=tint(C_CT), edgecolor="black", linewidth=0.6, hatch=hat, zorder=3)
-    for xi, r_, p_ in zip(xx, rg, p0):                     # label the two sinks that matter
-        if r_ >= 0.05: figstyle.chip(ax, xi, r_ / 2, r_)
-        if p_ >= 0.05: figstyle.chip(ax, xi, r_ + p_ / 2, p_)
     edges = np.stack([rg, rg + p0, rg + p0 + sp], axis=1)
     sv = np.stack([rgs, p0s, sps], axis=1)
     for j in range(3):
         ax.errorbar(xx, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
                     elinewidth=0.7, capsize=1.2, capthick=0.7, zorder=6)
-ax.set_ylim(0, 1.20); ax.set_xticks(x)
+ax.set_ylim(0, 1.06); ax.set_xticks(x)
 ax.set_xticklabels(DESIGNS, fontsize=figstyle.FS_AXIS)
 for xi in x:
     ax.text(xi - dx, 1.015, "F", fontsize=6.5, ha="center", va="bottom", color="0.35")
     ax.text(xi + dx, 1.015, "S", fontsize=6.5, ha="center", va="bottom", color="0.35")
 ax.set_xlim(-0.55, len(DESIGNS) - 0.45)
-ax.text(0.015, 0.995, "attention mass", transform=ax.transAxes,
-        ha="left", va="top", fontsize=figstyle.FS_AXIS)
 ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(labelsize=figstyle.FS_TICK, length=3.0)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 h = [Patch(facecolor=C_REG, edgecolor="black", lw=0.6, label="trainable sink"),
@@ -88,6 +83,7 @@ h = [Patch(facecolor=C_REG, edgecolor="black", lw=0.6, label="trainable sink"),
 fig.legend(handles=h, loc="upper center", bbox_to_anchor=(0.5, 1.10), ncol=3, frameon=False,
            fontsize=figstyle.FS_LEGEND, handlelength=0.9, handleheight=0.8, columnspacing=0.8,
            handletextpad=0.3, labelspacing=0.2)
+figstyle.yname(ax, "attention mass")
 plt.tight_layout(rect=(0, 0, 1, 0.92))
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)

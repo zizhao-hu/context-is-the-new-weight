@@ -49,12 +49,11 @@ for i, (key, label, col) in enumerate(MODELS):
            error_kw=dict(elinewidth=0.7, capsize=1.2, capthick=0.7, ecolor="0.25"))
 ax.set_xticks(x); ax.set_xticklabels([str(r) for r in RANKS], fontsize=figstyle.FS_AXIS)
 ax.set_xlabel("sink rank in window (1 $=$ nearest)", fontsize=figstyle.FS_AXIS)
-ax.text(0.015, 0.99, "share of sink mass", transform=ax.transAxes,
-        ha="left", va="top", fontsize=figstyle.FS_AXIS)          # inside the axes: the left margin is dead space
 ax.tick_params(labelsize=figstyle.FS_TICK, length=3.0)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 ax.legend(frameon=False, fontsize=figstyle.FS_LEGEND, handlelength=0.9, handleheight=0.8,
           labelspacing=0.25, borderpad=0.1, loc="upper right")
+figstyle.yname(ax, "share of sink mass")
 plt.tight_layout()
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)

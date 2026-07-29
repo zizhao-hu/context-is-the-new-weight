@@ -46,9 +46,20 @@ def clean(ax):
     ax.tick_params(length=3.0, labelsize=FS_TICK)
 
 
-def yname(ax, text, x=0.015, y=0.995):
-    """axis name inside the axes, so the left margin carries only the tick numbers"""
-    return ax.text(x, y, text, transform=ax.transAxes, ha="left", va="top", fontsize=FS_AXIS)
+def yname(ax, text, pad=0.075):
+    """Axis name running vertically just inside the left spine.
+
+    The left margin then carries only the tick numbers. `pad` (a fraction of the axes width)
+    is added to the left of the data range first, so the name sits in an empty strip instead
+    of on top of the leftmost bar. Call this after the data and any explicit xlim are set.
+    """
+    x0, x1 = ax.get_xlim()
+    if ax.get_xscale() == "log":
+        ax.set_xlim(x0 / (x1 / x0) ** (pad / (1 - pad)), x1)
+    else:
+        ax.set_xlim(x0 - (x1 - x0) * pad / (1 - pad), x1)
+    return ax.text(pad * 0.42, 0.5, text, transform=ax.transAxes, rotation=90,
+                   ha="center", va="center", fontsize=FS_AXIS)
 
 
 def chip(ax, x, y, v, fmt="%.2f"):
