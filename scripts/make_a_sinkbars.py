@@ -55,9 +55,9 @@ for ax, vals, sv, ttl in ((axes[0], cold, sem_cold, T_LO),
     x = np.arange(len(labels))
     fiw, sep, ct = vals[:, 0], vals[:, 1], vals[:, 2]
     w = 0.80
-    ax.bar(x, fiw, w, color=C_P0, edgecolor="white", linewidth=0.6)
-    ax.bar(x, sep, w, bottom=fiw, color=C_SEP, edgecolor="white", linewidth=0.6)
-    ax.bar(x, ct, w, bottom=fiw + sep, color=C_CT, edgecolor="white", linewidth=0.6)
+    ax.bar(x, fiw, w, color=C_P0, edgecolor="black", linewidth=0.6, zorder=3)
+    ax.bar(x, sep, w, bottom=fiw, color=C_SEP, edgecolor="black", linewidth=0.6, zorder=3)
+    ax.bar(x, ct, w, bottom=fiw + sep, color=C_CT, edgecolor="black", linewidth=0.6, zorder=3)
     edges = np.stack([fiw, fiw + sep], axis=1)
     for j in range(2):
         ax.errorbar(x, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
@@ -76,14 +76,13 @@ for ax, vals, sv, ttl in ((axes[0], cold, sem_cold, T_LO),
     ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(length=3.5, labelsize=figstyle.FS_TICK)
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 
-figstyle.yname(axes[0], "attention mass", also=(axes[1],))
-plt.tight_layout(rect=(0, 0, 1, 0.90))
-_cx = (axes[0].get_position().x0 + axes[1].get_position().x1) / 2   # centre over the panels only
-fig.legend(handles=[Patch(facecolor=C_P0, label="first-in-window sink"),
-                    Patch(facecolor=C_SEP, label="distributed sink"),
-                    Patch(facecolor=C_CT, label="content")],
-           loc="upper center", bbox_to_anchor=(_cx, 1.0), bbox_transform=fig.transFigure,
-           ncol=3, frameon=False, fontsize=figstyle.FS_LEGEND, handlelength=1.15, handleheight=0.9,
-           columnspacing=1.0, handletextpad=0.4, borderpad=0.0, borderaxespad=0.0)
+fig.legend(handles=[Patch(facecolor=C_P0, edgecolor="black", lw=0.6, label="first-in-window sink"),
+                    Patch(facecolor=C_SEP, edgecolor="black", lw=0.6, label="distributed sink"),
+                    Patch(facecolor=C_CT, edgecolor="black", lw=0.6, label="content")],
+           loc="upper center", bbox_to_anchor=(0.5, 1.10), ncol=3, frameon=False,
+           fontsize=figstyle.FS_LEGEND, handlelength=0.9, handleheight=0.8, columnspacing=0.8,
+           handletextpad=0.3, labelspacing=0.2)
+figstyle.yname(axes[0], "attention mass", also=(axes[1],), pad=0.105)
+plt.tight_layout(rect=(0, 0, 1, 0.92))
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
