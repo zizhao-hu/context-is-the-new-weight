@@ -86,9 +86,9 @@ for ax in (a1, a2):
     ax.axvline(div, color="0.75", lw=0.9, ls=":")
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
     ax.tick_params(length=2.5, labelsize=figstyle.FS_TICK)
-    ax.text((nsf - 1) / 2, -0.34, "unscored rows", ha="center", fontsize=figstyle.FS_AXIS,
+    ax.text((nsf - 1) / 2, -0.34, "unscored tokens", ha="center", fontsize=figstyle.FS_AXIS,
             transform=ax.get_xaxis_transform())
-    ax.text(np.mean(mx), -0.34, "mix $\\alpha$", ha="center", fontsize=figstyle.FS_AXIS,
+    ax.text(np.mean(mx), -0.34, "mix ratio $\\alpha$", ha="center", fontsize=figstyle.FS_AXIS,
             transform=ax.get_xaxis_transform())
 
 from matplotlib.ticker import MaxNLocator
