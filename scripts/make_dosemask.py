@@ -78,9 +78,10 @@ for k, (a, lab) in enumerate(((0.25, r"$\alpha{=}0.25$"), (0.75, r"$\alpha{=}0.7
 
 
 _pa = arr.get_position()
-fig.text(_pa.x0, _pa.y1 + 0.015, "truncate", ha="left", va="bottom",
+_ay = _pa.y0 + 0.5 * (_pa.y1 - _pa.y0)          # the arrow line itself, not the axes edge
+fig.text(_pa.x0, _ay + 0.012, "truncate", ha="left", va="bottom",
          fontsize=FS, color=DK, fontweight="bold")
-fig.text(_pa.x0, _pa.y0 - 0.015, "mix", ha="left", va="top",
+fig.text(_pa.x0, _ay - 0.012, "mix", ha="left", va="top",
          fontsize=FS, color=DK, fontweight="bold")
 _axs = [a for a in fig.axes]
 _p0, _p1 = _axs[-2].get_position(), _axs[-1].get_position()
