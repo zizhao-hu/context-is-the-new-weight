@@ -90,7 +90,7 @@ for k in ORDER:
 
 # ------------------------------------------------------------------------ figure
 fig, (ax, bx) = plt.subplots(1, 2, figsize=(figstyle.FULL, 2.15),
-                             gridspec_kw={"width_ratios": [2.9, 1.0], "wspace": 0.22})
+                             gridspec_kw={"width_ratios": [2.9, 1.0], "wspace": 0.12})
 
 PMAX = float(np.abs(dp[X0:X1]).max())
 ax.axhline(0, color="0.55", lw=0.8, zorder=2)
@@ -130,10 +130,10 @@ ax.legend(handles=[Patch(facecolor=COL[k], label=k) for k in ORDER],
           loc="upper right", ncol=2, frameon=False, fontsize=figstyle.FS_LEGEND - 0.6,
           handlelength=1.0, handleheight=0.85, columnspacing=0.9,
           handletextpad=0.35, labelspacing=0.25, borderaxespad=0.2)
-figstyle.yname(ax, r"$\Delta p$  (T-SWA $-$ SWA)")
-figstyle.yname(bx, r"mean $\Delta p$")
-figstyle.yticks_inside(ax)
-figstyle.yticks_inside(bx)
+ax.set_ylabel(r"$\Delta p$  (T-SWA $-$ SWA)", fontsize=figstyle.FS_AXIS, labelpad=1)
+bx.set_ylabel(r"mean $\Delta p$", fontsize=figstyle.FS_AXIS, labelpad=1)
+figstyle.yticks_inside(ax, x=0.012)
+figstyle.yticks_inside(bx, x=0.030)
 fig.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
 for k, n, e, sem, noise in rows:
