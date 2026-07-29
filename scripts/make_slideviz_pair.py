@@ -104,8 +104,9 @@ ax.set_ylim(-PMAX * 1.95, PMAX * 1.12)
 ax.set_yticks([-round(PMAX, 1), 0, round(PMAX, 1)])
 ax.tick_params(labelsize=figstyle.FS_TICK, length=3)
 ax.set_xticks([])
-for sp in ("top", "right", "bottom"):
-    ax.spines[sp].set_visible(False)
+for sp in ("top", "right", "bottom", "left"):
+    ax.spines[sp].set_visible(True)
+    ax.spines[sp].set_linewidth(figstyle.LW_AXES)
 ax.set_title("per token", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
 
 x = np.arange(len(rows))
@@ -123,8 +124,9 @@ bx.tick_params(labelsize=figstyle.FS_TICK, length=3)
 bx.set_title("token probability diff", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
 bx.text(len(rows) - 0.52, nz * 0.97, "grey $=$ same-rule\nseed spread, per class", fontsize=figstyle.FS_TICK - 0.5,
         ha="right", va="top", color="0.45", linespacing=1.15)
-for sp in ("top", "right", "bottom"):
-    bx.spines[sp].set_visible(False)
+for sp in ("top", "right", "bottom", "left"):
+    bx.spines[sp].set_visible(True)
+    bx.spines[sp].set_linewidth(figstyle.LW_AXES)
 
 ax.legend(handles=[Patch(facecolor=COL[k], label=k) for k in ORDER],
           loc="upper right", ncol=2, frameon=False, fontsize=figstyle.FS_LEGEND - 0.6,
