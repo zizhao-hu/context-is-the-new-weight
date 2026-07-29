@@ -15,7 +15,8 @@ from matplotlib.lines import Line2D
 
 DATA = "figures/sf_ablation.tsv"
 MIX = "figures/sf_mix.tsv"
-OUT = "paper/attention-sink/figures/sf_ablation.png"
+OUT_SINK = "paper/attention-sink/figures/sf_sink.png"
+OUT_PPL  = "paper/attention-sink/figures/sf_ppl.png"
 if not (os.path.exists(DATA) and os.path.exists(MIX)):
     sys.exit("missing %s or %s" % (DATA, MIX))
 
@@ -38,8 +39,9 @@ nsf = len(sf)
 labels = ["%d" % v for v in sf] + ["0" if a == 0 else ("1" if a == 1 else ("%.2f" % a).lstrip("0").rstrip("0")) for a in mal]
 
 C_P0, C_SEP, C_SHORT, C_STREAM = "#4C72B0", "#55A868", "#B04C4C", "#555555"
-plt.rcParams.update({"font.size": 12, "axes.linewidth": 0.9})
-fig, (a1, a2) = plt.subplots(1, 2, figsize=(12.6, 3.3))
+plt.rcParams.update({"font.size": 9, "axes.linewidth": 0.8})
+f1, a1 = plt.subplots(figsize=(3.34, 2.5))       # single column
+f2, a2 = plt.subplots(figsize=(3.34, 2.5))
 
 # ---- left: sink distribution ----
 w = 0.72
@@ -51,12 +53,12 @@ for sl in (slice(0, nsf), slice(nsf, None)):
 a1.errorbar(x, p0, yerr=p0s, fmt="none", ecolor="0.15", elinewidth=0.9, capsize=2, zorder=6)
 a1.errorbar(x, tot, yerr=np.sqrt(p0s**2 + seps**2), fmt="none", ecolor="0.15",
             elinewidth=0.9, capsize=2, zorder=6)
-a1.text(0.012, 0.97, "attention mass", transform=a1.transAxes, ha="left", va="top", fontsize=12)
+a1.set_ylabel("attention mass", fontsize=8)
 a1.set_ylim(0, max(tot) * 1.28)
-a1.set_title("sink distribution", fontsize=12, fontweight="bold", pad=4)
+
 a1.legend(handles=[Patch(facecolor=C_P0, label="p0 sink"),
                    Patch(facecolor=C_SEP, label="distributed sink")],
-          frameon=False, fontsize=8.6, ncol=2, loc="upper right",
+          frameon=False, fontsize=6.6, ncol=2, loc="upper right", borderpad=0.1,
           handlelength=1.2, columnspacing=0.9, handletextpad=0.4)
 
 # ---- right: perplexity (grouped bars: in-context vs streaming) ----
@@ -68,33 +70,26 @@ for sl in (slice(0, nsf), slice(nsf, None)):
     a2.plot(x[sl] + bw / 2, ppl[sl], "-o", color="#2b2b2b", ms=4, lw=1.8, zorder=5)
 a2.errorbar(x + bw / 2, ppl, yerr=ppl_sem, fmt="none", ecolor="0.1",
             elinewidth=0.9, capsize=2, zorder=6)
-a2.text(0.012, 0.97, "perplexity", transform=a2.transAxes, ha="left", va="top", fontsize=12)
+a2.set_ylabel("perplexity", fontsize=8)
 a2.set_ylim(30, max(short) * 1.15)
-a2.set_title("LM quality", fontsize=12, fontweight="bold", pad=4)
+
 a2.legend(handles=[Patch(facecolor=C_SHORT, label="in-context (len 64)"),
                    Patch(facecolor=C_STREAM, label="streaming (30k)")],
-          frameon=False, fontsize=8.6, ncol=2, loc="upper center",
+          frameon=False, fontsize=6.6, ncol=2, loc="upper center", borderpad=0.1,
           handlelength=1.1, columnspacing=0.9, handletextpad=0.4)
 
 div = nsf - 1 + GAP / 2 + 0.5
 for ax in (a1, a2):
-    ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=9)
+    ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=5.6, rotation=90)
     ax.axvline(div, color="0.75", lw=0.9, ls=":")
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-    ax.tick_params(length=3.5, labelsize=9.5)
-    ax.text(0, -0.22, "SWA", ha="center", fontsize=10, fontweight="bold",
-            color="#333", transform=ax.get_xaxis_transform())
-    ax.text(nsf - 1, -0.22, "T-SWA", ha="center", fontsize=10, fontweight="bold",
-            color="#333", transform=ax.get_xaxis_transform())
-    ax.text((nsf - 1) / 2, -0.34, "unscored context rows", ha="center", fontsize=11,
+    ax.tick_params(length=2.5, labelsize=7)
+    ax.text((nsf - 1) / 2, -0.34, "unscored rows", ha="center", fontsize=7,
             transform=ax.get_xaxis_transform())
-    ax.text(np.mean(mx), -0.34, "mix ratio $\\alpha$ (fraction of T-SWA steps)", ha="center", fontsize=11,
+    ax.text(np.mean(mx), -0.34, "mix $\\alpha$", ha="center", fontsize=7,
             transform=ax.get_xaxis_transform())
-    ax.text(mx[0], -0.22, "SWA", ha="center", fontsize=10, fontweight="bold",
-            color="#333", transform=ax.get_xaxis_transform())
-    ax.text(mx[-1], -0.22, "T-SWA", ha="center", fontsize=10, fontweight="bold",
-            color="#333", transform=ax.get_xaxis_transform())
 
-plt.tight_layout()
-plt.savefig(OUT, dpi=300, bbox_inches="tight")
-print("wrote", OUT)
+for f, o in ((f1, OUT_SINK), (f2, OUT_PPL)):
+    f.tight_layout()
+    f.savefig(o, dpi=300, bbox_inches="tight")
+    print("wrote", o)
