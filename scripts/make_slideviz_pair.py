@@ -93,7 +93,7 @@ fig, (ax, bx) = plt.subplots(1, 2, figsize=(figstyle.FULL, 2.15),
                              gridspec_kw={"width_ratios": [2.9, 1.0], "wspace": 0.12})
 
 PMAX = float(np.abs(dp[X0:X1]).max())
-ax.axhline(0, color="0.55", lw=0.8, zorder=2)
+ax.axhline(0, xmin=0.055, color="0.55", lw=0.8, zorder=2)
 for t in range(X0, X1):
     k = klass(toks[t])
     ax.add_patch(Rectangle((t + 0.08, 0), 0.84, float(dp[t]), fc=COL[k], ec="none", zorder=3))
@@ -110,7 +110,7 @@ ax.set_title("per token", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", c
 
 x = np.arange(len(rows))
 nz = max(r[4] for r in rows)
-bx.axhline(0, color="0.45", lw=0.9, zorder=2)
+bx.axhline(0, xmin=0.115, color="0.45", lw=0.9, zorder=2)
 for xx, (k, n, e, sem, noise) in zip(x, rows):
     bx.bar(xx, 2 * noise, width=0.84, bottom=-noise, color="0.90", zorder=0, lw=0)
     bx.bar(xx, e, width=0.58, color=COL[k], zorder=3)
