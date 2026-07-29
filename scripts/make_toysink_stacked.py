@@ -38,7 +38,7 @@ C_P0, C_SEP, C_CT = "#4C72B0", "#55A868", "#D3D3D3"
 GAP = 1.35
 xL = np.arange(len(TOY), dtype=float)
 xR = xL[-1] + 1 + GAP + np.arange(len(CPT), dtype=float)
-fig, ax = plt.subplots(figsize=(figstyle.COL, 1.83))
+fig, ax = plt.subplots(figsize=(figstyle.COL, 1.52))
 w = 0.80
 
 for xs, rows in ((xL, TOY), (xR, CPT)):
@@ -65,9 +65,9 @@ ax.set_xticklabels([r[0] for r in TOY] + [r[0] for r in CPT],
                    fontsize=figstyle.FS_TICK - 0.8)
 ax.set_xlim(xL[0] - 0.75, xR[-1] + 0.75)
 figstyle.clean(ax)
-ax.text(np.mean(xL), -0.30, "from scratch", ha="center", va="top",
+ax.text(np.mean(xL), -0.22, "from scratch", ha="center", va="top",
         fontsize=figstyle.FS_AXIS, transform=ax.get_xaxis_transform())
-ax.text(np.mean(xR), -0.30, "continued pretraining", ha="center", va="top",
+ax.text(np.mean(xR), -0.22, "continued pretraining", ha="center", va="top",
         fontsize=figstyle.FS_AXIS, transform=ax.get_xaxis_transform())
 
 ax.legend(handles=[Patch(facecolor=C_P0, edgecolor="black", lw=0.6, label="p$0$ sink"),
