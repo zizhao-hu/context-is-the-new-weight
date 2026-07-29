@@ -40,7 +40,7 @@ RANKS = list(range(1, 9))
 EDGES = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1025]
 
 fig, (ax, bx) = plt.subplots(1, 2, figsize=(3.51, 1.49),
-                             gridspec_kw={"wspace": 0.09})
+                             gridspec_kw={"wspace": 0.045})
 
 for key, label, col, mk in MODELS:
     d = {int(k): v for k, v in json.load(open(TR + "rankprof_%s.json" % key)).items()}
@@ -63,6 +63,7 @@ for key, label, col, mk in MODELS:
                 elinewidth=0.6, capsize=1.0, capthick=0.6)
 bx.set_xscale("log")
 bx.set_xticks([1, 10, 100, 1000])
+bx.set_xticklabels(["1", "10", "100", "1000"])      # plain numbers, not 10^n
 bx.set_ylim(0.0, 0.10)
 bx.set_yticks([0.0, 0.1])
 bx.set_xlabel("token age", fontsize=figstyle.FS_AXIS)
@@ -83,5 +84,9 @@ fig.legend(handles=[Line2D([], [], color=c, marker=k, ms=2.6, lw=1.0, label=l)
            fontsize=figstyle.FS_LEGEND, handlelength=1.1, handleheight=0.8,
            columnspacing=0.9, handletextpad=0.35, borderpad=0.0)
 plt.tight_layout(rect=(0, 0, 1, 0.86))
+_pa, _pb = ax.get_position(), bx.get_position()
+_xm = (_pa.x1 + _pb.x0) / 2
+fig.add_artist(Line2D([_xm, _xm], [_pa.y0, _pa.y1], color="0.75", lw=0.9,
+                      ls=":", transform=fig.transFigure))
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
