@@ -67,7 +67,7 @@ for k, fam in enumerate((FULLFAM, SWAFAM)):
         ax.errorbar(xx, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
                     elinewidth=0.7, capsize=1.2, capthick=0.7, zorder=6)
 ax.set_ylim(0, 1.06); ax.set_xticks(x)
-ax.set_xticklabels(DESIGNS, fontsize=figstyle.FS_AXIS)
+ax.set_xticklabels(DESIGNS, fontsize=figstyle.FS_TICK)
 for xi in x:
     ax.text(xi - dx, 1.015, "F", fontsize=6.5, ha="center", va="bottom", color="0.35")
     ax.text(xi + dx, 1.015, "S", fontsize=6.5, ha="center", va="bottom", color="0.35")

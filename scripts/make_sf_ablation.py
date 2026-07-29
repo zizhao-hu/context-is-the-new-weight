@@ -82,13 +82,13 @@ a2.legend(handles=[Patch(facecolor=C_SHORT, label="in-context (len 64)"),
 
 div = nsf - 1 + GAP / 2 + 0.5
 for ax in (a1, a2):
-    ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=5.6, rotation=90)
+    ax.set_xticks(x); ax.set_xticklabels(labels, fontsize=figstyle.FS_TICK - 1.3, rotation=90)
     ax.axvline(div, color="0.75", lw=0.9, ls=":")
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
     ax.tick_params(length=2.5, labelsize=figstyle.FS_TICK)
-    ax.text((nsf - 1) / 2, -0.34, "unscored rows", ha="center", fontsize=7,
+    ax.text((nsf - 1) / 2, -0.34, "unscored rows", ha="center", fontsize=figstyle.FS_AXIS,
             transform=ax.get_xaxis_transform())
-    ax.text(np.mean(mx), -0.34, "mix $\\alpha$", ha="center", fontsize=7,
+    ax.text(np.mean(mx), -0.34, "mix $\\alpha$", ha="center", fontsize=figstyle.FS_AXIS,
             transform=ax.get_xaxis_transform())
 
 figstyle.yname(a1, "attention mass")

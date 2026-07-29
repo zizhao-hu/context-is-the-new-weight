@@ -76,7 +76,7 @@ for ax, vals, sv, ttl in ((axes[0], cold, sem_cold, T_LO),
     ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(length=3.5, labelsize=figstyle.FS_TICK)
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 
-figstyle.yname(axes[0], "attention mass")
+figstyle.yname(axes[0], "attention mass", also=(axes[1],))
 plt.tight_layout(rect=(0, 0, 1, 0.90))
 _cx = (axes[0].get_position().x0 + axes[1].get_position().x1) / 2   # centre over the panels only
 fig.legend(handles=[Patch(facecolor=C_P0, label="first-in-window sink"),

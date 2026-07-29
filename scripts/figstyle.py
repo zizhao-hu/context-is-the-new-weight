@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 COL, FULL = 3.34, 7.0                      # \linewidth and \textwidth in this template
 
-FS_TICK, FS_AXIS, FS_TITLE, FS_LEGEND, FS_CHIP = 8.0, 8.5, 9.0, 7.6, 7.4
+FS_TICK, FS_AXIS, FS_TITLE, FS_LEGEND, FS_CHIP = 6.5, 7.5, 8.0, 7.0, 7.0
 LW_AXES, LW_BAR = 0.9, 0.6
 
 # shared palette: p0 sink, trainable register, distributed sink, content
@@ -46,18 +46,19 @@ def clean(ax):
     ax.tick_params(length=3.0, labelsize=FS_TICK)
 
 
-def yname(ax, text, pad=0.075):
+def yname(ax, text, pad=0.075, also=()):
     """Axis name running vertically just inside the left spine.
 
     The left margin then carries only the tick numbers. `pad` (a fraction of the axes width)
     is added to the left of the data range first, so the name sits in an empty strip instead
     of on top of the leftmost bar. Call this after the data and any explicit xlim are set.
     """
-    x0, x1 = ax.get_xlim()
-    if ax.get_xscale() == "log":
-        ax.set_xlim(x0 / (x1 / x0) ** (pad / (1 - pad)), x1)
-    else:
-        ax.set_xlim(x0 - (x1 - x0) * pad / (1 - pad), x1)
+    for a in (ax,) + tuple(also):          # pad siblings too so panel widths stay identical
+        x0, x1 = a.get_xlim()
+        if a.get_xscale() == "log":
+            a.set_xlim(x0 / (x1 / x0) ** (pad / (1 - pad)), x1)
+        else:
+            a.set_xlim(x0 - (x1 - x0) * pad / (1 - pad), x1)
     return ax.text(pad * 0.42, 0.5, text, transform=ax.transAxes, rotation=90,
                    ha="center", va="center", fontsize=FS_AXIS)
 
