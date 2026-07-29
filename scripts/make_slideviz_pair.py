@@ -160,7 +160,7 @@ figstyle.clean(bx)
 bx.tick_params(axis="y", labelsize=figstyle.FS_TICK - 1.0)
 figstyle.yname(bx, r"mean $\Delta p$", pad=0.115, x=0.045)
 bx.set_title("by token class", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
-bx.text(0.99, 0.97, "grey $=$ seed spread", transform=bx.transAxes, ha="right", va="top",
+bx.text(0.99, 0.97, "grey $=$ noise floor", transform=bx.transAxes, ha="right", va="top",
         fontsize=figstyle.FS_TICK - 1.2, color="0.45")
 
 _pa, _pb = ax.get_position(), bx.get_position()
