@@ -70,7 +70,11 @@ for a in (ax, bx):
     figstyle.clean(a)
     a.tick_params(labelsize=figstyle.FS_TICK - 1.0)
 figstyle.yname(ax, "share of sink mass", pad=0.115)
-figstyle.yname(bx, "mass received", pad=0.115)
+bx.yaxis.tick_right()                        # mirrored outward, so the gap stays clear
+bx.spines["left"].set_visible(False)
+bx.spines["right"].set_visible(True)
+bx.spines["right"].set_linewidth(figstyle.LW_AXES)
+figstyle.yname(bx, "mass received", pad=0.115, side="right")
 
 fig.legend(handles=[Line2D([], [], color=c, marker=k, ms=2.6, lw=1.0, label=l)
                     for _, l, c, k in MODELS],
