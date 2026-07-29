@@ -20,8 +20,7 @@ from matplotlib.lines import Line2D
 
 DATA = "figures/sf_ablation.tsv"
 MIX = "figures/sf_mix.tsv"
-OUT_SINK = "paper/attention-sink/figures/sf_sink.png"
-OUT_PPL  = "paper/attention-sink/figures/sf_ppl.png"
+OUT = "paper/attention-sink/figures/sf_pair.png"
 if not (os.path.exists(DATA) and os.path.exists(MIX)):
     sys.exit("missing %s or %s" % (DATA, MIX))
 
@@ -44,8 +43,8 @@ nsf = len(sf)
 labels = ["%d" % v for v in sf] + ["0" if a == 0 else ("1" if a == 1 else ("%.2f" % a).lstrip("0").rstrip("0")) for a in mal]
 
 C_P0, C_SEP, C_SHORT, C_STREAM = "#4C72B0", "#55A868", "#B04C4C", "#555555"
-f1, a1 = plt.subplots(figsize=(figstyle.COL, 1.92))       # single column
-f2, a2 = plt.subplots(figsize=(figstyle.COL, 1.92))
+fig, (a1, a2) = plt.subplots(1, 2, figsize=(figstyle.FULL, 1.95),
+                             gridspec_kw={"wspace": 0.16})
 
 # ---- left: sink distribution ----
 w = 0.72
@@ -98,7 +97,6 @@ for _a in (a1, a2):
     _a.set_xlim(x[0] - 0.62, x[-1] + 0.62)      # drop the default 5% side margins
 figstyle.yname(a1, "attention mass", pad=0.042)
 figstyle.yname(a2, "perplexity", pad=0.042)
-for f, o in ((f1, OUT_SINK), (f2, OUT_PPL)):
-    f.tight_layout()
-    f.savefig(o, dpi=300, bbox_inches="tight")
-    print("wrote", o)
+plt.tight_layout()
+plt.savefig(OUT, dpi=300, bbox_inches="tight")
+print("wrote", OUT)
