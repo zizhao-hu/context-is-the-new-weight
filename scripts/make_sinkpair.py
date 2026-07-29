@@ -39,8 +39,8 @@ MODELS = [("full", "A. full causal", "#4C72B0", "o"),
 RANKS = list(range(1, 9))
 EDGES = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1025]
 
-fig, (ax, bx) = plt.subplots(1, 2, figsize=(3.69, 1.49),
-                             gridspec_kw={"wspace": 0.42})
+fig, (ax, bx) = plt.subplots(1, 2, figsize=(3.46, 1.49),
+                             gridspec_kw={"wspace": 0.09})
 
 for key, label, col, mk in MODELS:
     d = {int(k): v for k, v in json.load(open(TR + "rankprof_%s.json" % key)).items()}
