@@ -39,7 +39,7 @@ MODELS = [("full", "A. full causal", "#4C72B0", "o"),
 RANKS = list(range(1, 9))
 EDGES = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1025]
 
-fig, (ax, bx) = plt.subplots(1, 2, figsize=(3.46, 1.49),
+fig, (ax, bx) = plt.subplots(1, 2, figsize=(3.51, 1.49),
                              gridspec_kw={"wspace": 0.09})
 
 for key, label, col, mk in MODELS:
@@ -63,7 +63,8 @@ for key, label, col, mk in MODELS:
                 elinewidth=0.6, capsize=1.0, capthick=0.6)
 bx.set_xscale("log")
 bx.set_xticks([1, 10, 100, 1000])
-bx.set_yticks([0.0, 0.04, 0.08])
+bx.set_ylim(0.0, 0.10)
+bx.set_yticks([0.0, 0.1])
 bx.set_xlabel("token age", fontsize=figstyle.FS_AXIS)
 
 for a in (ax, bx):
