@@ -29,35 +29,32 @@ T = os.path.expanduser("~/.claude/jobs/f25a34dc/tmp/")
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                    "paper/attention-sink/figures/sink_rank.png")
 
-MODELS = [("full", "A. full causal", "#4C72B0"),
-          ("swa", "B. SWA", "#DD5B45"),
-          ("sswa", "E. T-SWA", "#55A868")]
+MODELS = [("full", "A. full causal", "#4C72B0", "o"),
+          ("swa", "B. SWA", "#DD5B45", "s"),
+          ("sswa", "E. T-SWA", "#55A868", "^")]
 RANKS = list(range(1, 9))
 
 data = {}
-for key, _, _ in MODELS:
+for key, _, _, _ in MODELS:
     d = json.load(open(T + "rankprof_%s.json" % key))
     data[key] = {int(k): v for k, v in d.items()}
 
-fig, ax = plt.subplots(figsize=(figstyle.COL, 1.80))          # single column
-x = np.arange(len(RANKS))
-w = 0.27
-for i, (key, label, col) in enumerate(MODELS):
+fig, ax = plt.subplots(figsize=(figstyle.COL, 1.95))          # matches the lifetime figure
+for key, label, col, mk in MODELS:
     m = [data[key].get(r, {}).get("mean", np.nan) for r in RANKS]
     e = [data[key].get(r, {}).get("sem", np.nan) for r in RANKS]
-    ax.bar(x + (i - 1) * w, m, w, yerr=e, color=col, label=label,
-           error_kw=dict(elinewidth=0.7, capsize=1.2, capthick=0.7, ecolor="0.25"))
-ax.set_xticks(x); ax.set_xticklabels([str(r) for r in RANKS], fontsize=figstyle.FS_AXIS)
+    ax.errorbar(RANKS, m, yerr=e, color=col, marker=mk, ms=3.0, lw=1.1,
+                elinewidth=0.7, capsize=1.2, capthick=0.7, label=label)
+ax.set_xticks(RANKS)
 ax.set_xlabel("sink rank in window (1 $=$ nearest)", fontsize=figstyle.FS_AXIS)
-ax.tick_params(labelsize=figstyle.FS_TICK, length=3.0)
-ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-ax.legend(frameon=False, fontsize=figstyle.FS_LEGEND, handlelength=0.9, handleheight=0.8,
-          labelspacing=0.25, borderpad=0.1, loc="upper right")
+figstyle.clean(ax)
+ax.legend(frameon=False, fontsize=figstyle.FS_LEGEND, handlelength=1.3,
+          labelspacing=0.22, borderpad=0.1, loc="upper right")
 ax.set_yticks([0.0, 0.2, 0.4])                       # three ticks is enough to read the scale
 figstyle.yname(ax, "share of sink mass")
 plt.tight_layout()
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
-for key, label, _ in MODELS:
+for key, label, _, _ in MODELS:
     row = " ".join("%.3f" % data[key].get(r, {}).get("mean", float("nan")) for r in RANKS)
     print("  %-16s %s" % (label, row))
