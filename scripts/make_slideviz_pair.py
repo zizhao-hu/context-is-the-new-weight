@@ -100,7 +100,7 @@ PMAX = max(abs(v) for _, v in seg)
 norm = TwoSlopeNorm(vmin=-PMAX, vcenter=0.0, vmax=PMAX)
 cmap = plt.get_cmap("RdBu_r")
 
-NCOL = 78                                    # characters per line in the narrower left panel
+NCOL = 88                                    # characters per line in the narrower left panel
 lines, cur = [], []
 col = 0
 for tk, v in seg:
@@ -111,7 +111,7 @@ for tk, v in seg:
 if cur:
     lines.append(cur)
 
-fig = plt.figure(figsize=(figstyle.FULL, 1.75))
+fig = plt.figure(figsize=(figstyle.FULL, 1.48))
 gs = fig.add_gridspec(1, 2, width_ratios=[2.45, 1.0], wspace=0.14)
 ax = fig.add_subplot(gs[0, 0])
 for r, ln in enumerate(lines):
@@ -144,13 +144,14 @@ for xx, (k, n, e, sem, noise) in zip(x, rows):
     bx.errorbar(xx, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=0.9,
                 capsize=2.0, capthick=0.8, zorder=4)
 bx.set_xticks(x)
-bx.set_xticklabels(["function", "content", "punct.", "subword"],
-                   fontsize=figstyle.FS_TICK - 1.0, rotation=90)
+bx.set_xticklabels(["func", "cont", "punc", "sub"],
+                   fontsize=figstyle.FS_TICK - 1.5)
 for lab, (k, *_ ) in zip(bx.get_xticklabels(), rows):
     lab.set_color(COL[k])
 bx.set_ylim(-nz * 1.25, nz * 1.25)
 bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
 figstyle.clean(bx)
+bx.tick_params(axis="y", labelsize=figstyle.FS_TICK - 1.0)
 figstyle.yname(bx, r"mean $\Delta p$", pad=0.075)
 bx.set_title("by token class", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
 bx.text(0.99, 0.97, "grey $=$ seed spread", transform=bx.transAxes, ha="right", va="top",
