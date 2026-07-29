@@ -46,7 +46,7 @@ def clean(ax):
     ax.tick_params(length=3.0, labelsize=FS_TICK)
 
 
-def yname(ax, text, pad=0.075, also=()):
+def yname(ax, text, pad=0.075, also=(), x=None):
     """Axis name running vertically just inside the left spine.
 
     The left margin then carries only the tick numbers. `pad` (a fraction of the axes width)
@@ -59,7 +59,7 @@ def yname(ax, text, pad=0.075, also=()):
             a.set_xlim(x0 / (x1 / x0) ** (pad / (1 - pad)), x1)
         else:
             a.set_xlim(x0 - (x1 - x0) * pad / (1 - pad), x1)
-    return ax.text(pad * 0.42, 0.5, text, transform=ax.transAxes, rotation=90,
+    return ax.text(pad * 0.22 if x is None else x, 0.5, text, transform=ax.transAxes, rotation=90,
                    ha="center", va="center", fontsize=FS_AXIS)
 
 

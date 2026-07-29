@@ -44,8 +44,8 @@ nsf = len(sf)
 labels = ["%d" % v for v in sf] + ["0" if a == 0 else ("1" if a == 1 else ("%.2f" % a).lstrip("0").rstrip("0")) for a in mal]
 
 C_P0, C_SEP, C_SHORT, C_STREAM = "#4C72B0", "#55A868", "#B04C4C", "#555555"
-f1, a1 = plt.subplots(figsize=(figstyle.COL, 2.5))       # single column
-f2, a2 = plt.subplots(figsize=(figstyle.COL, 2.5))
+f1, a1 = plt.subplots(figsize=(figstyle.COL, 2.05))       # single column
+f2, a2 = plt.subplots(figsize=(figstyle.COL, 2.05))
 
 # ---- left: sink distribution ----
 w = 0.72
@@ -91,8 +91,13 @@ for ax in (a1, a2):
     ax.text(np.mean(mx), -0.34, "mix $\\alpha$", ha="center", fontsize=figstyle.FS_AXIS,
             transform=ax.get_xaxis_transform())
 
-figstyle.yname(a1, "attention mass")
-figstyle.yname(a2, "perplexity")
+from matplotlib.ticker import MaxNLocator
+for _a in (a1, a2):
+    _a.yaxis.set_major_locator(MaxNLocator(nbins=3))
+figstyle.yname(a1, "attention mass", pad=0.115)
+figstyle.yname(a2, "perplexity", pad=0.115)
+figstyle.yticks_inside(a1, x=0.062, size=figstyle.FS_TICK - 0.8)
+figstyle.yticks_inside(a2, x=0.062, size=figstyle.FS_TICK - 0.8)
 for f, o in ((f1, OUT_SINK), (f2, OUT_PPL)):
     f.tight_layout()
     f.savefig(o, dpi=300, bbox_inches="tight")

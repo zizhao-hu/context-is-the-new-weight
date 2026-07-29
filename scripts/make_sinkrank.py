@@ -39,7 +39,7 @@ for key, _, _ in MODELS:
     d = json.load(open(T + "rankprof_%s.json" % key))
     data[key] = {int(k): v for k, v in d.items()}
 
-fig, ax = plt.subplots(figsize=(3.34, 2.25))          # single column
+fig, ax = plt.subplots(figsize=(figstyle.COL, 1.80))          # single column
 x = np.arange(len(RANKS))
 w = 0.27
 for i, (key, label, col) in enumerate(MODELS):
@@ -53,7 +53,9 @@ ax.tick_params(labelsize=figstyle.FS_TICK, length=3.0)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 ax.legend(frameon=False, fontsize=figstyle.FS_LEGEND, handlelength=0.9, handleheight=0.8,
           labelspacing=0.25, borderpad=0.1, loc="upper right")
-figstyle.yname(ax, "share of sink mass")
+ax.set_yticks([0.0, 0.2, 0.4])                       # three ticks is enough to read the scale
+figstyle.yname(ax, "share of sink mass", pad=0.115)
+figstyle.yticks_inside(ax, x=0.062, size=figstyle.FS_TICK - 0.8)
 plt.tight_layout()
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
