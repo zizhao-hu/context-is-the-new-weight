@@ -106,7 +106,7 @@ ax.tick_params(labelsize=figstyle.FS_TICK, length=3)
 ax.set_xticks([])
 for sp in ("top", "right", "bottom"):
     ax.spines[sp].set_visible(False)
-ax.set_title("per token, one passage", fontsize=figstyle.FS_TITLE, pad=4, loc="left", color="0.25")
+ax.set_title("per token", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
 
 x = np.arange(len(rows))
 nz = max(r[4] for r in rows)
@@ -116,11 +116,12 @@ for xx, (k, n, e, sem, noise) in zip(x, rows):
     bx.bar(xx, e, width=0.58, color=COL[k], zorder=3)
     bx.errorbar(xx, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=1.0,
                 capsize=2.2, capthick=0.9, zorder=4)
+bx.set_xlim(-1.05, len(rows) - 0.35)          # empty strip so bars clear the inside numbers
 bx.set_xticks([])
 bx.set_ylim(-nz * 1.30, nz * 1.30)
 bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
 bx.tick_params(labelsize=figstyle.FS_TICK, length=3)
-bx.set_title("held-out chunks, 2 runs per rule", fontsize=figstyle.FS_TITLE, pad=4, loc="left", color="0.25")
+bx.set_title("token probability diff", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
 bx.text(len(rows) - 0.52, nz * 0.97, "grey $=$ same-rule\nseed spread, per class", fontsize=figstyle.FS_TICK - 0.5,
         ha="right", va="top", color="0.45", linespacing=1.15)
 for sp in ("top", "right", "bottom"):
@@ -132,8 +133,8 @@ ax.legend(handles=[Patch(facecolor=COL[k], label=k) for k in ORDER],
           handletextpad=0.35, labelspacing=0.25, borderaxespad=0.2)
 ax.set_ylabel(r"$\Delta p$  (T-SWA $-$ SWA)", fontsize=figstyle.FS_AXIS, labelpad=1)
 bx.set_ylabel(r"mean $\Delta p$", fontsize=figstyle.FS_AXIS, labelpad=1)
-figstyle.yticks_inside(ax, x=0.012)
-figstyle.yticks_inside(bx, x=0.030)
+figstyle.yticks_inside(ax, x=0.010, size=figstyle.FS_TICK - 1.2)
+figstyle.yticks_inside(bx, x=0.020, size=figstyle.FS_TICK - 1.2)
 fig.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
 for k, n, e, sem, noise in rows:

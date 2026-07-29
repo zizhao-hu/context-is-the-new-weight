@@ -63,7 +63,7 @@ def yname(ax, text, pad=0.075, also=()):
                    ha="center", va="center", fontsize=FS_AXIS)
 
 
-def yticks_inside(ax, x=0.085):
+def yticks_inside(ax, x=0.085, size=None):
     """Move the y tick numbers inside the axes, so the left margin disappears entirely.
 
     Call after yname(), which reserves the strip they sit in.
@@ -76,7 +76,7 @@ def yticks_inside(ax, x=0.085):
     tr = ax.get_yaxis_transform()                 # x in axes fraction, y in data units
     for yv, lb in zip(ys, labs):
         if lo <= yv <= hi and lb:
-            ax.text(x, yv, lb, transform=tr, ha="left", va="center", fontsize=FS_TICK)
+            ax.text(x, yv, lb, transform=tr, ha="left", va="center", fontsize=size or FS_TICK)
 
 
 def chip(ax, x, y, v, fmt="%.2f"):
