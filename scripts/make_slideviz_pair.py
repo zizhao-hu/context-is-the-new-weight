@@ -123,7 +123,7 @@ ax.set_xlim(-0.5, NCOL + 0.5); ax.set_ylim(-len(lines) + 0.35, 0.75)
 ax.set_xticks([]); ax.set_yticks([])
 for sp in ax.spines.values():
     sp.set_visible(False)
-ax.set_title("one WikiText passage, shaded by $\\Delta p$ (T-SWA $-$ SWA)",
+ax.set_title("WikiText passage token probability",
              fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
 
 # colour key inline, in the space left over after the last token, so it costs no extra row
