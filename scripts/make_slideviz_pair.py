@@ -151,9 +151,7 @@ for xx, (k, n, e, sem, noise) in zip(x, rows):
     bx.bar(xx, e, width=0.52, color=COL[k], edgecolor="black", linewidth=0.5, zorder=3)
     bx.errorbar(xx, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=0.9,
                 capsize=2.0, capthick=0.8, zorder=4)
-bx.set_xticks(x)
-bx.set_xticklabels(["func", "cont", "punc", "sub"],
-                   fontsize=figstyle.FS_TICK - 1.5)
+bx.set_xticks([])                                # the legend names the classes
 bx.set_ylim(-nz * 1.25, nz * 1.25)
 bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
 figstyle.clean(bx)
@@ -162,6 +160,13 @@ figstyle.yname(bx, r"mean $\Delta p$", pad=0.115, x=0.045)
 bx.set_title("by token class", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
 bx.text(0.99, 0.97, "grey $=$ noise floor", transform=bx.transAxes, ha="right", va="top",
         fontsize=figstyle.FS_TICK - 1.2, color="0.45")
+FULL = {"function word": "function words", "content word": "content words",
+        "punctuation & space": "punctuation", "subword piece": "subword continuation"}
+bx.legend(handles=[Patch(facecolor=COL[k], edgecolor="black", lw=0.5, label=FULL[k])
+                   for k, *_ in rows],
+          loc="upper center", bbox_to_anchor=(0.5, -0.02), ncol=2, frameon=False,
+          fontsize=figstyle.FS_TICK - 1.2, handlelength=0.9, handleheight=0.8,
+          columnspacing=0.8, handletextpad=0.35, labelspacing=0.25, borderpad=0.0)
 
 _pa, _pb = ax.get_position(), bx.get_position()
 _y0 = _pa.y0 + 0.105                          # room for the right panel's tick labels
