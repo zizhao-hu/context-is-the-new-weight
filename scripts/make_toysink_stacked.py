@@ -11,9 +11,15 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import sys, os as _o
+sys.path.insert(0, _o.path.dirname(_o.path.abspath(__file__)))
+import figstyle
+figstyle.apply()
 from matplotlib.patches import Patch
 
-OUT = "/Users/zizhaohu/Desktop/projects/context-is-the-new-weight/paper/attention-sink/figures/toy_sink.png"
+import os as _os
+OUT = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))),
+                   "paper/attention-sink/figures/toy_sink.png")
 
 # (p0, p0sem, dist, distsem) -- W=128 BPE toy, FULL-CAUSAL eval (both models given
 # access to p0), all-heads means, sequence within max context (fulldecomp job 5166394).
@@ -24,12 +30,11 @@ CPT = [("base", 0.5855, 0.0031, 0.0479, 0.0011),
        ("SWA",  0.1630, 0.0267, 0.5017, 0.0311)]
 
 C_P0, C_SEP, C_CT = "#4C72B0", "#55A868", "#D3D3D3"
-plt.rcParams.update({"font.size": 12, "axes.linewidth": 0.9})
-fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.65), sharey=True,
+fig, axes = plt.subplots(1, 2, figsize=(3.20, 2.35), sharey=True,
                          gridspec_kw={"width_ratios": [2, 3]})
 
-T_L = "pretrained from scratch"
-T_R = "continued pretraining (Llama-3.2-3B)"
+T_L = "from scratch"
+T_R = "continued pretraining"
 for ax, rows, ttl in ((axes[0], TOY, T_L), (axes[1], CPT, T_R)):
     x = np.arange(len(rows))
     labs = [r[0] for r in rows]
@@ -48,24 +53,25 @@ for ax, rows, ttl in ((axes[0], TOY, T_L), (axes[1], CPT, T_R)):
     for xx, a_, b_ in zip(x, p0, cm):
         for yy, v in ((a_ / 2, a_), (a_ + b_ / 2, b_)):
             if v >= 0.01:
-                ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=9.8,
+                ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=figstyle.FS_CHIP,
                         color="0.1", fontweight="bold", zorder=7,
                         bbox=dict(boxstyle="round,pad=0.18", fc="white", ec="0.45", lw=0.8, alpha=0.9))
-    ax.set_ylim(0, 1); ax.set_xticks(x)
-    ax.set_xticklabels(labs, fontsize=11.6)
+    ax.set_ylim(0, 1.42); ax.set_xticks(x)
+    ax.set_xticklabels(labs, fontsize=figstyle.FS_TICK)
     ax.set_xlim(-0.60, len(rows) - 0.40)
-    ax.set_title(ttl, fontsize=11.6, fontweight="bold", pad=3)
-    ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(length=3.5, labelsize=10.6)
+    ax.set_title(ttl, fontsize=figstyle.FS_TICK, fontweight="bold", pad=3)
+    ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(length=3.0, labelsize=figstyle.FS_TICK)
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
-axes[0].set_ylabel("attention mass", fontsize=11.6)
+figstyle.yname(axes[0], "attention mass", also=(axes[1],), pad=0.105)
 
-plt.tight_layout(rect=(0, 0, 1, 0.90))
-_cx = (axes[0].get_position().x0 + axes[1].get_position().x1) / 2
+plt.tight_layout()
+_p0, _p1 = axes[0].get_position(), axes[1].get_position()   # legend inside, along the top band
 fig.legend(handles=[Patch(facecolor=C_P0, label="p0 sink"),
                     Patch(facecolor=C_SEP, label="distributed sink"),
                     Patch(facecolor=C_CT, label="content")],
-           loc="upper center", bbox_to_anchor=(_cx, 1.0), bbox_transform=fig.transFigure,
-           ncol=3, frameon=False, fontsize=11.0, handlelength=1.15, handleheight=0.9,
-           columnspacing=1.6, handletextpad=0.4, borderpad=0.0, borderaxespad=0.0)
+           loc="upper center", bbox_to_anchor=((_p0.x0 + _p1.x1) / 2, _p0.y1 - 0.03),
+           bbox_transform=fig.transFigure, ncol=3, frameon=False, fontsize=figstyle.FS_LEGEND,
+           handlelength=0.9, handleheight=0.8, columnspacing=0.8, handletextpad=0.4,
+           borderpad=0.0, borderaxespad=0.0)
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)

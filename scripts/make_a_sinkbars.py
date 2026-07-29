@@ -69,20 +69,23 @@ for ax, vals, sv, ttl in ((axes[0], cold, sem_cold, T_LO),
                 ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=figstyle.FS_CHIP,
                         color="0.1", fontweight="bold", zorder=7,
                         bbox=dict(boxstyle="round,pad=0.16", fc="white", ec="0.45", lw=0.7, alpha=0.92))
-    ax.set_ylim(0, 1); ax.set_xticks(x)
+    ax.set_ylim(0, 1.42); ax.set_xticks(x)
     ax.set_xticklabels(xl, fontsize=figstyle.FS_TICK)
     ax.set_xlim(-0.60, len(labels) - 0.40)
     ax.set_title(ttl, fontsize=figstyle.FS_TICK, fontweight="bold", pad=3)
     ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(length=3.5, labelsize=figstyle.FS_TICK)
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 
-fig.legend(handles=[Patch(facecolor=C_P0, edgecolor="black", lw=0.6, label="first-in-window sink"),
-                    Patch(facecolor=C_SEP, edgecolor="black", lw=0.6, label="distributed sink"),
-                    Patch(facecolor=C_CT, edgecolor="black", lw=0.6, label="content")],
-           loc="upper center", bbox_to_anchor=(0.5, 1.10), ncol=3, frameon=False,
-           fontsize=figstyle.FS_LEGEND, handlelength=0.9, handleheight=0.8, columnspacing=0.8,
-           handletextpad=0.3, labelspacing=0.2)
+_H = [Patch(facecolor=C_P0, edgecolor="black", lw=0.6, label="first-in-window sink"),
+      Patch(facecolor=C_SEP, edgecolor="black", lw=0.6, label="distributed sink"),
+      Patch(facecolor=C_CT, edgecolor="black", lw=0.6, label="content")]
 figstyle.yname(axes[0], "attention mass", also=(axes[1],), pad=0.105)
-plt.tight_layout(rect=(0, 0, 1, 0.92))
+plt.tight_layout()
+_p0, _p1 = axes[0].get_position(), axes[1].get_position()   # legend inside, along the top band
+fig.legend(handles=_H, loc="upper center",
+           bbox_to_anchor=((_p0.x0 + _p1.x1) / 2, _p0.y1 - 0.005),
+           bbox_transform=fig.transFigure, ncol=3, frameon=False,
+           fontsize=figstyle.FS_LEGEND, handlelength=0.9, handleheight=0.8, columnspacing=0.8,
+           handletextpad=0.3, labelspacing=0.2, borderaxespad=0.0)
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
