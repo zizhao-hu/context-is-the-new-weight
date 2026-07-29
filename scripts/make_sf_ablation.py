@@ -44,8 +44,8 @@ nsf = len(sf)
 labels = ["%d" % v for v in sf] + ["0" if a == 0 else ("1" if a == 1 else ("%.2f" % a).lstrip("0").rstrip("0")) for a in mal]
 
 C_P0, C_SEP, C_SHORT, C_STREAM = "#4C72B0", "#55A868", "#B04C4C", "#555555"
-f1, a1 = plt.subplots(figsize=(figstyle.COL, 1.92))       # single column
-f2, a2 = plt.subplots(figsize=(figstyle.COL, 1.92))
+f1, a1 = plt.subplots(figsize=(figstyle.COL, 1.62))       # single column
+f2, a2 = plt.subplots(figsize=(figstyle.COL, 1.62))
 
 # ---- left: sink distribution ----
 w = 0.72
@@ -86,9 +86,9 @@ for ax in (a1, a2):
     ax.axvline(div, color="0.75", lw=0.9, ls=":")
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
     ax.tick_params(length=2.5, labelsize=figstyle.FS_TICK)
-    ax.text((nsf - 1) / 2, -0.34, "unscored tokens", ha="center", fontsize=figstyle.FS_AXIS,
+    ax.text((nsf - 1) / 2, -0.36, "unscored tokens", ha="center", fontsize=figstyle.FS_AXIS,
             transform=ax.get_xaxis_transform())
-    ax.text(np.mean(mx), -0.34, "mix ratio $\\alpha$", ha="center", fontsize=figstyle.FS_AXIS,
+    ax.text(np.mean(mx), -0.36, "mix ratio $\\alpha$", ha="center", fontsize=figstyle.FS_AXIS,
             transform=ax.get_xaxis_transform())
 
 from matplotlib.ticker import MaxNLocator

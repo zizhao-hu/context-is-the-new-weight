@@ -46,7 +46,7 @@ def col(fam, i):
     r = fam[i]
     return np.array([r[1], r[2], r[3], r[4], r[5], r[6]], dtype=float)
 
-fig, ax = plt.subplots(figsize=(3.34, 2.05))            # single column
+fig, ax = plt.subplots(figsize=(3.34, 1.75))            # single column
 x = np.arange(len(DESIGNS))
 w, dx = 0.36, 0.20
 for k, fam in enumerate((FULLFAM, SWAFAM)):

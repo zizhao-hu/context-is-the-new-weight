@@ -52,7 +52,7 @@ GAP = 1.35
 n = len(labels)
 xL = np.arange(n, dtype=float)
 xR = xL + n + GAP
-fig, ax = plt.subplots(figsize=(figstyle.COL, 1.83))
+fig, ax = plt.subplots(figsize=(figstyle.COL, 1.52))
 w = 0.80
 for xs, vals, sv in ((xL, cold, sem_cold), (xR, deep, sem_deep)):
     fiw, sep, ct = vals[:, 0], vals[:, 1], vals[:, 2]
@@ -72,9 +72,9 @@ ax.set_xticks(np.concatenate([xL, xR]))
 ax.set_xticklabels(xl + xl, fontsize=figstyle.FS_TICK - 0.8)
 ax.set_xlim(xL[0] - 0.75, xR[-1] + 0.75)
 figstyle.clean(ax)
-ax.text(np.mean(xL), -0.30, "within max context", ha="center", va="top",
+ax.text(np.mean(xL), -0.22, "within max context", ha="center", va="top",
         fontsize=figstyle.FS_AXIS, transform=ax.get_xaxis_transform())
-ax.text(np.mean(xR), -0.30, "past max context", ha="center", va="top",
+ax.text(np.mean(xR), -0.22, "past max context", ha="center", va="top",
         fontsize=figstyle.FS_AXIS, transform=ax.get_xaxis_transform())
 
 ax.legend(handles=[Patch(facecolor=C_P0, edgecolor="black", lw=0.6, label="first-in-window sink"),
