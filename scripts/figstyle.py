@@ -63,6 +63,22 @@ def yname(ax, text, pad=0.075, also=()):
                    ha="center", va="center", fontsize=FS_AXIS)
 
 
+def yticks_inside(ax, x=0.085):
+    """Move the y tick numbers inside the axes, so the left margin disappears entirely.
+
+    Call after yname(), which reserves the strip they sit in.
+    """
+    ax.figure.canvas.draw()                       # tick label text is only filled in on draw
+    ys, labs = ax.get_yticks(), [t.get_text() for t in ax.get_yticklabels()]
+    lo, hi = ax.get_ylim()
+    ax.set_yticklabels([])
+    ax.tick_params(axis="y", length=0)
+    tr = ax.get_yaxis_transform()                 # x in axes fraction, y in data units
+    for yv, lb in zip(ys, labs):
+        if lo <= yv <= hi and lb:
+            ax.text(x, yv, lb, transform=tr, ha="left", va="center", fontsize=FS_TICK)
+
+
 def chip(ax, x, y, v, fmt="%.2f"):
     """bold value label on a white rounded plate, readable on top of any fill"""
     return ax.text(x, y, fmt % v, ha="center", va="center", fontsize=FS_CHIP,

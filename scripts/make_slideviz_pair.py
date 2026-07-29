@@ -89,7 +89,7 @@ for k in ORDER:
     rows.append((k, n, e.mean(), sem, noise))
 
 # ------------------------------------------------------------------------ figure
-fig, (ax, bx) = plt.subplots(1, 2, figsize=(figstyle.FULL, 2.9),
+fig, (ax, bx) = plt.subplots(1, 2, figsize=(figstyle.FULL, 2.15),
                              gridspec_kw={"width_ratios": [2.9, 1.0], "wspace": 0.22})
 
 PMAX = float(np.abs(dp[X0:X1]).max())
@@ -116,11 +116,8 @@ for xx, (k, n, e, sem, noise) in zip(x, rows):
     bx.bar(xx, e, width=0.58, color=COL[k], zorder=3)
     bx.errorbar(xx, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=1.0,
                 capsize=2.2, capthick=0.9, zorder=4)
-bx.set_xticks(x)
-SHORT = {"function word": "function", "content word": "content",
-         "punctuation & space": "punct.", "subword piece": "subword"}
-bx.set_xticklabels([SHORT[r[0]] for r in rows], fontsize=figstyle.FS_TICK, rotation=90)
-bx.set_ylim(-nz * 1.12, nz * 1.12)
+bx.set_xticks([])
+bx.set_ylim(-nz * 1.30, nz * 1.30)
 bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
 bx.tick_params(labelsize=figstyle.FS_TICK, length=3)
 bx.set_title("held-out chunks, 2 runs per rule", fontsize=figstyle.FS_TITLE, pad=4, loc="left", color="0.25")
@@ -129,12 +126,14 @@ bx.text(len(rows) - 0.52, nz * 0.97, "grey $=$ same-rule\nseed spread, per class
 for sp in ("top", "right", "bottom"):
     bx.spines[sp].set_visible(False)
 
+ax.legend(handles=[Patch(facecolor=COL[k], label=k) for k in ORDER],
+          loc="upper right", ncol=2, frameon=False, fontsize=figstyle.FS_LEGEND - 0.6,
+          handlelength=1.0, handleheight=0.85, columnspacing=0.9,
+          handletextpad=0.35, labelspacing=0.25, borderaxespad=0.2)
 figstyle.yname(ax, r"$\Delta p$  (T-SWA $-$ SWA)")
 figstyle.yname(bx, r"mean $\Delta p$")
-fig.legend(handles=[Patch(facecolor=COL[k], label=k) for k in ORDER],
-           loc="upper center", bbox_to_anchor=(0.5, 1.10), ncol=4, frameon=False,
-           fontsize=figstyle.FS_LEGEND, handlelength=1.1, handleheight=0.9, columnspacing=1.6,
-           handletextpad=0.4)
+figstyle.yticks_inside(ax)
+figstyle.yticks_inside(bx)
 fig.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
 for k, n, e, sem, noise in rows:
