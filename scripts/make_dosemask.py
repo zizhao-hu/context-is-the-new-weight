@@ -53,9 +53,9 @@ gs = fig.add_gridspec(3, 4, height_ratios=[2.45, 0.75, 1.45],
 for i, (skip, title, sub) in enumerate(PANELS):
     ax = fig.add_subplot(gs[0, i])
     mask(ax, 0, 0, skip)
-    ax.plot([-0.55, -0.55], [0, Q - skip], color=DK, lw=1.2, clip_on=False)   # scored block
+    ax.plot([-1.05, -1.05], [0, Q - skip], color=DK, lw=1.2, clip_on=False)   # scored block
     ax.text(Q / 2.0, -0.55, sub, ha="center", va="top", fontsize=FS - 0.8, color="0.35")
-    ax.set_xlim(-1.15, Q + 0.15); ax.set_ylim(-2.2, Q + 0.15)
+    ax.set_xlim(-1.7, Q + 0.15); ax.set_ylim(-2.2, Q + 0.15)
     ax.set_aspect("equal"); ax.axis("off")
     ax.set_title(title, fontsize=FS, pad=1.5, color="0.2")
 

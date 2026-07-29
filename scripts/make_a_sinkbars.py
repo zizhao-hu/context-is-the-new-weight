@@ -46,46 +46,45 @@ SHORT = {"a. full causal": "full", "b. sliding window": "SWA",
 xl = [SHORT.get(l, l) for l in labels]
 
 C_P0, C_REG, C_SEP, C_CT = "#4C72B0", "#DD5B45", "#55A868", "#D3D3D3"
-fig, axes = plt.subplots(1, 2, figsize=(figstyle.COL, 2.45), sharey=True)   # tall enough to label every segment
 
-T_LO = "within max context"
-T_HI = "past max context"
-for ax, vals, sv, ttl in ((axes[0], cold, sem_cold, T_LO),
-                          (axes[1], deep, sem_deep, T_HI)):
-    x = np.arange(len(labels))
+# one axes with two blocks and a dotted divider, exactly like the ablation figures
+GAP = 1.35
+n = len(labels)
+xL = np.arange(n, dtype=float)
+xR = xL + n + GAP
+fig, ax = plt.subplots(figsize=(figstyle.COL, 1.83))
+w = 0.80
+for xs, vals, sv in ((xL, cold, sem_cold), (xR, deep, sem_deep)):
     fiw, sep, ct = vals[:, 0], vals[:, 1], vals[:, 2]
-    w = 0.80
-    ax.bar(x, fiw, w, color=C_P0, edgecolor="black", linewidth=0.6, zorder=3)
-    ax.bar(x, sep, w, bottom=fiw, color=C_SEP, edgecolor="black", linewidth=0.6, zorder=3)
-    ax.bar(x, ct, w, bottom=fiw + sep, color=C_CT, edgecolor="black", linewidth=0.6, zorder=3)
+    ax.bar(xs, fiw, w, color=C_P0, edgecolor="black", linewidth=0.6, zorder=3)
+    ax.bar(xs, sep, w, bottom=fiw, color=C_SEP, edgecolor="black", linewidth=0.6, zorder=3)
+    ax.bar(xs, ct, w, bottom=fiw + sep, color=C_CT, edgecolor="black", linewidth=0.6, zorder=3)
     edges = np.stack([fiw, fiw + sep], axis=1)
     for j in range(2):
-        ax.errorbar(x, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
-                    elinewidth=0.9, capsize=1.6, capthick=0.8, zorder=5)
-    # label the three sink classes; content is the remainder to 1 and needs no number
-    for xx, a_, b_ in zip(x, fiw, sep):
-        for yy, v in ((a_ / 2, a_), (a_ + b_ / 2, b_)):
-            if v >= 0.01:
-                ax.text(xx, yy, "%.2f" % v, ha="center", va="center", fontsize=figstyle.FS_CHIP,
-                        color="0.1", fontweight="bold", zorder=7,
-                        bbox=dict(boxstyle="round,pad=0.16", fc="white", ec="0.45", lw=0.7, alpha=0.92))
-    ax.set_ylim(0, 1.42); ax.set_xticks(x)
-    ax.set_xticklabels(xl, fontsize=figstyle.FS_TICK)
-    ax.set_xlim(-0.60, len(labels) - 0.40)
-    ax.set_title(ttl, fontsize=figstyle.FS_TICK, fontweight="bold", pad=3)
-    ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(length=3.5, labelsize=figstyle.FS_TICK)
-    ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
+        ax.errorbar(xs, edges[:, j], yerr=sv[:, j], fmt="none", ecolor="0.15",
+                    elinewidth=0.7, capsize=1.2, capthick=0.7, zorder=6)
 
-_H = [Patch(facecolor=C_P0, edgecolor="black", lw=0.6, label="first-in-window sink"),
-      Patch(facecolor=C_SEP, edgecolor="black", lw=0.6, label="distributed sink"),
-      Patch(facecolor=C_CT, edgecolor="black", lw=0.6, label="content")]
-figstyle.yname(axes[0], "attention mass", also=(axes[1],), pad=0.105)
+div = (xL[-1] + xR[0]) / 2.0
+ax.axvline(div, color="0.75", lw=0.9, ls=":", zorder=1)
+ax.set_ylim(0, 1.30)
+ax.set_yticks(np.arange(0, 1.01, 0.25))
+ax.set_xticks(np.concatenate([xL, xR]))
+ax.set_xticklabels(xl + xl, fontsize=figstyle.FS_TICK - 0.8)
+ax.set_xlim(xL[0] - 0.75, xR[-1] + 0.75)
+figstyle.clean(ax)
+ax.text(np.mean(xL), -0.30, "within max context", ha="center", va="top",
+        fontsize=figstyle.FS_AXIS, transform=ax.get_xaxis_transform())
+ax.text(np.mean(xR), -0.30, "past max context", ha="center", va="top",
+        fontsize=figstyle.FS_AXIS, transform=ax.get_xaxis_transform())
+
+ax.legend(handles=[Patch(facecolor=C_P0, edgecolor="black", lw=0.6, label="first-in-window sink"),
+                   Patch(facecolor=C_SEP, edgecolor="black", lw=0.6, label="distributed sink"),
+                   Patch(facecolor=C_CT, edgecolor="black", lw=0.6, label="content")],
+          loc="upper center", ncol=3, frameon=True, fancybox=False,
+          fontsize=figstyle.FS_LEGEND, handlelength=0.9, handleheight=0.8, columnspacing=0.8,
+          handletextpad=0.3, labelspacing=0.2, borderpad=0.25, borderaxespad=0.15,
+          edgecolor="0.4", framealpha=1.0)
+figstyle.yname(ax, "attention mass", pad=0.055)
 plt.tight_layout()
-_p0, _p1 = axes[0].get_position(), axes[1].get_position()   # legend inside, along the top band
-fig.legend(handles=_H, loc="upper center",
-           bbox_to_anchor=((_p0.x0 + _p1.x1) / 2, _p0.y1 - 0.005),
-           bbox_transform=fig.transFigure, ncol=3, frameon=False,
-           fontsize=figstyle.FS_LEGEND, handlelength=0.9, handleheight=0.8, columnspacing=0.8,
-           handletextpad=0.3, labelspacing=0.2, borderaxespad=0.0)
 plt.savefig(OUT, dpi=300, bbox_inches="tight")
 print("wrote", OUT)
