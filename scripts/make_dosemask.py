@@ -45,7 +45,7 @@ def mask(ax, ox, oy, skip, cell=1.0, lw=0.3, frame=0.8):
                            edgecolor="black", lw=frame, zorder=5))
 
 
-fig = plt.figure(figsize=(3.20, 2.05))
+fig = plt.figure(figsize=(3.20, 1.93))
 gs = fig.add_gridspec(3, 4, height_ratios=[2.45, 0.75, 1.45],
                       hspace=0.04, wspace=0.10,
                       left=0.012, right=0.995, top=0.90, bottom=0.02)
@@ -73,7 +73,7 @@ for k, (a, lab) in enumerate(((0.25, r"$\alpha{=}0.25$"), (0.75, r"$\alpha{=}0.7
     for j, skip in enumerate(order):
         mask(bx, j * (Q + GAP), 0, skip, cell=1.0, lw=0.12, frame=0.45)
     bx.text(span / 2.0, -2.4, lab, ha="center", va="top", fontsize=FS, color="0.2")
-    bx.set_xlim(-0.6, span + 0.6); bx.set_ylim(-6.0, Q + 3.4)
+    bx.set_xlim(-0.6, span + 0.6); bx.set_ylim(-5.2, Q + 3.0)
     bx.set_aspect("equal"); bx.axis("off")
 
 
