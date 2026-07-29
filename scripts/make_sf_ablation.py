@@ -94,8 +94,10 @@ for ax in (a1, a2):
 from matplotlib.ticker import MaxNLocator
 for _a in (a1, a2):
     _a.yaxis.set_major_locator(MaxNLocator(nbins=3))
-figstyle.yname(a1, "attention mass")
-figstyle.yname(a2, "perplexity")
+for _a in (a1, a2):
+    _a.set_xlim(x[0] - 0.62, x[-1] + 0.62)      # drop the default 5% side margins
+figstyle.yname(a1, "attention mass", pad=0.042)
+figstyle.yname(a2, "perplexity", pad=0.042)
 for f, o in ((f1, OUT_SINK), (f2, OUT_PPL)):
     f.tight_layout()
     f.savefig(o, dpi=300, bbox_inches="tight")
