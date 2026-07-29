@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Method figure for Finding 2: the dose is how many context rows go unscored.
 
-Four panels of the same sliding band on one chunk (C=6, W=3), differing only in which query rows
-carry loss. b scores every row, including the starved ones at the chunk start. e scores only rows
-with a full window. Between them sit partial doses, so the sweep in the ablation figures is one
-axis, not two regimes.
+Four panels of the same sliding band on one chunk (C=8, W=4), differing only in which query rows
+carry loss. SWA scores every row, including the starved ones at the chunk start. Every panel with
+a nonzero dose is T-SWA; the last, at W-1 unscored, is the fully symmetric case where every
+scored query sees exactly W tokens.
 
 Colour follows regimes.png: filled cells are attended, blue rows are scored, pale rows are
 context-only. The bracket marks the scored block.
@@ -26,14 +26,14 @@ OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 BLUE = (0.18, 0.43, 0.71)          # scored row, in window
 PALE = (0.80, 0.86, 0.93)          # context-only row, in window
 DK = "#333"
-Q = 6                              # chunk length C
-W = 3                              # window
+Q = 8                              # chunk length C
+W = 4                              # window
 PANELS = [(0, "b. SWA\n$0$ unscored"),
-          (1, "$1$ unscored"),
-          (2, "$2$ unscored"),
-          (W - 1, "e. T-SWA\n$W{-}1$ unscored")]
+          (1, "T-SWA\n$1$ unscored"),
+          (2, "T-SWA\n$2$ unscored"),
+          (W - 1, "symmetric\n$W{-}1$ unscored")]
 
-fig, axes = plt.subplots(1, len(PANELS), figsize=(figstyle.COL, 1.30))
+fig, axes = plt.subplots(1, len(PANELS), figsize=(figstyle.COL, 1.34))
 for ax, (skip, title) in zip(axes, PANELS):
     for q in range(Q):
         y = Q - 1 - q
