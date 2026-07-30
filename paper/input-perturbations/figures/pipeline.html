@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  /* Authored at 1890px wide = 6.3in at 300dpi (ACL \textwidth). Fonts ~30px = ~7.2pt printed. */
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Helvetica Neue", Arial, sans-serif; }
+  body { width: 1890px; background: #ffffff; padding: 26px 10px; }
+  .row { display: flex; align-items: center; justify-content: space-between; }
+  .col { display: flex; flex-direction: column; gap: 22px; flex: 1; }
+  .box { border: 3px solid #333; border-radius: 10px; padding: 18px 20px; background: #fff; }
+  .box h3 { font-size: 32px; font-weight: 700; color: #222; margin-bottom: 8px; }
+  .box p { font-size: 27px; color: #444; line-height: 1.35; }
+  .stage { width: 250px; text-align: center; }
+  .stage h3 { font-size: 31px; }
+  .kb { border-color: #4C72B0; background: #eef2f8; }
+  .kb h3 { color: #2d4d7c; }
+  .vc { border-color: #DD5B45; background: #fdf0ed; }
+  .vc h3 { color: #a03c2b; }
+  .bl { border-color: #DD5B45; border-style: dashed; background: #fff; }
+  .bl h3 { color: #a03c2b; }
+  .use { border-color: #55A868; background: #eff6f0; width: 300px; }
+  .use h3 { color: #33684a; }
+  .arrow { flex: 0 0 56px; text-align: center; font-size: 44px; color: #555; font-weight: 700; }
+  .dial { text-align: center; font-size: 26px; color: #666; margin-top: 6px; font-style: italic; }
+  .tag { display: inline-block; font-size: 24px; font-weight: 700; color: #fff; background: #888;
+         border-radius: 6px; padding: 2px 10px; margin-right: 8px; vertical-align: middle; }
+  .kb .tag { background: #4C72B0; }
+  .vc .tag { background: #DD5B45; }
+  .bl .tag { background: #a03c2b; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="box stage">
+      <h3>intended text</h3>
+      <p>what the user meant to send</p>
+    </div>
+    <div class="arrow">&#10132;</div>
+    <div class="col">
+      <div class="box kb">
+        <h3><span class="tag">1&ndash;6</span>keyboard channel</h3>
+        <p>adjacent-key substitution &middot; transposition &middot; omission &middot; doubling &middot; shifted-row slip &middot; space slip</p>
+      </div>
+      <div class="box vc">
+        <h3><span class="tag">7&ndash;12</span>voice channel (modeled)</h3>
+        <p>homophone &middot; near-homophone &middot; word merge &middot; word split &middot; function-word deletion &middot; punctuation loss</p>
+      </div>
+      <div class="box bl">
+        <h3><span class="tag">13&ndash;14</span>voice baselines: TTS &#8594; ASR</h3>
+        <p>text spoken by a synthesis engine, re-heard by a recognizer; real-engine reference corruptions, pairs A and B</p>
+      </div>
+      <div class="dial">one severity dial for 1&ndash;12: fraction of tokens touched</div>
+    </div>
+    <div class="arrow">&#10132;</div>
+    <div class="box stage">
+      <h3>transmitted text</h3>
+      <p>what the model receives</p>
+    </div>
+    <div class="arrow">&#10132;</div>
+    <div class="col" style="flex: 0 0 300px;">
+      <div class="box use">
+        <h3>evaluate</h3>
+        <p>perturb benchmark inputs, score models under realistic noise</p>
+      </div>
+      <div class="box use">
+        <h3>augment</h3>
+        <p>perturb training data, train the harm away</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -114,23 +114,22 @@ word-level, producing fluent text that says something else. The two modalities t
 two distinct perturbation families, not one noise dial.
 \end{hypbox}
 
-% figure placeholder: taxonomy schematic, keyboard family left, voice family right,
-% one example sentence perturbed by each operator
-% \noindent\begin{minipage}{\linewidth}\centering
-% \includegraphics[width=\linewidth]{figures/taxonomy.png}
-% \captionof{figure}{The perturbation set. Left: keyboard operators. Right: voice operators.}
-% \label{fig:taxonomy}
-% \end{minipage}\par\medskip
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/pipeline.png}
+\caption{The perturbation pipeline. Intended text passes through one of three channels, the
+modeled keyboard operators ($1$--$6$), the modeled voice operators ($7$--$12$), or the
+TTS$\to$ASR roundtrip baselines ($13$--$14$), and the transmitted text feeds evaluation and
+augmentation. The full operator set is in Tab.~\ref{tab:operators} (App.~\ref{app:operators}).}
+\label{fig:pipeline}
+\end{figure*}
 
 \paragraph{Method.} We build each family from the physical error process. Keyboard operators
 model the hands: adjacent-key substitution weighted by key distance on the layout, character
 transposition, omission, doubling, and shifted-row slips, with per-character error rates
 calibrated to \todo{typing-corpus source}. Voice operators model the recognizer: homophone and
 near-homophone substitution, word merge and split, function-word deletion, and punctuation loss,
-with confusion statistics drawn from \todo{ASR confusion source}. Every operator exposes the same
-severity dial, the fraction of tokens touched, so the two families can be applied at matched
-rates. The set supports two uses unchanged: perturbing benchmark inputs for evaluation, and
-perturbing training data for augmentation.
+with confusion statistics drawn from \todo{ASR confusion source}. Alongside the twelve modeled operators, two TTS$\to$ASR roundtrip baselines (operators $13$ and $14$) speak the text through a synthesis engine and re-hear it with a recognizer, giving reference voice corruptions from real engine pairs rather than modeled statistics (Fig.~\ref{fig:pipeline}; full set in Tab.~\ref{tab:operators}, App.~\ref{app:operators}). Every modeled operator exposes the same severity dial, the fraction of tokens touched, so the two families can be applied at matched rates. The set supports two uses unchanged: perturbing benchmark inputs for evaluation, and perturbing training data for augmentation.
 
 \paragraph{The two families do not overlap.} Applied to the same text at the same rate, the
 families produce measurably different corruptions: keyboard operators leave \todo{XX\%} of
@@ -196,5 +195,15 @@ robustness for voice-facing deployments, and the fix is to state robustness per 
 
 \raggedbottom
 % \bibliography{references}  % re-enable once verified entries are added; an empty bib breaks the build
+
+\appendix
+
+\section{The perturbation operator set}
+\label{app:operators}
+
+Tab.~\ref{tab:operators} lists the full set: the twelve modeled operators with the physical
+error each models and a worked example, and the two TTS$\to$ASR roundtrip baselines.
+
+\input{tables/operators.tex}
 
 \end{document}

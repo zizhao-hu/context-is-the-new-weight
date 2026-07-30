@@ -1,0 +1,33 @@
+% The full perturbation operator set. Operators 1-12 are the modeled methodology set
+% (6 keyboard, 6 voice); 13-14 are the TTS->ASR roundtrip baselines through real engines.
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} r l l l l}
+\toprule
+\# & family & operator & models & example (\emph{the road is clear}) \\
+\midrule
+1 & keyboard & adjacent-key substitution & finger lands on a neighboring key & the roas is clear\\
+2 & keyboard & transposition & two keystrokes swap order & the raod is clear\\
+3 & keyboard & omission & keystroke missed & the rad is clear\\
+4 & keyboard & doubling & key registers twice & the rooad is clear\\
+5 & keyboard & shifted-row slip & hand offset by one row & the 4oad is clear\\
+6 & keyboard & space slip & space dropped or inserted & ther oad is clear\\
+\midrule
+7 & voice & homophone substitution & recognizer picks the homophone & the rode is clear\\
+8 & voice & near-homophone substitution & acoustically close word wins & the load is clear\\
+9 & voice & word merge & two words heard as one & the roadis clear\\
+10 & voice & word split & one word heard as two & the row dis clear\\
+11 & voice & function-word deletion & short unstressed word dropped & road is clear\\
+12 & voice & punctuation loss & spoken input carries no punctuation & the road is clear no boundary\\
+\midrule
+13 & baseline & TTS$\to$ASR roundtrip A & real engine pair \todo{TTS A $+$ ASR A} & \todo{logged output}\\
+14 & baseline & TTS$\to$ASR roundtrip B & real engine pair \todo{TTS B $+$ ASR B} & \todo{logged output}\\
+\bottomrule
+\end{tabular*}
+\caption{The perturbation operator set: operators $1$--$12$ are the modeled methodology set, each
+with the same severity dial, and operators $13$--$14$ are TTS$\to$ASR roundtrip baselines that
+produce reference voice corruptions through real engines.}
+\label{tab:operators}
+\end{table*}
