@@ -1,0 +1,200 @@
+%File: main.tex -- *ACL format (acl-org/acl-style-files). Human input-error perturbations paper.
+% Layout follows the attention-sink paper: finding boxes (hypbox), \paragraph{Method.} blocks,
+% claim-first results paragraphs. All numbers marked \todo are placeholders to be measured.
+\documentclass[11pt]{article}
+
+% "review" for anonymous submission with line numbers; change to "final" for camera-ready.
+\usepackage[review]{acl}
+
+% Standard package includes per the ACL template
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{graphicx}
+
+% acl.sty already loads natbib, caption, hyperref, and geometry
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\newtcolorbox{hypbox}{colback=gray!8,colframe=gray!45,boxrule=0.5pt,arc=2pt,left=5pt,right=5pt,top=3pt,bottom=3pt}
+\newcommand{\todo}[1]{\textcolor{red}{[#1]}}
+\setcounter{secnumdepth}{2}
+
+\title{Measuring and Mitigating Human Input-Error Perturbations in Language Models}
+\author{Zizhao Hu \\
+  Department of Computer Science, University of Southern California \\
+  \texttt{zizhaohu@usc.edu}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Language models are evaluated on clean text, but humans do not produce clean text: keyboards slip
+and speech recognizers mishear. We collect a perturbation methodology set that models human input
+errors in their two dominant modalities, keyboard and voice, and use it both to evaluate models
+under realistic input noise and to augment training data with the same noise. Applying the set at
+matched perturbation rates separates the modalities: keyboard errors, which are local and
+character-level, degrade model performance far less than voice errors, which substitute and merge
+whole words and so change what the input says. Building on this split, we propose a mitigation
+that \todo{one-line method description}, recovering \todo{XX} of the perturbed-input loss while
+leaving clean-input performance unchanged. Input-error robustness is a modality property, not a
+noise-rate property, and it can be trained for.
+\end{abstract}
+
+\section{Introduction}
+A deployed language model never sees the text its user intended. Between intention and input sit
+two noisy channels: the keyboard, where fingers hit adjacent keys, transpose characters, and drop
+letters, and the microphone, where a speech recognizer substitutes homophones, merges words, and
+deletes the punctuation that structure depends on. Benchmarks score models on the intended text;
+users experience models on the transmitted text. The gap between the two is the subject of this
+paper.
+
+The two channels corrupt text in structurally different ways. A keyboard error is local: it
+changes characters inside a word, usually leaving the word recoverable from its neighbors and its
+shape. A voice error is global: it replaces the word with a different real word, or re-segments a
+span entirely, so the corrupted input is fluent text that says something else. If models read
+through local corruption but are misled by fluent corruption, then robustness to human input error
+is a property of the input modality, not of the noise rate, and evaluation and mitigation should
+be organized by modality.
+
+We make three contributions:
+\begin{enumerate}[label=\arabic*.,leftmargin=1.35em,topsep=1pt,itemsep=1pt,parsep=0pt,partopsep=0pt]
+\item We collect a \textbf{perturbation methodology set} that models human input errors from the
+keyboard and voice modalities, usable both for evaluation under realistic noise and for training
+data augmentation (Sec.~\ref{sec:find1}).
+\item We show that \textbf{keyboard errors are less harmful than voice errors} to a language model
+at matched perturbation rates, and locate why: local character noise leaves meaning recoverable
+while fluent word-level noise rewrites it (Sec.~\ref{sec:find2}).
+\item We propose a \textbf{mitigation method} that reduces the harm of both input-error
+modalities, recovering most of the perturbed-input loss without damaging clean-input performance
+(Sec.~\ref{sec:method}).
+\end{enumerate}
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Robustness to input noise.} \todo{cite: character-level adversarial and typo robustness
+work; synthetic vs natural typo studies; noise injection for NMT and classification. Fetch real
+citations from arXiv before submission, no invented references.} Prior robustness work
+concentrates on synthetic character noise or adversarial perturbations chosen to break the model.
+Human input errors differ on both counts: they are natural, high-frequency, and modality-shaped,
+and they arrive at inference time whether or not an adversary exists.
+
+\paragraph{Speech-channel errors.} \todo{cite: ASR error analysis, homophone confusion, cascaded
+spoken-language-understanding robustness.} Cascaded systems that feed recognizer output into a
+language model inherit the recognizer's confusions, which are fluent by construction: the
+recognizer emits real words. This places voice errors in a different class from keyboard slips,
+a distinction our evaluation makes measurable.
+
+\paragraph{Noise-aware training.} \todo{cite: data augmentation with synthetic noise, consistency
+training, input normalization front-ends.} Augmentation with synthetic noise improves robustness
+to that noise; the open question our method addresses is which noise to train with when the
+deployed noise is modality-mixed, and whether robustness to one modality transfers to the other.
+
+\section{Findings}
+
+We present our findings in two sections. The first builds the perturbation methodology set and
+establishes that human input errors are structured by modality (Finding~1, \S\ref{sec:find1}).
+The second applies the set at matched rates and separates the modalities by the harm they cause
+(Finding~2, \S\ref{sec:find2}).
+
+\subsection{A perturbation methodology set for human input errors}
+\label{sec:find1}
+
+\begin{hypbox}
+\textbf{Finding 1: human input errors are structured by modality.} Keyboard errors are local and
+character-level, leaving words recoverable from shape and context; voice errors are global and
+word-level, producing fluent text that says something else. The two modalities therefore define
+two distinct perturbation families, not one noise dial.
+\end{hypbox}
+
+% figure placeholder: taxonomy schematic, keyboard family left, voice family right,
+% one example sentence perturbed by each operator
+% \noindent\begin{minipage}{\linewidth}\centering
+% \includegraphics[width=\linewidth]{figures/taxonomy.png}
+% \captionof{figure}{The perturbation set. Left: keyboard operators. Right: voice operators.}
+% \label{fig:taxonomy}
+% \end{minipage}\par\medskip
+
+\paragraph{Method.} We build each family from the physical error process. Keyboard operators
+model the hands: adjacent-key substitution weighted by key distance on the layout, character
+transposition, omission, doubling, and shifted-row slips, with per-character error rates
+calibrated to \todo{typing-corpus source}. Voice operators model the recognizer: homophone and
+near-homophone substitution, word merge and split, function-word deletion, and punctuation loss,
+with confusion statistics drawn from \todo{ASR confusion source}. Every operator exposes the same
+severity dial, the fraction of tokens touched, so the two families can be applied at matched
+rates. The set supports two uses unchanged: perturbing benchmark inputs for evaluation, and
+perturbing training data for augmentation.
+
+\paragraph{The two families do not overlap.} Applied to the same text at the same rate, the
+families produce measurably different corruptions: keyboard operators leave \todo{XX\%} of
+perturbed words out-of-vocabulary and recoverable by edit distance \todo{$\le k$}, while voice
+operators leave \todo{XX\%} of perturbed words as valid vocabulary items, invisible to a spell
+checker by construction. \todo{One quantitative divergence measure between the families, e.g.
+distribution over edit types.} A single noise rate therefore under-specifies the perturbation; the
+modality is the load-bearing variable.
+
+\subsection{Keyboard errors harm less than voice errors}
+\label{sec:find2}
+
+\begin{hypbox}
+\textbf{Finding 2: keyboard errors are less harmful than voice errors.} At matched perturbation
+rates, keyboard noise costs a language model a fraction of the performance that voice noise
+costs, across tasks and rates. The harm tracks whether the corruption preserves recoverable
+meaning, not how many tokens it touches.
+\end{hypbox}
+
+% figure placeholder: harm curves, task metric vs perturbation rate, one line per modality
+% \noindent\begin{minipage}{\linewidth}\centering
+% \includegraphics[width=\linewidth]{figures/harm_curves.png}
+% \captionof{figure}{Task performance against perturbation rate. Left: \todo{task A}. Right:
+% \todo{task B}. Keyboard degrades gently; voice degrades steeply at the same rate.}
+% \label{fig:harm}
+% \end{minipage}\par\medskip
+
+\paragraph{Method.} We apply both families to the inputs of \todo{benchmark list} at rates
+\todo{sweep, e.g. 2 to 30 percent of tokens} and score \todo{model list} zero-shot, holding
+prompts, decoding, and metrics fixed so only the input perturbation varies. Clean-input scores
+anchor each curve. \todo{n, seeds, SEM protocol.}
+
+\paragraph{Voice noise costs a multiple of keyboard noise.} At a matched \todo{X\%} rate,
+keyboard perturbation moves \todo{task metric} from \todo{clean} to \todo{value}, while voice
+perturbation moves it to \todo{value}, a \todo{Y$\times$} larger drop; the gap widens with rate.
+\todo{One sentence on which voice operators drive the harm, e.g. homophone substitution versus
+punctuation loss, from the per-operator ablation.} The model reads through what a human reader
+reads through, and is misled where a human would need the audio.
+
+\section{Reducing the harm}
+\label{sec:method}
+
+\paragraph{Method.} \todo{The mitigation. Candidate framing to fill in once measured: train-time
+augmentation with the modality-matched perturbation set at a mixing ratio, optionally paired with
+an input-normalization step; state the training recipe, budget, and the clean-input control.}
+
+\paragraph{The mitigation recovers most of the perturbed-input loss.} \todo{Headline numbers:
+perturbed-input metric before and after mitigation per modality, clean-input metric unchanged
+within noise, transfer between modalities.} \todo{One sentence on the asymmetry: whether
+keyboard-trained robustness transfers to voice, and the cheaper direction.}
+
+\paragraph{Limitations.} \todo{Bound the claims once results land: models and tasks covered,
+calibration sources for the error statistics, synthetic-versus-logged human error gap, and any
+imputed cells, disclosed.}
+
+\section{Conclusion}
+Human input errors are not one noise source but two: the keyboard corrupts characters and leaves
+meaning recoverable, the voice channel corrupts words and rewrites meaning, and a language model
+inherits exactly that asymmetry, robust where recovery is possible and fragile where the input is
+fluent but wrong. The perturbation set makes the asymmetry measurable and trainable:
+\todo{one-sentence summary of the mitigation result}. Evaluation under clean text overstates
+robustness for voice-facing deployments, and the fix is to state robustness per modality.
+
+\raggedbottom
+% \bibliography{references}  % re-enable once verified entries are added; an empty bib breaks the build
+
+\end{document}
