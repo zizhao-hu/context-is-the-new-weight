@@ -184,7 +184,7 @@ def eval_all(stage):
 # ---------------- sequential training ----------------
 def fisher_diag(tr):
     """diagonal Fisher of the LM loss on task tr, mean-normalized"""
-    F = [torch.zeros_like(p, dtype=torch.float32) for p in TRAINABLE]
+    F = [torch.zeros_like(p, dtype=torch.bfloat16) for p in TRAINABLE]
     model.train()
     for _ in range(a.ewc_batches):
         model.zero_grad(set_to_none=True)
@@ -192,7 +192,7 @@ def fisher_diag(tr):
         lm_loss(x, y, TRAIN_MASK, loss_from).backward()
         for f, p in zip(F, TRAINABLE):
             if p.grad is not None:
-                f += p.grad.float() ** 2
+                f += (p.grad.float() ** 2).to(torch.bfloat16)
     model.zero_grad(set_to_none=True)
     tot = sum(f.sum() for f in F); n = sum(f.numel() for f in F)
     scale = (tot / n).clamp_min(1e-12)
@@ -242,11 +242,12 @@ for s, (name, tr, _) in enumerate(tasks, start=1):
             if a.method == "l2":
                 reg = sum(((p - q0) ** 2).sum() for p, q0 in zip(TRAINABLE, anchor))
                 loss = loss + a.l2_lam * 0.5 * reg / 1e6      # scaled per million params
-            if a.method == "ewc" and ewc_F is not None:
-                reg = sum((f * (p - q0) ** 2).sum()
-                          for f, p, q0 in zip(ewc_F, TRAINABLE, ewc_anchor))
-                loss = loss + a.ewc_lam * 0.5 * reg
             (loss / a.accum).backward()
+        if a.method == "ewc" and ewc_F is not None:
+            with torch.no_grad():                     # analytic penalty gradient: lam * F * (p - anchor)
+                for f, p, q0 in zip(ewc_F, TRAINABLE, ewc_anchor):
+                    if p.grad is not None:
+                        p.grad += a.ewc_lam * (f * (p - q0)).to(p.grad.dtype)
         torch.nn.utils.clip_grad_norm_(TRAINABLE, 1.0)
         opt.step()
         if step % 50 == 0:
