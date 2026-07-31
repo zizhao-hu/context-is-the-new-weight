@@ -16,10 +16,14 @@ Masks (Qwen2.5-0.5B, additive 4D attention mask, L=1024 chunks):
   b  SWA, sliding window W=256
   t  T-SWA: same sliding mask as b, loss only on queries with a full window (q >= W)
 
-Methods:
+Methods (replay = ER, ewc = online EWC, lwf = LwF, the traditional continual-learning trio):
   naive   sequential AdamW, nothing else
   replay  each micro-batch drawn from a uniformly sampled PREVIOUS task with prob --replay_p
   l2      L2-SP to the stage-start weights: loss += lam/2 * ||theta - theta_stage_start||^2
+  ewc     online EWC: diagonal Fisher estimated on each finished task (mean-normalized,
+          accumulated), penalty lam/2 * sum F * (theta - anchor)^2, anchor = last stage end
+  lwf     learning without forgetting: KL to the frozen previous-stage model on the
+          current batch, loss += alpha * KL(teacher || student)
 
 Deploy for eval is matched to the design (a: full causal; b,t: sliding W), and NLL is scored
 only on positions >= W under every deploy so each scored position has at least W context.
@@ -33,7 +37,7 @@ from datasets import load_dataset
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--mask", required=True, choices=["a", "b", "t"])
-ap.add_argument("--method", required=True, choices=["naive", "replay", "l2"])
+ap.add_argument("--method", required=True, choices=["naive", "replay", "l2", "ewc", "lwf"])
 ap.add_argument("--W", type=int, default=256)
 ap.add_argument("--L", type=int, default=1024)
 ap.add_argument("--steps", type=int, default=250)          # optimizer steps per stage
@@ -42,6 +46,9 @@ ap.add_argument("--accum", type=int, default=4)
 ap.add_argument("--lr", type=float, default=1e-5)
 ap.add_argument("--replay_p", type=float, default=0.2)
 ap.add_argument("--l2_lam", type=float, default=0.01)
+ap.add_argument("--ewc_lam", type=float, default=1.0)      # on mean-normalized Fisher
+ap.add_argument("--ewc_batches", type=int, default=24)     # Fisher estimation batches
+ap.add_argument("--lwf_alpha", type=float, default=1.0)    # KD weight
 ap.add_argument("--n_eval", type=int, default=24)          # eval chunks per task
 ap.add_argument("--seed", type=int, default=0)
 ap.add_argument("--fineweb", default="/scratch1/zizhaoh/fineweb/sample/100BT/001_00005.parquet")
@@ -150,12 +157,34 @@ def eval_all(stage):
     print("CLEVAL stage=%d task=%s ppl=%.4f" % (stage, probe[0], eval_ppl(probe[1])), flush=True)
 
 # ---------------- sequential training ----------------
+def fisher_diag(tr):
+    """diagonal Fisher of the LM loss on task tr, mean-normalized"""
+    F = [torch.zeros_like(p, dtype=torch.float32) for p in model.parameters()]
+    model.train()
+    for _ in range(a.ewc_batches):
+        model.zero_grad(set_to_none=True)
+        x, y = batch_from(tr, a.bs)
+        lm_loss(x, y, TRAIN_MASK, loss_from).backward()
+        for f, p in zip(F, model.parameters()):
+            if p.grad is not None:
+                f += p.grad.float() ** 2
+    model.zero_grad(set_to_none=True)
+    tot = sum(f.sum() for f in F); n = sum(f.numel() for f in F)
+    scale = (tot / n).clamp_min(1e-12)
+    return [f / scale for f in F]                             # mean 1
+
 opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.0)
 eval_all(0)                                                   # base model row
+ewc_F, ewc_anchor, teacher = None, None, None
 for s, (name, tr, _) in enumerate(tasks, start=1):
     anchor = None
     if a.method == "l2":
         anchor = [p.detach().clone() for p in model.parameters()]
+    if a.method == "lwf" and s > 1:
+        import copy
+        teacher = copy.deepcopy(model).eval()
+        for p in teacher.parameters():
+            p.requires_grad_(False)
     model.train()
     for step in range(a.steps):
         opt.zero_grad(set_to_none=True)
@@ -164,14 +193,32 @@ for s, (name, tr, _) in enumerate(tasks, start=1):
             if a.method == "replay" and s > 1 and random.random() < a.replay_p:
                 src = tasks[random.randrange(s - 1)][1]
             x, y = batch_from(src, a.bs)
-            loss = lm_loss(x, y, TRAIN_MASK, loss_from)
+            if a.method == "lwf" and teacher is not None:
+                out = model(input_ids=x, attention_mask=TRAIN_MASK.expand(x.size(0), -1, -1, -1)).logits
+                lp = F.log_softmax(out.float(), dim=-1)
+                nll = -lp.gather(-1, y[..., None]).squeeze(-1)[:, loss_from:].mean()
+                with torch.no_grad():
+                    tl = teacher(input_ids=x, attention_mask=TRAIN_MASK.expand(x.size(0), -1, -1, -1)).logits
+                kd = F.kl_div(lp[:, loss_from:], F.log_softmax(tl.float(), dim=-1)[:, loss_from:],
+                              log_target=True, reduction="batchmean") / (L - loss_from)
+                loss = nll + a.lwf_alpha * kd
+            else:
+                loss = lm_loss(x, y, TRAIN_MASK, loss_from)
             if a.method == "l2":
                 reg = sum(((p - q0) ** 2).sum() for p, q0 in zip(model.parameters(), anchor))
                 loss = loss + a.l2_lam * 0.5 * reg / 1e6      # scaled per million params
+            if a.method == "ewc" and ewc_F is not None:
+                reg = sum((f * (p - q0) ** 2).sum()
+                          for f, p, q0 in zip(ewc_F, model.parameters(), ewc_anchor))
+                loss = loss + a.ewc_lam * 0.5 * reg
             (loss / a.accum).backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         opt.step()
         if step % 50 == 0:
             print("STAGE %d (%s) step %d loss %.4f" % (s, name, step, loss.item()), flush=True)
+    if a.method == "ewc":
+        Fn = fisher_diag(tr)
+        ewc_F = Fn if ewc_F is None else [f0 + f1 for f0, f1 in zip(ewc_F, Fn)]
+        ewc_anchor = [p.detach().clone() for p in model.parameters()]
     eval_all(s)
 print("CLDONE mask=%s method=%s" % (a.mask, a.method), flush=True)

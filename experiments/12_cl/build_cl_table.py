@@ -16,10 +16,11 @@ import sys
 
 TASKS = ["wikitext", "gsm8k", "tofu", "arc"]
 STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
-ROWS = [("a", "naive", "A. full causal"), ("a", "replay", r"\quad$+$replay"),
-        ("a", "l2", r"\quad$+$L2"), ("b", "naive", "B. SWA"),
-        ("b", "replay", r"\quad$+$replay"), ("t", "naive", "E. T-SWA"),
-        ("t", "replay", r"\quad$+$replay"), ("t", "l2", r"\quad$+$L2")]
+METHODS = [("naive", None), ("replay", r"\quad$+$replay (ER)"), ("ewc", r"\quad$+$EWC"),
+           ("lwf", r"\quad$+$LwF"), ("l2", r"\quad$+$L2-SP")]
+ROWS = [(m, meth, (label if meth != "naive" else head))
+        for m, head in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]
+        for meth, label in METHODS]
 
 def parse(path):
     ev = {}
