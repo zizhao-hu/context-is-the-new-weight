@@ -120,8 +120,9 @@ def build_tasks():
     t4_tr = stream([ser_a(r) for r in arc["train"]])
     t4_va = stream([ser_a(r) for r in arc["validation"]], 200_000)
 
-    fw = load_dataset("parquet", data_files=a.fineweb)["train"]
-    r_va = stream([fw[i]["text"] for i in range(min(1500, len(fw)))], 200_000)
+    import pyarrow.parquet as pq                     # direct read: no datasets cache, no FileLock
+    fw_texts = pq.read_table(a.fineweb, columns=["text"])["text"].to_pylist()[:1500]
+    r_va = stream(fw_texts, 200_000)
 
     tasks = [("wikitext", t1_tr, t1_va), ("gsm8k", t2_tr, t2_va),
              ("tofu", t3_tr, t3_va), ("arc", t4_tr, t4_va)]
