@@ -214,6 +214,12 @@ for s, (name, tr, _) in enumerate(tasks, start=1):
         teacher = copy.deepcopy(model).eval()
         for p in teacher.parameters():
             p.requires_grad_(False)
+        if a.hybrid:
+            # frozen layers never train: alias them to the student's storage to halve memory
+            sp = dict(model.named_parameters())
+            for n_, tp in teacher.named_parameters():
+                if not sp[n_].requires_grad:
+                    tp.data = sp[n_].data
     model.train()
     for step in range(a.steps):
         opt.zero_grad(set_to_none=True)

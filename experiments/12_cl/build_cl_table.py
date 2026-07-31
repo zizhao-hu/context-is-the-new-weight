@@ -61,12 +61,12 @@ def main():
             base = ev
     hyb = {}
     for path in sorted(logs):
-        m = re.search(r"cl_cl_hyb_([abt])_\d+\.log$", path)
+        m = re.search(r"cl_cl_hyb_([abt])(?:_(naive|replay|ewc|lwf))?_\d+\.log$", path)
         if not m:
             continue
         ev, done = parse(path)
         if done:
-            hyb[m.group(1)] = ev
+            hyb[(m.group(1), m.group(2) or "naive")] = ev
 
     # ---- main table: metric columns ----
     out = []
@@ -92,16 +92,20 @@ def main():
         out.append("%s & %.2f & %.2f & %+.2f & %.2f\\\\" % (label, avg, F, B, fw))
     if hyb:
         out.append(r"\midrule")
-        out.append(r"\multicolumn{5}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained, naive)}\\")
-        hb = hyb.get("a") or next(iter(hyb.values()))
+        out.append(r"\multicolumn{5}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained)}\\")
+        hb = hyb.get(("a", "naive")) or next(iter(hyb.values()))
         out.append("base (no CPT) & %.2f & --- & --- & %.2f\\\\" %
                    (sum(hb[(0, t)] for t in TASKS) / 4, hb[(0, "fineweb")]))
-        for mask, label in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]:
-            ev = hyb.get(mask)
-            if not ev:
-                continue
-            avg, F, B, fw, _ = metrics(ev)
-            out.append("%s & %.2f & %.2f & %+.2f & %.2f\\\\" % (label, avg, F, B, fw))
+        for mask, head in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]:
+            for meth, label in METHODS:
+                if meth == "l2":
+                    continue
+                ev = hyb.get((mask, meth))
+                if not ev:
+                    continue
+                avg, F, B, fw, _ = metrics(ev)
+                out.append("%s & %.2f & %.2f & %+.2f & %.2f\\\\" %
+                           (head if meth == "naive" else label, avg, F, B, fw))
     out.append(r"\bottomrule")
     out.append(r"\end{tabular*}")
     out.append(r"\caption{Continual learning over the four-task sequence: final perplexity averaged")
@@ -137,12 +141,17 @@ def main():
                   (label, " & ".join("%.2f" % ev[(4, t)] for t in TASKS), ev[(4, "fineweb")]))
     if hyb:
         ap.append(r"\midrule")
-        ap.append(r"\multicolumn{6}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained, naive)}\\")
-        for mask, label in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]:
-            ev = hyb.get(mask)
-            if ev:
+        ap.append(r"\multicolumn{6}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained)}\\")
+        for mask, head in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]:
+            for meth, label in METHODS:
+                if meth == "l2":
+                    continue
+                ev = hyb.get((mask, meth))
+                if not ev:
+                    continue
                 ap.append("%s & %s & %.2f\\\\" %
-                          (label, " & ".join("%.2f" % ev[(4, t)] for t in TASKS), ev[(4, "fineweb")]))
+                          (head if meth == "naive" else label,
+                           " & ".join("%.2f" % ev[(4, t)] for t in TASKS), ev[(4, "fineweb")]))
     ap.append(r"\bottomrule")
     ap.append(r"\end{tabular*}")
     ap.append(r"\caption{Per-task final perplexity after the full continual sequence, for every")
