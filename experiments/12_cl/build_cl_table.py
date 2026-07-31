@@ -70,10 +70,11 @@ def main():
 
     # ---- main table: metric columns ----
     out = []
-    out.append(r"\begin{table}[t]")
+    out.append(r"\begin{table}[tp]")
     out.append(r"\centering")
     out.append(r"\scriptsize")
     out.append(r"\setlength{\tabcolsep}{3pt}")
+    out.append(r"\renewcommand{\arraystretch}{0.92}")
     out.append(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} l r r r r}")
     out.append(r"\toprule")
     out.append(r"training & \multicolumn{1}{c}{ppl} & \multicolumn{1}{c}{forget} & "
