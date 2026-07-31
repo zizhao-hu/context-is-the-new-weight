@@ -52,15 +52,39 @@ ap.add_argument("--lwf_alpha", type=float, default=1.0)    # KD weight
 ap.add_argument("--n_eval", type=int, default=24)          # eval chunks per task
 ap.add_argument("--seed", type=int, default=0)
 ap.add_argument("--fineweb", default="/scratch1/zizhaoh/fineweb/sample/100BT/001_00005.parquet")
+ap.add_argument("--model", default="Qwen/Qwen2.5-0.5B")
+ap.add_argument("--hybrid", action="store_true")           # freeze all but full-attention layers; 8-bit AdamW + grad ckpt
 a = ap.parse_args()
 torch.manual_seed(a.seed); random.seed(a.seed)
 dev, bf16 = "cuda", torch.bfloat16
 W, L = a.W, a.L
 
-MODEL = "Qwen/Qwen2.5-0.5B"
-tok = AutoTokenizer.from_pretrained(MODEL)
-model = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=bf16, attn_implementation="sdpa").to(dev)
-model.gradient_checkpointing_disable()
+MODEL = a.model
+tok = AutoTokenizer.from_pretrained(MODEL, trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=bf16, attn_implementation="sdpa",
+                                             trust_remote_code=True).to(dev)
+if a.hybrid:
+    # train only the full-(softmax-)attention decoder layers of the hybrid; freeze the rest
+    lt = getattr(model.config, "layer_types", None)
+    if lt:
+        full_idx = [i for i, t in enumerate(lt) if "full" in t]
+    else:
+        full_idx = [i for i, l in enumerate(model.model.layers)
+                    if "linear" not in type(getattr(l, "self_attn", l)).__name__.lower()
+                    and not hasattr(l, "linear_attn")]
+    print("HYBRID full-attention layers:", full_idx, flush=True)
+    for p_ in model.parameters():
+        p_.requires_grad_(False)
+    for i in full_idx:
+        for p_ in model.model.layers[i].parameters():
+            p_.requires_grad_(True)
+    model.gradient_checkpointing_enable()
+    model.enable_input_require_grads()
+else:
+    model.gradient_checkpointing_disable()
+TRAINABLE = [p_ for p_ in model.parameters() if p_.requires_grad]
+print("trainable params: %.2fB / %.2fB" % (sum(p_.numel() for p_ in TRAINABLE) / 1e9,
+      sum(p_.numel() for p_ in model.parameters()) / 1e9), flush=True)
 
 # ---------------- data: one flat token stream per task ----------------
 def stream(texts, cap_tokens=6_000_000):
@@ -159,13 +183,13 @@ def eval_all(stage):
 # ---------------- sequential training ----------------
 def fisher_diag(tr):
     """diagonal Fisher of the LM loss on task tr, mean-normalized"""
-    F = [torch.zeros_like(p, dtype=torch.float32) for p in model.parameters()]
+    F = [torch.zeros_like(p, dtype=torch.float32) for p in TRAINABLE]
     model.train()
     for _ in range(a.ewc_batches):
         model.zero_grad(set_to_none=True)
         x, y = batch_from(tr, a.bs)
         lm_loss(x, y, TRAIN_MASK, loss_from).backward()
-        for f, p in zip(F, model.parameters()):
+        for f, p in zip(F, TRAINABLE):
             if p.grad is not None:
                 f += p.grad.float() ** 2
     model.zero_grad(set_to_none=True)
@@ -173,13 +197,17 @@ def fisher_diag(tr):
     scale = (tot / n).clamp_min(1e-12)
     return [f / scale for f in F]                             # mean 1
 
-opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.0)
+if a.hybrid:
+    import bitsandbytes as bnb
+    opt = bnb.optim.AdamW8bit(TRAINABLE, lr=a.lr, weight_decay=0.0)
+else:
+    opt = torch.optim.AdamW(TRAINABLE, lr=a.lr, weight_decay=0.0)
 eval_all(0)                                                   # base model row
 ewc_F, ewc_anchor, teacher = None, None, None
 for s, (name, tr, _) in enumerate(tasks, start=1):
     anchor = None
     if a.method == "l2":
-        anchor = [p.detach().clone() for p in model.parameters()]
+        anchor = [p.detach().clone() for p in TRAINABLE]
     if a.method == "lwf" and s > 1:
         import copy
         teacher = copy.deepcopy(model).eval()
@@ -205,20 +233,20 @@ for s, (name, tr, _) in enumerate(tasks, start=1):
             else:
                 loss = lm_loss(x, y, TRAIN_MASK, loss_from)
             if a.method == "l2":
-                reg = sum(((p - q0) ** 2).sum() for p, q0 in zip(model.parameters(), anchor))
+                reg = sum(((p - q0) ** 2).sum() for p, q0 in zip(TRAINABLE, anchor))
                 loss = loss + a.l2_lam * 0.5 * reg / 1e6      # scaled per million params
             if a.method == "ewc" and ewc_F is not None:
                 reg = sum((f * (p - q0) ** 2).sum()
-                          for f, p, q0 in zip(ewc_F, model.parameters(), ewc_anchor))
+                          for f, p, q0 in zip(ewc_F, TRAINABLE, ewc_anchor))
                 loss = loss + a.ewc_lam * 0.5 * reg
             (loss / a.accum).backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        torch.nn.utils.clip_grad_norm_(TRAINABLE, 1.0)
         opt.step()
         if step % 50 == 0:
             print("STAGE %d (%s) step %d loss %.4f" % (s, name, step, loss.item()), flush=True)
     if a.method == "ewc":
         Fn = fisher_diag(tr)
         ewc_F = Fn if ewc_F is None else [f0 + f1 for f0, f1 in zip(ewc_F, Fn)]
-        ewc_anchor = [p.detach().clone() for p in model.parameters()]
+        ewc_anchor = [p.detach().clone() for p in TRAINABLE]
     eval_all(s)
 print("CLDONE mask=%s method=%s" % (a.mask, a.method), flush=True)

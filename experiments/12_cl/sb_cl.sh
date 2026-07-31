@@ -10,6 +10,7 @@
 set -eo pipefail
 module purge && module load gcc/13.3.0 cuda/12.6.3
 export CUDA_HOME=$CUDA_ROOT PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+export OPENBLAS_NUM_THREADS=4 OMP_NUM_THREADS=4
 export HF_HOME=/scratch1/zizhaoh/.cache/huggingface HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 TOKENIZERS_PARALLELISM=false
 source /scratch1/zizhaoh/envs/cinw/bin/activate
 cd /scratch1/zizhaoh
