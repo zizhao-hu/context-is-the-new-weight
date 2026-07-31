@@ -17,7 +17,7 @@ import sys
 TASKS = ["wikitext", "gsm8k", "tofu", "arc"]
 STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
 METHODS = [("naive", None), ("replay", r"\quad$+$replay (ER)"), ("ewc", r"\quad$+$EWC"),
-           ("lwf", r"\quad$+$LwF"), ("l2", r"\quad$+$L2-SP")]
+           ("lwf", r"\quad$+$LwF")]   # L2-SP runs exist but the row is inert; stated in text
 ROWS = [(m, meth, (label if meth != "naive" else head))
         for m, head in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]
         for meth, label in METHODS]
@@ -107,11 +107,10 @@ def main():
                         forget, ev[(4, "fineweb")]))
     out.append(r"\bottomrule")
     out.append(r"\end{tabular*}")
-    out.append(r"\caption{Sequential continued pretraining over four tasks (wikitext, gsm8k, tofu,")
-    out.append(r"arc): final held-out perplexity per task, their mean, forgetting (mean rise from")
-    out.append(r"just after each task's own stage to the end of the sequence), and perplexity on")
-    out.append(r"the never-trained fineweb probe. Each design evaluates under its matched deploy;")
-    out.append(r"the base row is under full attention.}")
+    out.append(r"\caption{Sequential continued pretraining over four tasks: final held-out perplexity")
+    out.append(r"per task, their mean, forgetting (mean rise from just after each task's own stage to")
+    out.append(r"the end), and the never-trained fineweb probe. Matched deploy per design; base rows")
+    out.append(r"under full attention; the hybrid block trains $50$ steps per stage.}")
     out.append(r"\label{tab:cl}")
     out.append(r"\end{table*}")
     print("\n".join(out))
