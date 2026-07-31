@@ -41,7 +41,7 @@ def main():
     runs = {}
     base = None
     for path in sorted(logs):
-        m = re.search(r"cl_cl_([abt])_(naive|replay|l2)_\d+\.log$", path)
+        m = re.search(r"cl_cl_([abt])_(naive|replay|l2|ewc|lwf)_\d+\.log$", path)
         if not m:
             continue
         ev, done = parse(path)
