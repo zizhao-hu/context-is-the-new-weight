@@ -33,6 +33,14 @@ def parse(path):
             done = True
     return ev, done
 
+def metrics(ev):
+    """final avg ppl, forgetting (best-reference, first 3 tasks), BWT (signed, first 3), fineweb"""
+    fin = [ev[(4, t)] for t in TASKS]
+    first3 = TASKS[:3]
+    F = sum(ev[(4, t)] - min(ev[(s, t)] for s in range(STAGE_OF[t], 5)) for t in first3) / 3
+    B = sum(ev[(STAGE_OF[t], t)] - ev[(4, t)] for t in first3) / 3
+    return sum(fin) / 4, F, B, ev[(4, "fineweb")], fin
+
 def main():
     pats = sys.argv[1:] or ["logs"]
     logs = []
@@ -59,61 +67,91 @@ def main():
         ev, done = parse(path)
         if done:
             hyb[m.group(1)] = ev
+
+    # ---- main table: metric columns ----
     out = []
-    out.append(r"\begin{table*}[t]")
+    out.append(r"\begin{table}[t]")
     out.append(r"\centering")
     out.append(r"\scriptsize")
-    out.append(r"\setlength{\tabcolsep}{4pt}")
-    out.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrrr r r r}")
+    out.append(r"\setlength{\tabcolsep}{3pt}")
+    out.append(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} l r r r r}")
     out.append(r"\toprule")
-    out.append(r" & \multicolumn{4}{c}{final ppl after the full sequence ($\downarrow$)} & & & \\")
-    out.append(r"\cmidrule(lr){2-5}")
-    out.append(r"training & \multicolumn{1}{c}{wikitext} & \multicolumn{1}{c}{gsm8k} & "
-               r"\multicolumn{1}{c}{tofu} & \multicolumn{1}{c}{arc} & \multicolumn{1}{c}{avg} & "
-               r"\multicolumn{1}{c}{forget} & \multicolumn{1}{c}{fineweb}\\")
+    out.append(r"training & \multicolumn{1}{c}{ppl} & \multicolumn{1}{c}{forget} & "
+               r"\multicolumn{1}{c}{BWT} & \multicolumn{1}{c}{fineweb}\\")
     out.append(r"\midrule")
     if base:
-        cells = ["%.2f" % base[(0, t)] for t in TASKS]
         avg = sum(base[(0, t)] for t in TASKS) / 4
-        out.append("base (no CPT) & %s & %.2f & --- & %.2f\\\\" %
-                   (" & ".join(cells), avg, base[(0, "fineweb")]))
+        out.append("base (no CPT) & %.2f & --- & --- & %.2f\\\\" % (avg, base[(0, "fineweb")]))
         out.append(r"\midrule")
     for mask, meth, label in ROWS:
         ev = runs.get((mask, meth))
         if not ev:
-            out.append("%s & \\multicolumn{7}{c}{---}\\\\" % label)
+            out.append("%s & \\multicolumn{4}{c}{---}\\\\" % label)
             continue
-        fin = [ev[(4, t)] for t in TASKS]
-        forget = sum(ev[(4, t)] - ev[(STAGE_OF[t], t)] for t in TASKS) / 4
-        out.append("%s & %s & %.2f & %+.2f & %.2f\\\\" %
-                   (label, " & ".join("%.2f" % v for v in fin), sum(fin) / 4,
-                    forget, ev[(4, "fineweb")]))
+        avg, F, B, fw, _ = metrics(ev)
+        out.append("%s & %.2f & %.2f & %+.2f & %.2f\\\\" % (label, avg, F, B, fw))
     if hyb:
         out.append(r"\midrule")
-        out.append(r"\multicolumn{8}{@{}l}{Qwen3.5-9B hybrid ($8$ softmax $+$ $24$ linear layers; softmax blocks trained, naive)}\\")
+        out.append(r"\multicolumn{5}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained, naive)}\\")
         hb = hyb.get("a") or next(iter(hyb.values()))
-        cells = ["%.2f" % hb[(0, t)] for t in TASKS]
-        out.append("base (no CPT) & %s & %.2f & --- & %.2f\\\\" %
-                   (" & ".join(cells), sum(hb[(0, t)] for t in TASKS) / 4, hb[(0, "fineweb")]))
+        out.append("base (no CPT) & %.2f & --- & --- & %.2f\\\\" %
+                   (sum(hb[(0, t)] for t in TASKS) / 4, hb[(0, "fineweb")]))
         for mask, label in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]:
             ev = hyb.get(mask)
             if not ev:
-                out.append("%s & \\multicolumn{7}{c}{---}\\\\" % label)
                 continue
-            fin = [ev[(4, t)] for t in TASKS]
-            forget = sum(ev[(4, t)] - ev[(STAGE_OF[t], t)] for t in TASKS) / 4
-            out.append("%s & %s & %.2f & %+.2f & %.2f\\\\" %
-                       (label, " & ".join("%.2f" % v for v in fin), sum(fin) / 4,
-                        forget, ev[(4, "fineweb")]))
+            avg, F, B, fw, _ = metrics(ev)
+            out.append("%s & %.2f & %.2f & %+.2f & %.2f\\\\" % (label, avg, F, B, fw))
     out.append(r"\bottomrule")
     out.append(r"\end{tabular*}")
-    out.append(r"\caption{Sequential continued pretraining over four tasks: final held-out perplexity")
-    out.append(r"per task, their mean, forgetting (mean rise from just after each task's own stage to")
-    out.append(r"the end), and the never-trained fineweb probe. Matched deploy per design; base rows")
-    out.append(r"under full attention; the hybrid block trains $50$ steps per stage.}")
+    out.append(r"\caption{Continual learning over the four-task sequence: final perplexity averaged")
+    out.append(r"over tasks, forgetting (mean rise from each task's best post-learning perplexity,")
+    out.append(r"lower is better), backward transfer (mean drop from just after each task's stage to")
+    out.append(r"the end, positive means later training helped), and the never-trained fineweb probe.")
+    out.append(r"Matched deploy per design; base rows under full attention; the hybrid trains $50$")
+    out.append(r"steps per stage. Per-task perplexities in App.~\ref{app:cltasks}.}")
     out.append(r"\label{tab:cl}")
-    out.append(r"\end{table*}")
+    out.append(r"\end{table}")
     print("\n".join(out))
+
+    # ---- appendix table: per-task matrix ----
+    ap = []
+    ap.append(r"\begin{table*}[t]")
+    ap.append(r"\centering")
+    ap.append(r"\scriptsize")
+    ap.append(r"\setlength{\tabcolsep}{4pt}")
+    ap.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrrr r}")
+    ap.append(r"\toprule")
+    ap.append(r"training & \multicolumn{1}{c}{wikitext} & \multicolumn{1}{c}{gsm8k} & "
+              r"\multicolumn{1}{c}{tofu} & \multicolumn{1}{c}{arc} & \multicolumn{1}{c}{fineweb}\\")
+    ap.append(r"\midrule")
+    if base:
+        ap.append("base (no CPT) & %s & %.2f\\\\" %
+                  (" & ".join("%.2f" % base[(0, t)] for t in TASKS), base[(0, "fineweb")]))
+        ap.append(r"\midrule")
+    for mask, meth, label in ROWS:
+        ev = runs.get((mask, meth))
+        if not ev:
+            continue
+        ap.append("%s & %s & %.2f\\\\" %
+                  (label, " & ".join("%.2f" % ev[(4, t)] for t in TASKS), ev[(4, "fineweb")]))
+    if hyb:
+        ap.append(r"\midrule")
+        ap.append(r"\multicolumn{6}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained, naive)}\\")
+        for mask, label in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]:
+            ev = hyb.get(mask)
+            if ev:
+                ap.append("%s & %s & %.2f\\\\" %
+                          (label, " & ".join("%.2f" % ev[(4, t)] for t in TASKS), ev[(4, "fineweb")]))
+    ap.append(r"\bottomrule")
+    ap.append(r"\end{tabular*}")
+    ap.append(r"\caption{Per-task final perplexity after the full continual sequence, for every")
+    ap.append(r"training and method of Tab.~\ref{tab:cl}.}")
+    ap.append(r"\label{tab:cltasks}")
+    ap.append(r"\end{table*}")
+    import io, os
+    with open(os.environ.get("CL_APPENDIX_OUT", "cl_tasks.tex"), "w") as f:
+        f.write("\n".join(ap) + "\n")
 
 if __name__ == "__main__":
     main()
