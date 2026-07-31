@@ -37,7 +37,7 @@ def main():
     pats = sys.argv[1:] or ["logs"]
     logs = []
     for p in pats:
-        logs += glob.glob(p + "/cl_cl_*_*.log") if not any(c in p for c in "*?") else glob.glob(p)
+        logs += glob.glob(p + "/cl_cl_*.log") if not any(c in p for c in "*?") else glob.glob(p)
     runs = {}
     base = None
     for path in sorted(logs):
@@ -51,6 +51,14 @@ def main():
         runs[(m.group(1), m.group(2))] = ev
         if base is None and all((0, t) in ev for t in TASKS + ["fineweb"]):
             base = ev
+    hyb = {}
+    for path in sorted(logs):
+        m = re.search(r"cl_cl_hyb_([abt])_\d+\.log$", path)
+        if not m:
+            continue
+        ev, done = parse(path)
+        if done:
+            hyb[m.group(1)] = ev
     out = []
     out.append(r"\begin{table*}[t]")
     out.append(r"\centering")
@@ -80,6 +88,23 @@ def main():
         out.append("%s & %s & %.2f & %+.2f & %.2f\\\\" %
                    (label, " & ".join("%.2f" % v for v in fin), sum(fin) / 4,
                     forget, ev[(4, "fineweb")]))
+    if hyb:
+        out.append(r"\midrule")
+        out.append(r"\multicolumn{8}{@{}l}{Qwen3.5-9B hybrid ($8$ softmax $+$ $24$ linear layers; softmax blocks trained, naive)}\\")
+        hb = hyb.get("a") or next(iter(hyb.values()))
+        cells = ["%.2f" % hb[(0, t)] for t in TASKS]
+        out.append("base (no CPT) & %s & %.2f & --- & %.2f\\\\" %
+                   (" & ".join(cells), sum(hb[(0, t)] for t in TASKS) / 4, hb[(0, "fineweb")]))
+        for mask, label in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]:
+            ev = hyb.get(mask)
+            if not ev:
+                out.append("%s & \\multicolumn{7}{c}{---}\\\\" % label)
+                continue
+            fin = [ev[(4, t)] for t in TASKS]
+            forget = sum(ev[(4, t)] - ev[(STAGE_OF[t], t)] for t in TASKS) / 4
+            out.append("%s & %s & %.2f & %+.2f & %.2f\\\\" %
+                       (label, " & ".join("%.2f" % v for v in fin), sum(fin) / 4,
+                        forget, ev[(4, "fineweb")]))
     out.append(r"\bottomrule")
     out.append(r"\end{tabular*}")
     out.append(r"\caption{Sequential continued pretraining over four tasks (wikitext, gsm8k, tofu,")
