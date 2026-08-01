@@ -91,13 +91,21 @@ def main():
     if base:
         base_rows(out, base, runs.get(("b", "naive")))
         out.append(r"\midrule")
+    vals = {k: metrics(ev) for k, ev in runs.items()}
+    naive = {m: vals[(m, "naive")] for m, _, _ in ROWS if (m, "naive") in vals}
+    bestF = min(naive, key=lambda m: naive[m][1]) if naive else None
+    bestB = max(naive, key=lambda m: naive[m][2]) if naive else None
     for mask, meth, label in ROWS:
-        ev = runs.get((mask, meth))
-        if not ev:
+        if (mask, meth) not in vals:
             out.append("%s & \\multicolumn{4}{c}{---}\\\\" % label)
             continue
-        avg, F, B, fw, _ = metrics(ev)
-        out.append("%s & %.2f & %.2f & %+.2f & %.2f\\\\" % (label, avg, F, B, fw))
+        avg, F, B, fw, _ = vals[(mask, meth)]
+        fs, bs = "%.2f" % F, "%+.2f" % B
+        if meth == "naive" and mask == bestF:
+            fs = "\\textbf{%s}" % fs
+        if meth == "naive" and mask == bestB:
+            bs = "\\textbf{%s}" % bs
+        out.append("%s & %.2f & %s & %s & %.2f\\\\" % (label, avg, fs, bs, fw))
     if hyb:
         out.append(r"\midrule")
         out.append(r"\multicolumn{5}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained)}\\")
@@ -121,7 +129,7 @@ def main():
     out.append(r"design under its matched deploy. Base rows give the unadapted model under the")
     out.append(r"full-attention and sliding deploys; the hybrid trains $50$ steps per stage.")
     out.append(r"Per-task numbers in")
-    out.append(r"App.~\ref{app:cltasks}.}")
+    out.append(r"App.~\ref{app:cltasks}; bold, the best naive mask.}")
     out.append(r"\label{tab:cl}")
     out.append(r"\end{table}")
     print("\n".join(out))
