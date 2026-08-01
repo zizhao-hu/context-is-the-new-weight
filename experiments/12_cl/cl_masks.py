@@ -319,6 +319,10 @@ for s, (name, tr, _) in enumerate(tasks, start=1):
         anchor = [p.detach().clone() for p in TRAINABLE]
     if a.method == "lwf" and s > 1:
         import copy
+        if teacher is not None:                       # free the previous teacher and stale grads
+            del teacher
+        model.zero_grad(set_to_none=True)
+        torch.cuda.empty_cache()
         teacher = copy.deepcopy(model).eval()
         for p in teacher.parameters():
             p.requires_grad_(False)
