@@ -74,15 +74,22 @@ def main():
     out.append(r"\centering")
     out.append(r"\scriptsize")
     out.append(r"\setlength{\tabcolsep}{3pt}")
-    out.append(r"\renewcommand{\arraystretch}{0.92}")
+    out.append(r"\renewcommand{\arraystretch}{0.90}")
     out.append(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} l r r r r}")
     out.append(r"\toprule")
     out.append(r"training & \multicolumn{1}{c}{ppl} & \multicolumn{1}{c}{forget} & "
                r"\multicolumn{1}{c}{BWT} & \multicolumn{1}{c}{fineweb}\\")
     out.append(r"\midrule")
+    def base_rows(dst, full_ev, slide_ev):
+        if full_ev:
+            avg = sum(full_ev[(0, t)] for t in TASKS) / 4
+            dst.append("base (no CPT) & %.2f & --- & --- & %.2f\\\\" % (avg, full_ev[(0, "fineweb")]))
+        if slide_ev and all((0, t) in slide_ev for t in TASKS + ["fineweb"]):
+            avg = sum(slide_ev[(0, t)] for t in TASKS) / 4
+            dst.append("\\quad sliding deploy & %.2f & --- & --- & %.2f\\\\" %
+                       (avg, slide_ev[(0, "fineweb")]))
     if base:
-        avg = sum(base[(0, t)] for t in TASKS) / 4
-        out.append("base (no CPT) & %.2f & --- & --- & %.2f\\\\" % (avg, base[(0, "fineweb")]))
+        base_rows(out, base, runs.get(("b", "naive")))
         out.append(r"\midrule")
     for mask, meth, label in ROWS:
         ev = runs.get((mask, meth))
@@ -95,8 +102,7 @@ def main():
         out.append(r"\midrule")
         out.append(r"\multicolumn{5}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained)}\\")
         hb = hyb.get(("a", "naive")) or next(iter(hyb.values()))
-        out.append("base (no CPT) & %.2f & --- & --- & %.2f\\\\" %
-                   (sum(hb[(0, t)] for t in TASKS) / 4, hb[(0, "fineweb")]))
+        base_rows(out, hb, hyb.get(("b", "naive")))
         for mask, head in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]:
             for meth, label in METHODS:
                 if meth == "l2":
@@ -111,8 +117,10 @@ def main():
     out.append(r"\end{tabular*}")
     out.append(r"\caption{Continual learning over the four-task sequence: final perplexity averaged")
     out.append(r"over tasks, forgetting (rise from each task's best post-learning perplexity),")
-    out.append(r"backward transfer (positive helps), and the never-trained fineweb probe. Matched")
-    out.append(r"deploy; the hybrid trains $50$ steps per stage. Per-task numbers in")
+    out.append(r"backward transfer (positive helps), and the never-trained fineweb probe, each")
+    out.append(r"design under its matched deploy. Base rows give the unadapted model under the")
+    out.append(r"full-attention and sliding deploys; the hybrid trains $50$ steps per stage.")
+    out.append(r"Per-task numbers in")
     out.append(r"App.~\ref{app:cltasks}.}")
     out.append(r"\label{tab:cl}")
     out.append(r"\end{table}")
@@ -129,9 +137,15 @@ def main():
     ap.append(r"training & \multicolumn{1}{c}{wikitext} & \multicolumn{1}{c}{gsm8k} & "
               r"\multicolumn{1}{c}{tofu} & \multicolumn{1}{c}{arc} & \multicolumn{1}{c}{fineweb}\\")
     ap.append(r"\midrule")
+    def base_rows_tasks(dst, full_ev, slide_ev):
+        if full_ev:
+            dst.append("base (no CPT) & %s & %.2f\\\\" %
+                       (" & ".join("%.2f" % full_ev[(0, t)] for t in TASKS), full_ev[(0, "fineweb")]))
+        if slide_ev and all((0, t) in slide_ev for t in TASKS + ["fineweb"]):
+            dst.append("\\quad sliding deploy & %s & %.2f\\\\" %
+                       (" & ".join("%.2f" % slide_ev[(0, t)] for t in TASKS), slide_ev[(0, "fineweb")]))
     if base:
-        ap.append("base (no CPT) & %s & %.2f\\\\" %
-                  (" & ".join("%.2f" % base[(0, t)] for t in TASKS), base[(0, "fineweb")]))
+        base_rows_tasks(ap, base, runs.get(("b", "naive")))
         ap.append(r"\midrule")
     for mask, meth, label in ROWS:
         ev = runs.get((mask, meth))
@@ -142,6 +156,7 @@ def main():
     if hyb:
         ap.append(r"\midrule")
         ap.append(r"\multicolumn{6}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained)}\\")
+        base_rows_tasks(ap, hyb.get(("a", "naive")), hyb.get(("b", "naive")))
         for mask, head in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]:
             for meth, label in METHODS:
                 if meth == "l2":
