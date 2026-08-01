@@ -6,9 +6,10 @@ Usage: build_cl_table.py <log dir or glob> > tables/cl.tex
 Per config (mask, method) the log carries, for stages 0..4 and tasks
 {wikitext, gsm8k, tofu, arc, fineweb}: CLEVAL stage=k task=name ppl=x.
 
-Table columns per row: final ppl on the four tasks (stage 4), their mean,
-forgetting = mean over tasks of (ppl at stage 4 minus ppl just after the task's own
-stage), and the fineweb retention probe at stage 4. The base row is stage 0.
+Both tables group method-major so the three masks sit adjacent: the claim is
+about masks, and the naive block must read 1.86 / 4.60 / 1.11 in consecutive
+rows. Bold marks the unique best mask within the naive group on the
+deploy-invariant metrics (forgetting, BWT); ties bold nothing.
 """
 import glob
 import re
@@ -16,11 +17,10 @@ import sys
 
 TASKS = ["wikitext", "gsm8k", "tofu", "arc"]
 STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
-METHODS = [("naive", None), ("replay", r"\quad$+$replay (ER)"), ("ewc", r"\quad$+$EWC"),
-           ("lwf", r"\quad$+$LwF")]   # L2-SP runs exist but the row is inert; stated in text
-ROWS = [(m, meth, (label if meth != "naive" else head))
-        for m, head in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]
-        for meth, label in METHODS]
+MASKS = [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]
+GROUPS = [("naive", r"\textit{naive}"), ("replay", r"\textit{$+$replay (ER)}"),
+          ("ewc", r"\textit{$+$EWC}"), ("lwf", r"\textit{$+$LwF}")]
+# L2-SP runs exist but the row is inert; stated in text
 
 def parse(path):
     ev = {}
@@ -40,6 +40,60 @@ def metrics(ev):
     F = sum(ev[(4, t)] - min(ev[(s, t)] for s in range(STAGE_OF[t], 5)) for t in first3) / 3
     B = sum(ev[(STAGE_OF[t], t)] - ev[(4, t)] for t in first3) / 3
     return sum(fin) / 4, F, B, ev[(4, "fineweb")], fin
+
+def unique_best(scores, pick):
+    """mask key of the strictly best score, or None on a tie"""
+    if not scores:
+        return None
+    tgt = pick(scores.values())
+    win = [m for m, v in scores.items() if v == tgt]
+    return win[0] if len(win) == 1 else None
+
+def base_rows(dst, full_ev, slide_ev, fmt):
+    if full_ev:
+        dst.append(fmt("base (no CPT)", full_ev))
+    if slide_ev and all((0, t) in slide_ev for t in TASKS + ["fineweb"]):
+        dst.append(fmt(r"\quad sliding deploy", slide_ev))
+
+def metric_fmt(label, ev):
+    avg = sum(ev[(0, t)] for t in TASKS) / 4
+    return "%s & %.2f & --- & --- & %.2f\\\\" % (label, avg, ev[(0, "fineweb")])
+
+def task_fmt(label, ev):
+    return "%s & %s & %.2f\\\\" % (
+        label, " & ".join("%.2f" % ev[(0, t)] for t in TASKS), ev[(0, "fineweb")])
+
+def metric_block(dst, get):
+    """method-major rows: an italic method line, then the three masks"""
+    vals = {(m, meth): metrics(get(m, meth))
+            for m, _ in MASKS for meth, _ in GROUPS if get(m, meth)}
+    nF = {m: vals[(m, "naive")][1] for m, _ in MASKS if (m, "naive") in vals}
+    nB = {m: vals[(m, "naive")][2] for m, _ in MASKS if (m, "naive") in vals}
+    bF, bB = unique_best(nF, min), unique_best(nB, max)
+    for meth, glabel in GROUPS:
+        if not any((m, meth) in vals for m, _ in MASKS):
+            continue
+        dst.append(r"\multicolumn{5}{@{}l}{%s}\\" % glabel)
+        for m, mhead in MASKS:
+            if (m, meth) not in vals:
+                continue
+            avg, F, B, fw, _ = vals[(m, meth)]
+            fs, bs = "%.2f" % F, "%+.2f" % B
+            if meth == "naive" and m == bF:
+                fs = r"\textbf{%s}" % fs
+            if meth == "naive" and m == bB:
+                bs = r"\textbf{%s}" % bs
+            dst.append(r"\quad %s & %.2f & %s & %s & %.2f\\" % (mhead, avg, fs, bs, fw))
+
+def task_block(dst, get):
+    for meth, glabel in GROUPS:
+        rows = [(m, mhead, get(m, meth)) for m, mhead in MASKS if get(m, meth)]
+        if not rows:
+            continue
+        dst.append(r"\multicolumn{6}{@{}l}{%s}\\" % glabel)
+        for m, mhead, ev in rows:
+            dst.append(r"\quad %s & %s & %.2f\\" % (
+                mhead, " & ".join("%.2f" % ev[(4, t)] for t in TASKS), ev[(4, "fineweb")]))
 
 def main():
     pats = sys.argv[1:] or ["logs"]
@@ -68,70 +122,75 @@ def main():
         if done:
             hyb[(m.group(1), m.group(2) or "naive")] = ev
 
-    # ---- main table: metric columns ----
+    # ---- main table: side-by-side metric blocks (softmax | hybrid) ----
+    svals = {k: metrics(ev) for k, ev in runs.items()}
+    hvals = {k: metrics(ev) for k, ev in hyb.items()}
+
+    def bolds(vals):
+        # compare at display precision so a tie at 0.03 never bolds one of the pair
+        nF = {m: round(vals[(m, "naive")][1], 2) for m, _ in MASKS if (m, "naive") in vals}
+        nB = {m: round(vals[(m, "naive")][2], 2) for m, _ in MASKS if (m, "naive") in vals}
+        return unique_best(nF, min), unique_best(nB, max)
+    sbF, sbB = bolds(svals)
+    hbF, hbB = bolds(hvals)
+
+    def cells_metric(v, bF, bB):
+        if v is None:
+            return ["---"] * 4
+        avg, F, B, fw, _ = v
+        fs, bs = "%.2f" % F, "%+.2f" % B
+        if bF:
+            fs = r"\textbf{%s}" % fs
+        if bB:
+            bs = r"\textbf{%s}" % bs
+        return ["%.2f" % avg, fs, bs, "%.2f" % fw]
+
+    def cells_base(ev):
+        if not (ev and all((0, t) in ev for t in TASKS + ["fineweb"])):
+            return ["---"] * 4
+        return ["%.2f" % (sum(ev[(0, t)] for t in TASKS) / 4), "---", "---",
+                "%.2f" % ev[(0, "fineweb")]]
+
     out = []
-    out.append(r"\begin{table}[tp]")
+    out.append(r"\begin{table*}[t]")
     out.append(r"\centering")
     out.append(r"\scriptsize")
-    out.append(r"\setlength{\tabcolsep}{3pt}")
-    out.append(r"\renewcommand{\arraystretch}{0.90}")
-    out.append(r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} l r r r r}")
+    out.append(r"\setlength{\tabcolsep}{4pt}")
+    out.append(r"\renewcommand{\arraystretch}{0.89}")
+    out.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrrr rrrr}")
     out.append(r"\toprule")
+    out.append(r" & \multicolumn{4}{c}{Qwen2.5-0.5B softmax} & "
+               r"\multicolumn{4}{c}{Qwen3.5-9B hybrid}\\")
+    out.append(r"\cmidrule(lr){2-5}\cmidrule(lr){6-9}")
     out.append(r"training & \multicolumn{1}{c}{ppl} & \multicolumn{1}{c}{forget} & "
+               r"\multicolumn{1}{c}{BWT} & \multicolumn{1}{c}{fineweb} & "
+               r"\multicolumn{1}{c}{ppl} & \multicolumn{1}{c}{forget} & "
                r"\multicolumn{1}{c}{BWT} & \multicolumn{1}{c}{fineweb}\\")
     out.append(r"\midrule")
-    def base_rows(dst, full_ev, slide_ev):
-        if full_ev:
-            avg = sum(full_ev[(0, t)] for t in TASKS) / 4
-            dst.append("base (no CPT) & %.2f & --- & --- & %.2f\\\\" % (avg, full_ev[(0, "fineweb")]))
-        if slide_ev and all((0, t) in slide_ev for t in TASKS + ["fineweb"]):
-            avg = sum(slide_ev[(0, t)] for t in TASKS) / 4
-            dst.append("\\quad sliding deploy & %.2f & --- & --- & %.2f\\\\" %
-                       (avg, slide_ev[(0, "fineweb")]))
-    if base:
-        base_rows(out, base, runs.get(("b", "naive")))
-        out.append(r"\midrule")
-    vals = {k: metrics(ev) for k, ev in runs.items()}
-    naive = {m: vals[(m, "naive")] for m, _, _ in ROWS if (m, "naive") in vals}
-    bestF = min(naive, key=lambda m: naive[m][1]) if naive else None
-    bestB = max(naive, key=lambda m: naive[m][2]) if naive else None
-    for mask, meth, label in ROWS:
-        if (mask, meth) not in vals:
-            out.append("%s & \\multicolumn{4}{c}{---}\\\\" % label)
-            continue
-        avg, F, B, fw, _ = vals[(mask, meth)]
-        fs, bs = "%.2f" % F, "%+.2f" % B
-        if meth == "naive" and mask == bestF:
-            fs = "\\textbf{%s}" % fs
-        if meth == "naive" and mask == bestB:
-            bs = "\\textbf{%s}" % bs
-        out.append("%s & %.2f & %s & %s & %.2f\\\\" % (label, avg, fs, bs, fw))
-    if hyb:
-        out.append(r"\midrule")
-        out.append(r"\multicolumn{5}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained)}\\")
-        hb = hyb.get(("a", "naive")) or next(iter(hyb.values()))
-        base_rows(out, hb, hyb.get(("b", "naive")))
-        for mask, head in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]:
-            for meth, label in METHODS:
-                if meth == "l2":
-                    continue
-                ev = hyb.get((mask, meth))
-                if not ev:
-                    continue
-                avg, F, B, fw, _ = metrics(ev)
-                out.append("%s & %.2f & %.2f & %+.2f & %.2f\\\\" %
-                           (head if meth == "naive" else label, avg, F, B, fw))
+    row = lambda label, left, right: out.append(
+        "%s & %s\\\\" % (label, " & ".join(left + right)))
+    row("base (no CPT)", cells_base(base), cells_base(hyb.get(("a", "naive"))))
+    row(r"\quad sliding deploy", cells_base(runs.get(("b", "naive"))),
+        cells_base(hyb.get(("b", "naive"))))
+    out.append(r"\midrule")
+    for meth, glabel in GROUPS:
+        out.append(r"\multicolumn{9}{@{}l}{%s}\\" % glabel)
+        for m, mhead in MASKS:
+            row(r"\quad %s" % mhead,
+                cells_metric(svals.get((m, meth)),
+                             meth == "naive" and m == sbF, meth == "naive" and m == sbB),
+                cells_metric(hvals.get((m, meth)),
+                             meth == "naive" and m == hbF, meth == "naive" and m == hbB))
     out.append(r"\bottomrule")
     out.append(r"\end{tabular*}")
     out.append(r"\caption{Continual learning over the four-task sequence: final perplexity averaged")
     out.append(r"over tasks, forgetting (rise from each task's best post-learning perplexity),")
-    out.append(r"backward transfer (positive helps), and the never-trained fineweb probe, each")
-    out.append(r"design under its matched deploy. Base rows give the unadapted model under the")
-    out.append(r"full-attention and sliding deploys; the hybrid trains $50$ steps per stage.")
-    out.append(r"Per-task numbers in")
+    out.append(r"backward transfer (positive helps), and the never-trained fineweb probe, each design")
+    out.append(r"under its matched deploy; the hybrid trains $50$ steps per stage. Base rows give the")
+    out.append(r"unadapted model under the full-attention and sliding deploys. Per-task numbers in")
     out.append(r"App.~\ref{app:cltasks}; bold, the best naive mask.}")
     out.append(r"\label{tab:cl}")
-    out.append(r"\end{table}")
+    out.append(r"\end{table*}")
     print("\n".join(out))
 
     # ---- appendix table: per-task matrix ----
@@ -145,43 +204,22 @@ def main():
     ap.append(r"training & \multicolumn{1}{c}{wikitext} & \multicolumn{1}{c}{gsm8k} & "
               r"\multicolumn{1}{c}{tofu} & \multicolumn{1}{c}{arc} & \multicolumn{1}{c}{fineweb}\\")
     ap.append(r"\midrule")
-    def base_rows_tasks(dst, full_ev, slide_ev):
-        if full_ev:
-            dst.append("base (no CPT) & %s & %.2f\\\\" %
-                       (" & ".join("%.2f" % full_ev[(0, t)] for t in TASKS), full_ev[(0, "fineweb")]))
-        if slide_ev and all((0, t) in slide_ev for t in TASKS + ["fineweb"]):
-            dst.append("\\quad sliding deploy & %s & %.2f\\\\" %
-                       (" & ".join("%.2f" % slide_ev[(0, t)] for t in TASKS), slide_ev[(0, "fineweb")]))
     if base:
-        base_rows_tasks(ap, base, runs.get(("b", "naive")))
+        base_rows(ap, base, runs.get(("b", "naive")), task_fmt)
         ap.append(r"\midrule")
-    for mask, meth, label in ROWS:
-        ev = runs.get((mask, meth))
-        if not ev:
-            continue
-        ap.append("%s & %s & %.2f\\\\" %
-                  (label, " & ".join("%.2f" % ev[(4, t)] for t in TASKS), ev[(4, "fineweb")]))
+    task_block(ap, lambda m, meth: runs.get((m, meth)))
     if hyb:
         ap.append(r"\midrule")
         ap.append(r"\multicolumn{6}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained)}\\")
-        base_rows_tasks(ap, hyb.get(("a", "naive")), hyb.get(("b", "naive")))
-        for mask, head in [("a", "A. full causal"), ("b", "B. SWA"), ("t", "E. T-SWA")]:
-            for meth, label in METHODS:
-                if meth == "l2":
-                    continue
-                ev = hyb.get((mask, meth))
-                if not ev:
-                    continue
-                ap.append("%s & %s & %.2f\\\\" %
-                          (head if meth == "naive" else label,
-                           " & ".join("%.2f" % ev[(4, t)] for t in TASKS), ev[(4, "fineweb")]))
+        base_rows(ap, hyb.get(("a", "naive")), hyb.get(("b", "naive")), task_fmt)
+        task_block(ap, lambda m, meth: hyb.get((m, meth)))
     ap.append(r"\bottomrule")
     ap.append(r"\end{tabular*}")
     ap.append(r"\caption{Per-task final perplexity after the full continual sequence, for every")
     ap.append(r"training and method of Tab.~\ref{tab:cl}.}")
     ap.append(r"\label{tab:cltasks}")
     ap.append(r"\end{table*}")
-    import io, os
+    import os
     with open(os.environ.get("CL_APPENDIX_OUT", "cl_tasks.tex"), "w") as f:
         f.write("\n".join(ap) + "\n")
 
