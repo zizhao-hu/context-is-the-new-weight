@@ -198,14 +198,20 @@ def main():
     out = []
     out.append(r"\begin{table*}[t]")
     out.append(r"\centering")
+    out.append(r"\setlength{\abovecaptionskip}{4pt}")
     out.append(r"\scriptsize")
     out.append(r"\setlength{\tabcolsep}{3pt}")
-    out.append(r"\renewcommand{\arraystretch}{0.87}")
+    out.append(r"\renewcommand{\arraystretch}{0.85}")
     out.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrrr rrrr rrrr}")
     out.append(r"\toprule")
     out.append(r" & \multicolumn{8}{c}{Qwen2.5-0.5B softmax} & "
                r"\multicolumn{4}{c}{Qwen3.5-9B hybrid}\\")
     out.append(r"\cmidrule(lr){2-9}\cmidrule(lr){10-13}")
+    out.append(r" & \multicolumn{4}{c}{final ppl per task} & "
+               r"\multicolumn{1}{c}{general} & \multicolumn{3}{c}{overall} & "
+               r"\multicolumn{1}{c}{general} & \multicolumn{3}{c}{overall}\\")
+    out.append(r"\cmidrule(lr){2-5}\cmidrule(lr){6-6}\cmidrule(lr){7-9}"
+               r"\cmidrule(lr){10-10}\cmidrule(lr){11-13}")
     summ = (r"\multicolumn{1}{c}{fineweb$\downarrow$} & \multicolumn{1}{c}{ppl$\downarrow$} & "
             r"\multicolumn{1}{c}{forget$\downarrow$} & \multicolumn{1}{c}{BWT$\uparrow$}")
     tasks_hdr = " & ".join(r"\multicolumn{1}{c}{%s$\downarrow$}" % t
@@ -228,10 +234,10 @@ def main():
                               meth == "naive" and m == hbF, meth == "naive" and m == hbB))
     out.append(r"\bottomrule")
     out.append(r"\end{tabular*}")
-    out.append(r"\caption{Continual learning over the four-task sequence: each task's final")
-    out.append(r"perplexity, then the never-trained fineweb probe, the average over tasks,")
-    out.append(r"forgetting (rise from each task's best post-learning perplexity), and backward")
-    out.append(r"transfer (positive helps); $\pm$, SEM over eval chunks; matched deploy, equal")
+    out.append(r"\caption{Continual learning over the four-task sequence: per-task final")
+    out.append(r"perplexity, the never-trained fineweb probe, average perplexity, forgetting")
+    out.append(r"(rise from each task's best post-learning perplexity), and backward transfer")
+    out.append(r"(positive helps); $\pm$, SEM over eval chunks; matched deploy, equal")
     out.append(r"supervised-token budget, hybrid $50$ steps per stage. Base rows: the unadapted")
     out.append(r"model under each deploy. Per-task forgetting in App.~\ref{app:cltasks}; bold,")
     out.append(r"best naive mask.}")
