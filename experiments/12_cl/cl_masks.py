@@ -155,10 +155,12 @@ tasks, probe = build_tasks()
 
 # ---------------- trainable sliding sink: nP learned prefix K/V registers ----------------
 def kv_layers(pkv):
-    """layer list of (K, V) from either a Cache object or the legacy tuple format"""
-    if hasattr(pkv, "key_cache"):
+    """layer list of (K, V) across transformers cache layouts"""
+    if hasattr(pkv, "layers"):                       # new DynamicCache: .layers[i].keys/.values
+        return [(l.keys, l.values) for l in pkv.layers]
+    if hasattr(pkv, "key_cache"):                    # older DynamicCache
         return list(zip(pkv.key_cache, pkv.value_cache))
-    return list(pkv)
+    return list(pkv)                                 # legacy tuple
 
 PK, PV = [], []
 if SINK:
@@ -316,6 +318,10 @@ for s, (name, tr, _) in enumerate(tasks, start=1):
                 for f, p, q0 in zip(ewc_F, TRAINABLE, ewc_anchor):
                     if p.grad is not None:
                         p.grad += a.ewc_lam * (f * (p - q0)).to(p.grad.dtype)
+        if SINK and s == 1 and step == 0:
+            gn = sum((p.grad.float() ** 2).sum() for p in PK + PV if p.grad is not None)
+            print("SINKGRAD step0 norm=%.3e nonnull=%d/%d" % (
+                gn.sqrt(), sum(p.grad is not None for p in PK + PV), len(PK + PV)), flush=True)
         torch.nn.utils.clip_grad_norm_(TRAINABLE, 1.0)
         opt.step()
         if step % 50 == 0:
