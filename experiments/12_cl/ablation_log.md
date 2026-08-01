@@ -23,3 +23,11 @@ Iterations
   sink stage-0 fineweb 313.9 vs plain-sliding 296.1, repaired to ~100 even by junk steps).
   Fleet submitted: 10769925-10769936 (t/bs/ts x naive/replay/ewc/lwf, 6h limits).
   Paper edits held until harvest so table and text swap atomically.
+- it4 HARVEST (fleet 10769925-36 all CLDONE, guard held: a/b rows byte-identical):
+  naive forget: SWA 4.60 / t@fair 2.48 / bs 1.04 / ts 1.26; naive BWT: -4.60 / -2.48 / +1.92 / +4.16
+  tofu final: 28.06 / 23.82 / 7.59 / 9.64 -> the sink is the forgetting protection,
+  truncation adds transfer, full recipe = largest BWT anywhere in the table.
+  HONEST CORRECTION: old t 1.11/+2.10 was budget-confounded (250 steps = 25% fewer
+  supervised tokens); fair rerun 2.48/-2.48. EWC still pins everything (<=0.15).
+  Paper: tab:cl/tab:cltasks regenerated (+8 rows), 4.2 rewritten, content ends p8,
+  submodule 61d837e. VERDICT: keep.
