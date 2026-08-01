@@ -17,3 +17,9 @@ Iterations
 - it0 baseline: existing 27-run table (tab:cl) with unfair t budget (250 steps, -25% tokens)
 - it1: trainer rewrite (sink + fair budget + stream comments); account fix in sb_cl.sh;
   smokes 10769911 (ts_lwf), 10769912 (bs_ewc) submitted
+- it2: kv_layers fixed for new DynamicCache (.layers[i].keys/.values); CPU gradcheck 48/48
+  finite grads (norm 4.8); SINKGRAD self-check baked into trainer; account robinjia_875
+- it3: smokes PASS (ts_lwf steps=3 fair-scaled, bs_ewc; SINKGRAD 48/48 on GPU;
+  sink stage-0 fineweb 313.9 vs plain-sliding 296.1, repaired to ~100 even by junk steps).
+  Fleet submitted: 10769925-10769936 (t/bs/ts x naive/replay/ewc/lwf, 6h limits).
+  Paper edits held until harvest so table and text swap atomically.
