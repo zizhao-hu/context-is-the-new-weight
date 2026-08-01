@@ -226,8 +226,9 @@ def lm_loss(x, y, mask, from_pos):
 
 @torch.no_grad()
 def eval_ppl(va):
+    """ppl over the scored set plus its SEM: delta method over per-chunk mean NLLs"""
     model.eval()
-    tot, n = 0.0, 0
+    chunk_means = []
     for i in range(a.n_eval):
         o = i * L
         if o + L + 1 > len(va):
@@ -235,14 +236,21 @@ def eval_ppl(va):
         x = va[o:o + L][None].to(dev); y = va[o + 1:o + L + 1][None].to(dev)
         lp = F.log_softmax(fwd_logits(x, DEPLOY_MASK).float(), dim=-1)
         nll = -lp.gather(-1, y[..., None]).squeeze(-1)[:, W:]      # same scored set under every deploy
-        tot += nll.sum().item(); n += nll.numel()
+        chunk_means.append(nll.mean().item())
     model.train()
-    return math.exp(tot / max(n, 1))
+    n = len(chunk_means)
+    mu = sum(chunk_means) / max(n, 1)
+    var = sum((c - mu) ** 2 for c in chunk_means) / max(n - 1, 1)
+    ppl = math.exp(mu)
+    sem = ppl * math.sqrt(var / max(n, 1))
+    return ppl, sem
 
 def eval_all(stage):
     for name, _, va in tasks:
-        print("CLEVAL stage=%d task=%s ppl=%.4f" % (stage, name, eval_ppl(va)), flush=True)
-    print("CLEVAL stage=%d task=%s ppl=%.4f" % (stage, probe[0], eval_ppl(probe[1])), flush=True)
+        pp, se = eval_ppl(va)
+        print("CLEVAL stage=%d task=%s ppl=%.4f sem=%.4f" % (stage, name, pp, se), flush=True)
+    pp, se = eval_ppl(probe[1])
+    print("CLEVAL stage=%d task=%s ppl=%.4f sem=%.4f" % (stage, probe[0], pp, se), flush=True)
 
 # ---------------- sequential training ----------------
 def fisher_diag(tr):

@@ -27,9 +27,11 @@ def parse(path):
     ev = {}
     done = False
     for ln in open(path, errors="ignore"):
-        m = re.match(r"CLEVAL stage=(\d+) task=(\S+) ppl=([\d.]+)", ln)
+        m = re.match(r"CLEVAL stage=(\d+) task=(\S+) ppl=([\d.]+)(?: sem=([\d.]+))?", ln)
         if m:
             ev[(int(m.group(1)), m.group(2))] = float(m.group(3))
+            if m.group(4):
+                ev[("sem", int(m.group(1)), m.group(2))] = float(m.group(4))
         if ln.startswith("CLDONE"):
             done = True
     return ev, done
@@ -45,6 +47,26 @@ def metrics(ev):
 def task_forget(ev, t):
     """rise of task t's ppl from its best post-learning value to the end"""
     return ev[(4, t)] - min(ev[(s, t)] for s in range(STAGE_OF[t], 5))
+
+def sefmt(se):
+    return r"{\tiny$\pm$%s}" % ("%.2f" % se if se < 0.095 else
+                                "%.1f" % se if se < 9.95 else "%.0f" % se)
+
+def pm(ev, stage, task, bold=False):
+    """ppl cell with a tiny +-SEM mark when the log carries one"""
+    v = "%.2f" % ev[(stage, task)]
+    if bold:
+        v = r"\textbf{%s}" % v
+    se = ev.get(("sem", stage, task))
+    return v + (sefmt(se) if se else "")
+
+def avg_pm(ev, stage):
+    """mean over tasks with the propagated SEM (independent eval sets)"""
+    v = "%.2f" % (sum(ev[(stage, t)] for t in TASKS) / 4)
+    ses = [ev.get(("sem", stage, t)) for t in TASKS]
+    if all(ses):
+        v += sefmt(sum(s ** 2 for s in ses) ** 0.5 / 4)
+    return v
 
 def unique_best(scores, pick):
     """mask key of the strictly best score, or None on a tie"""
@@ -67,8 +89,8 @@ def metric_fmt(label, ev):
 def task_fmt(label, ev):
     cells = []
     for t in TASKS[:3]:
-        cells += ["%.2f" % ev[(0, t)], "---"]
-    cells += ["%.2f" % ev[(0, "arc")], "%.2f" % ev[(0, "fineweb")]]
+        cells += [pm(ev, 0, t), "---"]
+    cells += [pm(ev, 0, "arc"), pm(ev, 0, "fineweb")]
     return "%s & %s\\\\" % (label, " & ".join(cells))
 
 def metric_block(dst, get):
@@ -102,8 +124,8 @@ def task_block(dst, get):
         for m, mhead, ev in rows:
             cells = []
             for t in TASKS[:3]:
-                cells += ["%.2f" % ev[(4, t)], "%+.2f" % task_forget(ev, t)]
-            cells += ["%.2f" % ev[(4, "arc")], "%.2f" % ev[(4, "fineweb")]]
+                cells += [pm(ev, 4, t), "%+.2f" % task_forget(ev, t)]
+            cells += [pm(ev, 4, "arc"), pm(ev, 4, "fineweb")]
             dst.append(r"\quad %s & %s\\" % (mhead, " & ".join(cells)))
 
 def main():
@@ -145,50 +167,50 @@ def main():
     sbF, sbB = bolds(svals)
     hbF, hbB = bolds(hvals)
 
-    def cells_summary(v, bF, bB):
-        """avg ppl, forget, BWT (the hybrid block's columns)"""
+    def cells_summary(v, ev, bF, bB):
+        """general eval then averages: fineweb, avg ppl, forget, BWT"""
         if v is None:
-            return ["---"] * 3
-        avg, F, B, fw, _ = v
+            return ["---"] * 4
+        _, F, B, _, _ = v
         fs, bs = "%.2f" % F, "%+.2f" % B
         if bF:
             fs = r"\textbf{%s}" % fs
         if bB:
             bs = r"\textbf{%s}" % bs
-        return ["%.2f" % avg, fs, bs]
+        return [pm(ev, 4, "fineweb"), avg_pm(ev, 4), fs, bs]
 
     def cells_softmax(v, ev, bF, bB):
-        """summary plus per-task final perplexity"""
+        """per-task breakdown first, then the general/summary columns"""
         if v is None:
-            return ["---"] * (3 + len(TASKS))
-        return cells_summary(v, bF, bB) + ["%.2f" % ev[(4, t)] for t in TASKS]
+            return ["---"] * (4 + len(TASKS))
+        return [pm(ev, 4, t) for t in TASKS] + cells_summary(v, ev, bF, bB)
 
     def base_summary(ev):
-        if not (ev and all((0, t) in ev for t in TASKS)):
-            return ["---"] * 3
-        return ["%.2f" % (sum(ev[(0, t)] for t in TASKS) / 4), "---", "---"]
+        if not (ev and all((0, t) in ev for t in TASKS + ["fineweb"])):
+            return ["---"] * 4
+        return [pm(ev, 0, "fineweb"), avg_pm(ev, 0), "---", "---"]
 
     def base_softmax(ev):
-        if not (ev and all((0, t) in ev for t in TASKS)):
-            return ["---"] * (3 + len(TASKS))
-        return base_summary(ev) + ["%.2f" % ev[(0, t)] for t in TASKS]
+        if not (ev and all((0, t) in ev for t in TASKS + ["fineweb"])):
+            return ["---"] * (4 + len(TASKS))
+        return [pm(ev, 0, t) for t in TASKS] + base_summary(ev)
 
     out = []
     out.append(r"\begin{table*}[t]")
     out.append(r"\centering")
     out.append(r"\scriptsize")
-    out.append(r"\setlength{\tabcolsep}{4pt}")
+    out.append(r"\setlength{\tabcolsep}{3pt}")
     out.append(r"\renewcommand{\arraystretch}{0.87}")
-    out.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrr rrrr rrr}")
+    out.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrrr rrrr rrrr}")
     out.append(r"\toprule")
-    out.append(r" & \multicolumn{7}{c}{Qwen2.5-0.5B softmax} & "
-               r"\multicolumn{3}{c}{Qwen3.5-9B hybrid}\\")
-    out.append(r"\cmidrule(lr){2-8}\cmidrule(lr){9-11}")
-    summ = (r"\multicolumn{1}{c}{ppl$\downarrow$} & \multicolumn{1}{c}{forget$\downarrow$} & "
-            r"\multicolumn{1}{c}{BWT$\uparrow$}")
+    out.append(r" & \multicolumn{8}{c}{Qwen2.5-0.5B softmax} & "
+               r"\multicolumn{4}{c}{Qwen3.5-9B hybrid}\\")
+    out.append(r"\cmidrule(lr){2-9}\cmidrule(lr){10-13}")
+    summ = (r"\multicolumn{1}{c}{fineweb$\downarrow$} & \multicolumn{1}{c}{ppl$\downarrow$} & "
+            r"\multicolumn{1}{c}{forget$\downarrow$} & \multicolumn{1}{c}{BWT$\uparrow$}")
     tasks_hdr = " & ".join(r"\multicolumn{1}{c}{%s$\downarrow$}" % t
                            for t in ["wikitext", "gsm8k", "tofu", "arc"])
-    out.append("training & %s & %s & %s\\\\" % (summ, tasks_hdr, summ))
+    out.append("training & %s & %s & %s\\\\" % (tasks_hdr, summ, summ))
     out.append(r"\midrule")
     row = lambda label, left, right: out.append(
         "%s & %s\\\\" % (label, " & ".join(left + right)))
@@ -197,21 +219,22 @@ def main():
         base_summary(hyb.get(("b", "naive"))))
     out.append(r"\midrule")
     for meth, glabel in GROUPS:
-        out.append(r"\multicolumn{11}{@{}l}{%s}\\" % glabel)
+        out.append(r"\multicolumn{13}{@{}l}{%s}\\" % glabel)
         for m, mhead in MASKS:
             row(r"\quad %s" % mhead,
                 cells_softmax(svals.get((m, meth)), runs.get((m, meth)),
                               meth == "naive" and m == sbF, meth == "naive" and m == sbB),
-                cells_summary(hvals.get((m, meth)),
+                cells_summary(hvals.get((m, meth)), hyb.get((m, meth)),
                               meth == "naive" and m == hbF, meth == "naive" and m == hbB))
     out.append(r"\bottomrule")
     out.append(r"\end{tabular*}")
-    out.append(r"\caption{Continual learning over the four-task sequence: final perplexity averaged")
-    out.append(r"over tasks, forgetting (rise from each task's best post-learning perplexity),")
-    out.append(r"backward transfer (positive helps), and each task's final perplexity; matched")
-    out.append(r"deploy, equal supervised-token budget, hybrid $50$ steps per stage. Base rows: the")
-    out.append(r"unadapted model under each deploy. Per-task forgetting and the fineweb probe in")
-    out.append(r"App.~\ref{app:cltasks}; bold, best naive mask.}")
+    out.append(r"\caption{Continual learning over the four-task sequence: each task's final")
+    out.append(r"perplexity, then the never-trained fineweb probe, the average over tasks,")
+    out.append(r"forgetting (rise from each task's best post-learning perplexity), and backward")
+    out.append(r"transfer (positive helps); $\pm$, SEM over eval chunks; matched deploy, equal")
+    out.append(r"supervised-token budget, hybrid $50$ steps per stage. Base rows: the unadapted")
+    out.append(r"model under each deploy. Per-task forgetting in App.~\ref{app:cltasks}; bold,")
+    out.append(r"best naive mask.}")
     out.append(r"\label{tab:cl}")
     out.append(r"\end{table*}")
     print("\n".join(out))

@@ -31,3 +31,8 @@ Iterations
   supervised tokens); fair rerun 2.48/-2.48. EWC still pins everything (<=0.15).
   Paper: tab:cl/tab:cltasks regenerated (+8 rows), 4.2 rewritten, content ends p8,
   submodule 61d837e. VERDICT: keep.
+- it5 (err bars + reorder): eval_ppl emits sem (delta method over 24 eval-chunk mean NLLs);
+  full 32-job re-run fleet 10777518-49 (softmax 20 + hybrid 12, trainer deployed pre-start,
+  md5 verified) since no checkpoints existed for the finished runs. Harvester: column order
+  = per-task breakdown | fineweb | avg ppl | forget | BWT (both blocks), pm()/avg_pm() render
+  {\tiny$\pm$}; appendix ppl columns too. Values will be reconciled to the new logs at harvest.
