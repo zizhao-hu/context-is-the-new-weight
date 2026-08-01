@@ -43,3 +43,12 @@ Iterations
   Harvester regrouped mask-major per user: groups a, b, b+sink, c, d, e, e+sink; sub-rows
   naive (unlabeled first row) then +replay/+EWC/+LwF. Smokes 10784155 (c_lwf) / 10784156
   (d_ewc); 8 production c/d jobs follow on pass, joining the SEM fleet for the final harvest.
+- it6b: c/d smokes PASS. c stage-0 sanity: pinning 4 real tokens ~restores full-attention
+  base (wikitext 10.07 vs 10.51, fineweb 28.8 vs 296 sliding) = StreamingLLM finding
+  reproduced. d stage-0 expectedly OOD (fineweb 346; no sink in memory past segment 1).
+  Production c/d fleet: 10784685-92. Target harvest = 40 runs, all-SEM.
+- FINDING (user-prompted, for final prose): E+sink naive BWT +4.16 decomposes as
+  wikitext -1.89, gsm8k -1.88, tofu +16.25 -> dominated by post-TOFU overfit recovery
+  (just-after 25.9 -> final 9.6), not broad backward transfer. Final text must lead with
+  forgetting (robust, sink-driven) and caveat the BWT sign; check SEM overlap of
+  bs 1.04 vs ts 1.26 forget before claiming an ordering.
