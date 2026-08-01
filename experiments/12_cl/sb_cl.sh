@@ -5,7 +5,7 @@
 #SBATCH --mem=48G
 #SBATCH --cpus-per-task=4
 #SBATCH --time=03:30:00
-#SBATCH --account=jessetho_1732
+#SBATCH --account=robinjia_875
 #SBATCH --output=/scratch1/zizhaoh/logs/cl_%x_%j.log
 set -eo pipefail
 module purge && module load gcc/13.3.0 cuda/12.6.3

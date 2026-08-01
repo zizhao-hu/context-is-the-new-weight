@@ -1,5 +1,7 @@
 """Continual-learning benchmark for the attention-sink paper: full-causal vs SWA vs T-SWA
-continued pretraining over a 4-task sequence, against simple continual-learning baselines.
+continued pretraining over a 4-task sequence, against simple continual-learning baselines,
+with a 2x2 ablation of the two recipe components on the sliding base:
+rows-to-skip (truncated loss) x trainable sliding sink (prefix KV registers).
 
 Tasks (all offline HF caches on CARC):
   T1 wikitext   wikitext-103-raw-v1 train        (encyclopedic prose)
@@ -8,13 +10,25 @@ Tasks (all offline HF caches on CARC):
   T4 arc        allenai/ai2_arc ARC-Challenge    (science QA text)
   R  fineweb    one parquet of fineweb sample    (never trained: general-language retention probe)
 
-One job = one (mask, method) config trained sequentially T1->T2->T3->T4 at a matched step
-budget per stage, with per-task held-out perplexity measured after every stage.
+One job = one (mask, method) config trained sequentially T1->T2->T3->T4, with per-task
+held-out perplexity measured after every stage.
 
 Masks (Qwen2.5-0.5B, additive 4D attention mask, L=1024 chunks):
-  a  full causal
-  b  SWA, sliding window W=256
-  t  T-SWA: same sliding mask as b, loss only on queries with a full window (q >= W)
+  a   full causal
+  b   SWA, sliding window W=256
+  t   T-SWA: same sliding mask as b, loss only on queries with a full window (q >= W)
+  bs  SWA  + trainable sliding sink: nP learned prefix K/V registers visible to every query,
+      recent window W-nP so the total KV budget stays W
+  ts  T-SWA + the same trainable sliding sink
+
+Fair budget: every config trains the same number of SUPERVISED tokens. Truncated-loss
+configs (t, ts) score only L-W of the L positions per chunk, so their per-stage step count
+is scaled by L/(L-W) (250 -> 333 at L=1024, W=256; supervised tokens match within 0.1%).
+
+Continuous-stream sampling: each task is one flat concatenated token stream and training
+windows are drawn at uniformly random offsets (batch_from), so a token that falls in the
+skipped first-W rows of one window is supervised as a q >= W position of other windows;
+no stream token is systematically excluded from the loss.
 
 Methods (replay = ER, ewc = online EWC, lwf = LwF, the traditional continual-learning trio):
   naive   sequential AdamW, nothing else
@@ -25,9 +39,10 @@ Methods (replay = ER, ewc = online EWC, lwf = LwF, the traditional continual-lea
   lwf     learning without forgetting: KL to the frozen previous-stage model on the
           current batch, loss += alpha * KL(teacher || student)
 
-Deploy for eval is matched to the design (a: full causal; b,t: sliding W), and NLL is scored
-only on positions >= W under every deploy so each scored position has at least W context.
-Machine-readable output: CLEVAL stage=<0..4> task=<name> ppl=<x>; CLDONE at the end.
+Deploy for eval is matched to the design (a: full causal; b,t: sliding W; bs,ts: prefix
+registers + sliding W-nP), and NLL is scored only on positions >= W under every deploy so
+each scored position has at least budget-W context and the scored set is identical across
+designs. Machine-readable output: CLEVAL stage=<0..4> task=<name> ppl=<x>; CLDONE at the end.
 """
 import argparse, math, random
 import torch
@@ -36,11 +51,12 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--mask", required=True, choices=["a", "b", "t"])
+ap.add_argument("--mask", required=True, choices=["a", "b", "t", "bs", "ts"])
 ap.add_argument("--method", required=True, choices=["naive", "replay", "l2", "ewc", "lwf"])
 ap.add_argument("--W", type=int, default=256)
 ap.add_argument("--L", type=int, default=1024)
-ap.add_argument("--steps", type=int, default=250)          # optimizer steps per stage
+ap.add_argument("--steps", type=int, default=250)          # optimizer steps per stage at loss_from=0
+ap.add_argument("--sink_n", type=int, default=4)           # prefix KV registers for bs/ts
 ap.add_argument("--bs", type=int, default=2)
 ap.add_argument("--accum", type=int, default=4)
 ap.add_argument("--lr", type=float, default=1e-5)
@@ -57,7 +73,14 @@ ap.add_argument("--hybrid", action="store_true")           # freeze all but full
 a = ap.parse_args()
 torch.manual_seed(a.seed); random.seed(a.seed)
 dev, bf16 = "cuda", torch.bfloat16
-W, L = a.W, a.L
+W, L, nP = a.W, a.L, a.sink_n
+SINK = a.mask in ("bs", "ts")
+assert not (SINK and a.hybrid), "trainable sink is a pure-softmax ablation; no hybrid variant"
+loss_from = W if a.mask in ("t", "ts") else 0
+# fair budget: equal supervised tokens per stage regardless of the loss rule
+steps_eff = round(a.steps * L / (L - loss_from)) if loss_from else a.steps
+print("BUDGET steps=%d loss_from=%d supervised_toks_per_stage=%d" %
+      (steps_eff, loss_from, steps_eff * a.bs * a.accum * (L - loss_from)), flush=True)
 
 MODEL = a.model
 tok = AutoTokenizer.from_pretrained(MODEL, trust_remote_code=True)
@@ -82,9 +105,6 @@ if a.hybrid:
     model.enable_input_require_grads()
 else:
     model.gradient_checkpointing_disable()
-TRAINABLE = [p_ for p_ in model.parameters() if p_.requires_grad]
-print("trainable params: %.2fB / %.2fB" % (sum(p_.numel() for p_ in TRAINABLE) / 1e9,
-      sum(p_.numel() for p_ in model.parameters()) / 1e9), flush=True)
 
 # ---------------- data: one flat token stream per task ----------------
 def stream(texts, cap_tokens=6_000_000):
@@ -133,30 +153,72 @@ def build_tasks():
 
 tasks, probe = build_tasks()
 
+# ---------------- trainable sliding sink: nP learned prefix K/V registers ----------------
+def kv_layers(pkv):
+    """layer list of (K, V) from either a Cache object or the legacy tuple format"""
+    if hasattr(pkv, "key_cache"):
+        return list(zip(pkv.key_cache, pkv.value_cache))
+    return list(pkv)
+
+PK, PV = [], []
+if SINK:
+    with torch.no_grad():
+        x0 = tasks[0][1][:L][None].to(dev)
+        init = model(input_ids=x0, use_cache=True).past_key_values
+        for k, v in kv_layers(init):
+            km = k.mean(dim=2, keepdim=True).repeat(1, 1, nP, 1)     # typical key/value scale
+            vm = v.mean(dim=2, keepdim=True).repeat(1, 1, nP, 1)
+            PK.append(torch.nn.Parameter(km + 0.02 * torch.randn_like(km)))
+            PV.append(torch.nn.Parameter(vm + 0.02 * torch.randn_like(vm)))
+    print("SINK registers: %d layers x %d slots, %d params" %
+          (len(PK), nP, sum(p.numel() for p in PK + PV)), flush=True)
+
+def prefix_cache(bs, pk=None, pv=None):
+    from transformers import DynamicCache
+    c = DynamicCache()
+    for i, (k, v) in enumerate(zip(pk or PK, pv or PV)):
+        c.update(k.expand(bs, -1, -1, -1), v.expand(bs, -1, -1, -1), i)
+    return c
+
+TRAINABLE = [p_ for p_ in model.parameters() if p_.requires_grad] + PK + PV
+print("trainable params: %.2fB / %.2fB" % (sum(p_.numel() for p_ in TRAINABLE) / 1e9,
+      sum(p_.numel() for p_ in model.parameters()) / 1e9), flush=True)
+
 # ---------------- masks ----------------
 def make_mask(kind):
     q = torch.arange(L)[:, None]; k = torch.arange(L)[None, :]
     if kind == "full":
         keep = k <= q
-    else:
+    elif kind == "slide":
         keep = (k <= q) & (k > q - W)
+    else:                                            # sink: registers + recent W-nP window
+        keep = (k <= q) & (k > q - (W - nP))
     m = torch.zeros(L, L, dtype=bf16)
     m[~keep] = float("-inf")
+    if kind == "sink":                               # nP always-visible register columns
+        m = torch.cat([torch.zeros(L, nP, dtype=bf16), m], dim=1)
     return m[None, None].to(dev)
 
-TRAIN_MASK = make_mask("full" if a.mask == "a" else "slide")
-DEPLOY_MASK = TRAIN_MASK           # matched deploy: a -> full, b/t -> sliding
-loss_from = W if a.mask == "t" else 0
+TRAIN_MASK = make_mask("full" if a.mask == "a" else ("sink" if SINK else "slide"))
+DEPLOY_MASK = TRAIN_MASK           # matched deploy: a -> full, b/t -> sliding, bs/ts -> sink+window
 
 def batch_from(tr, bs):
+    # uniformly random windows over the continuous task stream: tokens in one window's
+    # skipped first-W rows are supervised as q >= W positions of other windows
     off = torch.randint(0, len(tr) - L - 1, (bs,))
     x = torch.stack([tr[o:o + L] for o in off])
     y = torch.stack([tr[o + 1:o + L + 1] for o in off])
     return x.to(dev), y.to(dev)
 
+def fwd_logits(x, mask, net=None, pk=None, pv=None):
+    net = net or model
+    if SINK:
+        return net(input_ids=x, past_key_values=prefix_cache(x.size(0), pk, pv),
+                   attention_mask=mask.expand(x.size(0), -1, -1, -1)).logits
+    return net(input_ids=x, attention_mask=mask.expand(x.size(0), -1, -1, -1)).logits
+
 def lm_loss(x, y, mask, from_pos):
-    out = model(input_ids=x, attention_mask=mask.expand(x.size(0), -1, -1, -1)).logits
-    lp = F.log_softmax(out.float(), dim=-1)
+    lp = F.log_softmax(fwd_logits(x, mask).float(), dim=-1)
     nll = -lp.gather(-1, y[..., None]).squeeze(-1)
     return nll[:, from_pos:].mean()
 
@@ -169,9 +231,8 @@ def eval_ppl(va):
         if o + L + 1 > len(va):
             break
         x = va[o:o + L][None].to(dev); y = va[o + 1:o + L + 1][None].to(dev)
-        out = model(input_ids=x, attention_mask=DEPLOY_MASK).logits
-        lp = F.log_softmax(out.float(), dim=-1)
-        nll = -lp.gather(-1, y[..., None]).squeeze(-1)[:, W:]      # >= W context under every deploy
+        lp = F.log_softmax(fwd_logits(x, DEPLOY_MASK).float(), dim=-1)
+        nll = -lp.gather(-1, y[..., None]).squeeze(-1)[:, W:]      # same scored set under every deploy
         tot += nll.sum().item(); n += nll.numel()
     model.train()
     return math.exp(tot / max(n, 1))
@@ -188,12 +249,16 @@ def fisher_diag(tr):
     model.train()
     for _ in range(a.ewc_batches):
         model.zero_grad(set_to_none=True)
+        for p in PK + PV:
+            p.grad = None
         x, y = batch_from(tr, a.bs)
         lm_loss(x, y, TRAIN_MASK, loss_from).backward()
         for f, p in zip(F, TRAINABLE):
             if p.grad is not None:
                 f += (p.grad.float() ** 2).to(torch.bfloat16)
     model.zero_grad(set_to_none=True)
+    for p in PK + PV:
+        p.grad = None
     tot = sum(f.sum() for f in F); n = sum(f.numel() for f in F)
     scale = (tot / n).clamp_min(1e-12)
     return [f / scale for f in F]                             # mean 1
@@ -204,7 +269,7 @@ if a.hybrid:
 else:
     opt = torch.optim.AdamW(TRAINABLE, lr=a.lr, weight_decay=0.0)
 eval_all(0)                                                   # base model row
-ewc_F, ewc_anchor, teacher = None, None, None
+ewc_F, ewc_anchor, teacher, teacher_pkv = None, None, None, None
 for s, (name, tr, _) in enumerate(tasks, start=1):
     anchor = None
     if a.method == "l2":
@@ -214,6 +279,8 @@ for s, (name, tr, _) in enumerate(tasks, start=1):
         teacher = copy.deepcopy(model).eval()
         for p in teacher.parameters():
             p.requires_grad_(False)
+        teacher_pkv = ([k.detach().clone() for k in PK],
+                       [v.detach().clone() for v in PV]) if SINK else None
         if a.hybrid:
             # frozen layers never train: alias them to the student's storage to halve memory
             sp = dict(model.named_parameters())
@@ -221,7 +288,7 @@ for s, (name, tr, _) in enumerate(tasks, start=1):
                 if not sp[n_].requires_grad:
                     tp.data = sp[n_].data
     model.train()
-    for step in range(a.steps):
+    for step in range(steps_eff):
         opt.zero_grad(set_to_none=True)
         for _ in range(a.accum):
             src = tr
@@ -229,11 +296,12 @@ for s, (name, tr, _) in enumerate(tasks, start=1):
                 src = tasks[random.randrange(s - 1)][1]
             x, y = batch_from(src, a.bs)
             if a.method == "lwf" and teacher is not None:
-                out = model(input_ids=x, attention_mask=TRAIN_MASK.expand(x.size(0), -1, -1, -1)).logits
-                lp = F.log_softmax(out.float(), dim=-1)
+                lp = F.log_softmax(fwd_logits(x, TRAIN_MASK).float(), dim=-1)
                 nll = -lp.gather(-1, y[..., None]).squeeze(-1)[:, loss_from:].mean()
                 with torch.no_grad():
-                    tl = teacher(input_ids=x, attention_mask=TRAIN_MASK.expand(x.size(0), -1, -1, -1)).logits
+                    tl = fwd_logits(x, TRAIN_MASK, net=teacher,
+                                    pk=teacher_pkv[0] if teacher_pkv else None,
+                                    pv=teacher_pkv[1] if teacher_pkv else None)
                 kd = F.kl_div(lp[:, loss_from:], F.log_softmax(tl.float(), dim=-1)[:, loss_from:],
                               log_target=True, reduction="batchmean") / (L - loss_from)
                 loss = nll + a.lwf_alpha * kd
@@ -257,4 +325,4 @@ for s, (name, tr, _) in enumerate(tasks, start=1):
         ewc_F = Fn if ewc_F is None else [f0 + f1 for f0, f1 in zip(ewc_F, Fn)]
         ewc_anchor = [p.detach().clone() for p in TRAINABLE]
     eval_all(s)
-print("CLDONE mask=%s method=%s" % (a.mask, a.method), flush=True)
+print("CLDONE mask=%s method=%s steps=%d" % (a.mask, a.method, steps_eff), flush=True)
