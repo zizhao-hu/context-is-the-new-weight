@@ -145,22 +145,33 @@ def main():
     sbF, sbB = bolds(svals)
     hbF, hbB = bolds(hvals)
 
-    def cells_metric(v, bF, bB):
+    def cells_summary(v, bF, bB):
+        """avg ppl, forget, BWT (the hybrid block's columns)"""
         if v is None:
-            return ["---"] * 4
+            return ["---"] * 3
         avg, F, B, fw, _ = v
         fs, bs = "%.2f" % F, "%+.2f" % B
         if bF:
             fs = r"\textbf{%s}" % fs
         if bB:
             bs = r"\textbf{%s}" % bs
-        return ["%.2f" % avg, fs, bs, "%.2f" % fw]
+        return ["%.2f" % avg, fs, bs]
 
-    def cells_base(ev):
-        if not (ev and all((0, t) in ev for t in TASKS + ["fineweb"])):
-            return ["---"] * 4
-        return ["%.2f" % (sum(ev[(0, t)] for t in TASKS) / 4), "---", "---",
-                "%.2f" % ev[(0, "fineweb")]]
+    def cells_softmax(v, ev, bF, bB):
+        """summary plus per-task final perplexity"""
+        if v is None:
+            return ["---"] * (3 + len(TASKS))
+        return cells_summary(v, bF, bB) + ["%.2f" % ev[(4, t)] for t in TASKS]
+
+    def base_summary(ev):
+        if not (ev and all((0, t) in ev for t in TASKS)):
+            return ["---"] * 3
+        return ["%.2f" % (sum(ev[(0, t)] for t in TASKS) / 4), "---", "---"]
+
+    def base_softmax(ev):
+        if not (ev and all((0, t) in ev for t in TASKS)):
+            return ["---"] * (3 + len(TASKS))
+        return base_summary(ev) + ["%.2f" % ev[(0, t)] for t in TASKS]
 
     out = []
     out.append(r"\begin{table*}[t]")
@@ -168,37 +179,39 @@ def main():
     out.append(r"\scriptsize")
     out.append(r"\setlength{\tabcolsep}{4pt}")
     out.append(r"\renewcommand{\arraystretch}{0.87}")
-    out.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrrr rrrr}")
+    out.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrr rrrr rrr}")
     out.append(r"\toprule")
-    out.append(r" & \multicolumn{4}{c}{Qwen2.5-0.5B softmax} & "
-               r"\multicolumn{4}{c}{Qwen3.5-9B hybrid}\\")
-    out.append(r"\cmidrule(lr){2-5}\cmidrule(lr){6-9}")
-    hdr = (r"\multicolumn{1}{c}{ppl$\downarrow$} & \multicolumn{1}{c}{forget$\downarrow$} & "
-           r"\multicolumn{1}{c}{BWT$\uparrow$} & \multicolumn{1}{c}{fineweb$\downarrow$}")
-    out.append("training & %s & %s\\\\" % (hdr, hdr))
+    out.append(r" & \multicolumn{7}{c}{Qwen2.5-0.5B softmax} & "
+               r"\multicolumn{3}{c}{Qwen3.5-9B hybrid}\\")
+    out.append(r"\cmidrule(lr){2-8}\cmidrule(lr){9-11}")
+    summ = (r"\multicolumn{1}{c}{ppl$\downarrow$} & \multicolumn{1}{c}{forget$\downarrow$} & "
+            r"\multicolumn{1}{c}{BWT$\uparrow$}")
+    tasks_hdr = " & ".join(r"\multicolumn{1}{c}{%s$\downarrow$}" % t
+                           for t in ["wikitext", "gsm8k", "tofu", "arc"])
+    out.append("training & %s & %s & %s\\\\" % (summ, tasks_hdr, summ))
     out.append(r"\midrule")
     row = lambda label, left, right: out.append(
         "%s & %s\\\\" % (label, " & ".join(left + right)))
-    row("base (no CPT)", cells_base(base), cells_base(hyb.get(("a", "naive"))))
-    row(r"\quad sliding deploy", cells_base(runs.get(("b", "naive"))),
-        cells_base(hyb.get(("b", "naive"))))
+    row("base (no CPT)", base_softmax(base), base_summary(hyb.get(("a", "naive"))))
+    row(r"\quad sliding deploy", base_softmax(runs.get(("b", "naive"))),
+        base_summary(hyb.get(("b", "naive"))))
     out.append(r"\midrule")
     for meth, glabel in GROUPS:
-        out.append(r"\multicolumn{9}{@{}l}{%s}\\" % glabel)
+        out.append(r"\multicolumn{11}{@{}l}{%s}\\" % glabel)
         for m, mhead in MASKS:
             row(r"\quad %s" % mhead,
-                cells_metric(svals.get((m, meth)),
-                             meth == "naive" and m == sbF, meth == "naive" and m == sbB),
-                cells_metric(hvals.get((m, meth)),
-                             meth == "naive" and m == hbF, meth == "naive" and m == hbB))
+                cells_softmax(svals.get((m, meth)), runs.get((m, meth)),
+                              meth == "naive" and m == sbF, meth == "naive" and m == sbB),
+                cells_summary(hvals.get((m, meth)),
+                              meth == "naive" and m == hbF, meth == "naive" and m == hbB))
     out.append(r"\bottomrule")
     out.append(r"\end{tabular*}")
     out.append(r"\caption{Continual learning over the four-task sequence: final perplexity averaged")
     out.append(r"over tasks, forgetting (rise from each task's best post-learning perplexity),")
-    out.append(r"backward transfer (positive helps), and the never-trained fineweb probe; matched")
+    out.append(r"backward transfer (positive helps), and each task's final perplexity; matched")
     out.append(r"deploy, equal supervised-token budget, hybrid $50$ steps per stage. Base rows: the")
-    out.append(r"unadapted model under each deploy. Per-task numbers in App.~\ref{app:cltasks};")
-    out.append(r"bold, best naive mask.}")
+    out.append(r"unadapted model under each deploy. Per-task forgetting and the fineweb probe in")
+    out.append(r"App.~\ref{app:cltasks}; bold, best naive mask.}")
     out.append(r"\label{tab:cl}")
     out.append(r"\end{table*}")
     print("\n".join(out))
