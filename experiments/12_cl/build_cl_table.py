@@ -42,6 +42,10 @@ def metrics(ev):
     B = sum(ev[(STAGE_OF[t], t)] - ev[(4, t)] for t in first3) / 3
     return sum(fin) / 4, F, B, ev[(4, "fineweb")], fin
 
+def task_forget(ev, t):
+    """rise of task t's ppl from its best post-learning value to the end"""
+    return ev[(4, t)] - min(ev[(s, t)] for s in range(STAGE_OF[t], 5))
+
 def unique_best(scores, pick):
     """mask key of the strictly best score, or None on a tie"""
     if not scores:
@@ -61,8 +65,11 @@ def metric_fmt(label, ev):
     return "%s & %.2f & --- & --- & %.2f\\\\" % (label, avg, ev[(0, "fineweb")])
 
 def task_fmt(label, ev):
-    return "%s & %s & %.2f\\\\" % (
-        label, " & ".join("%.2f" % ev[(0, t)] for t in TASKS), ev[(0, "fineweb")])
+    cells = []
+    for t in TASKS[:3]:
+        cells += ["%.2f" % ev[(0, t)], "---"]
+    cells += ["%.2f" % ev[(0, "arc")], "%.2f" % ev[(0, "fineweb")]]
+    return "%s & %s\\\\" % (label, " & ".join(cells))
 
 def metric_block(dst, get):
     """method-major rows: an italic method line, then the three masks"""
@@ -91,10 +98,13 @@ def task_block(dst, get):
         rows = [(m, mhead, get(m, meth)) for m, mhead in MASKS if get(m, meth)]
         if not rows:
             continue
-        dst.append(r"\multicolumn{6}{@{}l}{%s}\\" % glabel)
+        dst.append(r"\multicolumn{9}{@{}l}{%s}\\" % glabel)
         for m, mhead, ev in rows:
-            dst.append(r"\quad %s & %s & %.2f\\" % (
-                mhead, " & ".join("%.2f" % ev[(4, t)] for t in TASKS), ev[(4, "fineweb")]))
+            cells = []
+            for t in TASKS[:3]:
+                cells += ["%.2f" % ev[(4, t)], "%+.2f" % task_forget(ev, t)]
+            cells += ["%.2f" % ev[(4, "arc")], "%.2f" % ev[(4, "fineweb")]]
+            dst.append(r"\quad %s & %s\\" % (mhead, " & ".join(cells)))
 
 def main():
     pats = sys.argv[1:] or ["logs"]
@@ -157,16 +167,15 @@ def main():
     out.append(r"\centering")
     out.append(r"\scriptsize")
     out.append(r"\setlength{\tabcolsep}{4pt}")
-    out.append(r"\renewcommand{\arraystretch}{0.89}")
+    out.append(r"\renewcommand{\arraystretch}{0.87}")
     out.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrrr rrrr}")
     out.append(r"\toprule")
     out.append(r" & \multicolumn{4}{c}{Qwen2.5-0.5B softmax} & "
                r"\multicolumn{4}{c}{Qwen3.5-9B hybrid}\\")
     out.append(r"\cmidrule(lr){2-5}\cmidrule(lr){6-9}")
-    out.append(r"training & \multicolumn{1}{c}{ppl} & \multicolumn{1}{c}{forget} & "
-               r"\multicolumn{1}{c}{BWT} & \multicolumn{1}{c}{fineweb} & "
-               r"\multicolumn{1}{c}{ppl} & \multicolumn{1}{c}{forget} & "
-               r"\multicolumn{1}{c}{BWT} & \multicolumn{1}{c}{fineweb}\\")
+    hdr = (r"\multicolumn{1}{c}{ppl$\downarrow$} & \multicolumn{1}{c}{forget$\downarrow$} & "
+           r"\multicolumn{1}{c}{BWT$\uparrow$} & \multicolumn{1}{c}{fineweb$\downarrow$}")
+    out.append("training & %s & %s\\\\" % (hdr, hdr))
     out.append(r"\midrule")
     row = lambda label, left, right: out.append(
         "%s & %s\\\\" % (label, " & ".join(left + right)))
@@ -186,11 +195,10 @@ def main():
     out.append(r"\end{tabular*}")
     out.append(r"\caption{Continual learning over the four-task sequence: final perplexity averaged")
     out.append(r"over tasks, forgetting (rise from each task's best post-learning perplexity),")
-    out.append(r"backward transfer (positive helps), and the never-trained fineweb probe, each design")
-    out.append(r"under its matched deploy at an equal supervised-token budget; the hybrid trains $50$")
-    out.append(r"steps per stage. Base rows give the")
-    out.append(r"unadapted model under the full-attention and sliding deploys. Per-task numbers in")
-    out.append(r"App.~\ref{app:cltasks}; bold, the best naive mask.}")
+    out.append(r"backward transfer (positive helps), and the never-trained fineweb probe; matched")
+    out.append(r"deploy, equal supervised-token budget, hybrid $50$ steps per stage. Base rows: the")
+    out.append(r"unadapted model under each deploy. Per-task numbers in App.~\ref{app:cltasks};")
+    out.append(r"bold, best naive mask.}")
     out.append(r"\label{tab:cl}")
     out.append(r"\end{table*}")
     print("\n".join(out))
@@ -201,10 +209,15 @@ def main():
     ap.append(r"\centering")
     ap.append(r"\scriptsize")
     ap.append(r"\setlength{\tabcolsep}{4pt}")
-    ap.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrrr r}")
+    ap.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rr rr rr r r}")
     ap.append(r"\toprule")
-    ap.append(r"training & \multicolumn{1}{c}{wikitext} & \multicolumn{1}{c}{gsm8k} & "
-              r"\multicolumn{1}{c}{tofu} & \multicolumn{1}{c}{arc} & \multicolumn{1}{c}{fineweb}\\")
+    ap.append(r" & \multicolumn{2}{c}{wikitext} & \multicolumn{2}{c}{gsm8k} & "
+              r"\multicolumn{2}{c}{tofu} & \multicolumn{1}{c}{arc} & \multicolumn{1}{c}{fineweb}\\")
+    ap.append(r"\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}")
+    ap.append(r"training & \multicolumn{1}{c}{ppl$\downarrow$} & \multicolumn{1}{c}{F$\downarrow$} & "
+              r"\multicolumn{1}{c}{ppl$\downarrow$} & \multicolumn{1}{c}{F$\downarrow$} & "
+              r"\multicolumn{1}{c}{ppl$\downarrow$} & \multicolumn{1}{c}{F$\downarrow$} & "
+              r"\multicolumn{1}{c}{ppl$\downarrow$} & \multicolumn{1}{c}{ppl$\downarrow$}\\")
     ap.append(r"\midrule")
     if base:
         base_rows(ap, base, runs.get(("b", "naive")), task_fmt)
@@ -212,13 +225,15 @@ def main():
     task_block(ap, lambda m, meth: runs.get((m, meth)))
     if hyb:
         ap.append(r"\midrule")
-        ap.append(r"\multicolumn{6}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained)}\\")
+        ap.append(r"\multicolumn{9}{@{}l}{Qwen3.5-9B hybrid (softmax layers trained)}\\")
         base_rows(ap, hyb.get(("a", "naive")), hyb.get(("b", "naive")), task_fmt)
         task_block(ap, lambda m, meth: hyb.get((m, meth)))
     ap.append(r"\bottomrule")
     ap.append(r"\end{tabular*}")
-    ap.append(r"\caption{Per-task final perplexity after the full continual sequence, for every")
-    ap.append(r"training and method of Tab.~\ref{tab:cl}.}")
+    ap.append(r"\caption{Per-task breakdown after the full continual sequence, for every training")
+    ap.append(r"and method of Tab.~\ref{tab:cl}: final perplexity and, for each previous task, its")
+    ap.append(r"forgetting F (rise from the task's best post-learning perplexity; ARC is learned")
+    ap.append(r"last so it cannot be forgotten).}")
     ap.append(r"\label{tab:cltasks}")
     ap.append(r"\end{table*}")
     import os
