@@ -36,3 +36,10 @@ Iterations
   md5 verified) since no checkpoints existed for the finished runs. Harvester: column order
   = per-task breakdown | fineweb | avg ppl | forget | BWT (both blocks), pm()/avg_pm() render
   {\tiny$\pm$}; appendix ppl columns too. Values will be reconciled to the new logs at harvest.
+- it6 (masks C/D + mask-major regroup): trainer gains c = SWAA (4 pinned first tokens +
+  W-4 recent, budget W) and d = Transformer-XL (W-token segments, previous segment's KV
+  as stop-gradient memory via DynamicCache + explicit position_ids; span <= 2W, budget 2W
+  disclosed); c is the real-token twin of bs (pinned real vs learned registers, same split).
+  Harvester regrouped mask-major per user: groups a, b, b+sink, c, d, e, e+sink; sub-rows
+  naive (unlabeled first row) then +replay/+EWC/+LwF. Smokes 10784155 (c_lwf) / 10784156
+  (d_ewc); 8 production c/d jobs follow on pass, joining the SEM fleet for the final harvest.

@@ -17,10 +17,11 @@ import sys
 
 TASKS = ["wikitext", "gsm8k", "tofu", "arc"]
 STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
-MASKS = [("a", "A. full causal"), ("b", "B. SWA"), ("bs", r"\quad$+$ sink prefix"),
-         ("t", "E. T-SWA"), ("ts", r"\quad$+$ sink prefix")]
-GROUPS = [("naive", r"\textit{naive}"), ("replay", r"\textit{$+$replay (ER)}"),
-          ("ewc", r"\textit{$+$EWC}"), ("lwf", r"\textit{$+$LwF}")]
+MASKS = [("a", "A. full causal"), ("b", "B. SWA"), ("bs", r"B $+$ sink prefix"),
+         ("c", "C. SWAA"), ("d", "D. Transformer-XL"),
+         ("t", "E. T-SWA"), ("ts", r"E $+$ sink prefix")]
+GROUPS = [("naive", None), ("replay", r"\quad$+$replay (ER)"),
+          ("ewc", r"\quad$+$EWC"), ("lwf", r"\quad$+$LwF")]
 # L2-SP runs exist but the row is inert; stated in text
 
 def parse(path):
@@ -116,17 +117,17 @@ def metric_block(dst, get):
             dst.append(r"\quad %s & %.2f & %s & %s & %.2f\\" % (mhead, avg, fs, bs, fw))
 
 def task_block(dst, get):
-    for meth, glabel in GROUPS:
-        rows = [(m, mhead, get(m, meth)) for m, mhead in MASKS if get(m, meth)]
-        if not rows:
-            continue
-        dst.append(r"\multicolumn{9}{@{}l}{%s}\\" % glabel)
-        for m, mhead, ev in rows:
+    for m, mhead in MASKS:
+        for meth, mlabel in GROUPS:
+            ev = get(m, meth)
+            if not ev:
+                continue
             cells = []
             for t in TASKS[:3]:
                 cells += [pm(ev, 4, t), "%+.2f" % task_forget(ev, t)]
             cells += [pm(ev, 4, "arc"), pm(ev, 4, "fineweb")]
-            dst.append(r"\quad %s & %s\\" % (mhead, " & ".join(cells)))
+            dst.append(r"%s & %s\\" % (mhead if meth == "naive" else mlabel,
+                                       " & ".join(cells)))
 
 def main():
     pats = sys.argv[1:] or ["logs"]
@@ -136,7 +137,7 @@ def main():
     runs = {}
     base = None
     for path in sorted(logs):
-        m = re.search(r"cl_cl_(a|b|t|bs|ts)_(naive|replay|l2|ewc|lwf)_(\d+)\.log$", path)
+        m = re.search(r"cl_cl_(a|b|t|bs|ts|c|d)_(naive|replay|l2|ewc|lwf)_(\d+)\.log$", path)
         if not m:
             continue
         ev, done = parse(path)
@@ -224,10 +225,13 @@ def main():
     row(r"\quad sliding deploy", base_softmax(runs.get(("b", "naive"))),
         base_summary(hyb.get(("b", "naive"))))
     out.append(r"\midrule")
-    for meth, glabel in GROUPS:
-        out.append(r"\multicolumn{13}{@{}l}{%s}\\" % glabel)
-        for m, mhead in MASKS:
-            row(r"\quad %s" % mhead,
+    for m, mhead in MASKS:
+        if not any((m, meth) in svals or (m, meth) in hvals for meth, _ in GROUPS):
+            continue
+        for meth, mlabel in GROUPS:
+            if (m, meth) not in svals and (m, meth) not in hvals:
+                continue
+            row(mhead if meth == "naive" else mlabel,
                 cells_softmax(svals.get((m, meth)), runs.get((m, meth)),
                               meth == "naive" and m == sbF, meth == "naive" and m == sbB),
                 cells_summary(hvals.get((m, meth)), hyb.get((m, meth)),
@@ -238,7 +242,8 @@ def main():
     out.append(r"perplexity, the never-trained fineweb probe, average perplexity, forgetting")
     out.append(r"(rise from each task's best post-learning perplexity), and backward transfer")
     out.append(r"(positive helps); $\pm$, SEM over eval chunks; matched deploy, equal")
-    out.append(r"supervised-token budget, hybrid $50$ steps per stage. Base rows: the unadapted")
+    out.append(r"supervised-token budget, hybrid $50$ steps per stage. Rows group by window")
+    out.append(r"method, each block's unlabeled first row naive. Base rows: the unadapted")
     out.append(r"model under each deploy. Per-task forgetting in App.~\ref{app:cltasks}; bold,")
     out.append(r"best naive mask.}")
     out.append(r"\label{tab:cl}")

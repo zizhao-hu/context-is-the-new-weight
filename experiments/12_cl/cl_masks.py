@@ -17,9 +17,12 @@ Masks (Qwen2.5-0.5B, additive 4D attention mask, L=1024 chunks):
   a   full causal
   b   SWA, sliding window W=256
   t   T-SWA: same sliding mask as b, loss only on queries with a full window (q >= W)
-  bs  SWA  + trainable sliding sink: nP learned prefix K/V registers visible to every query,
+  bs  SWA + trainable sink prefix: nP learned K/V registers kept for every query,
       recent window W-nP so the total KV budget stays W
-  ts  T-SWA + the same trainable sliding sink
+  ts  T-SWA + the same trainable sink prefix
+  c   SWAA (StreamingLLM-style): first swaa_n real tokens pinned + recent W-swaa_n window
+  d   Transformer-XL: W-token segments, previous segment's KV as stop-gradient memory
+      (attention span <= 2W, KV budget 2W, disclosed)
 
 Fair budget: every config trains the same number of SUPERVISED tokens. Truncated-loss
 configs (t, ts) score only L-W of the L positions per chunk, so their per-stage step count
@@ -51,12 +54,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--mask", required=True, choices=["a", "b", "t", "bs", "ts"])
+ap.add_argument("--mask", required=True, choices=["a", "b", "t", "bs", "ts", "c", "d"])
 ap.add_argument("--method", required=True, choices=["naive", "replay", "l2", "ewc", "lwf"])
 ap.add_argument("--W", type=int, default=256)
 ap.add_argument("--L", type=int, default=1024)
 ap.add_argument("--steps", type=int, default=250)          # optimizer steps per stage at loss_from=0
 ap.add_argument("--sink_n", type=int, default=4)           # prefix KV registers for bs/ts
+ap.add_argument("--swaa_n", type=int, default=4)           # pinned first tokens for c (SWAA)
 ap.add_argument("--bs", type=int, default=2)
 ap.add_argument("--accum", type=int, default=4)
 ap.add_argument("--lr", type=float, default=1e-5)
@@ -75,7 +79,8 @@ torch.manual_seed(a.seed); random.seed(a.seed)
 dev, bf16 = "cuda", torch.bfloat16
 W, L, nP = a.W, a.L, a.sink_n
 SINK = a.mask in ("bs", "ts")
-assert not (SINK and a.hybrid), "trainable sink is a pure-softmax ablation; no hybrid variant"
+TXL = a.mask == "d"
+assert not ((SINK or TXL or a.mask == "c") and a.hybrid), "lit-mask ablations are pure-softmax only"
 loss_from = W if a.mask in ("t", "ts") else 0
 # fair budget: equal supervised tokens per stage regardless of the loss rule
 steps_eff = round(a.steps * L / (L - loss_from)) if loss_from else a.steps
@@ -193,6 +198,8 @@ def make_mask(kind):
         keep = k <= q
     elif kind == "slide":
         keep = (k <= q) & (k > q - W)
+    elif kind == "swaa":                             # StreamingLLM: first swaa_n pinned + recent window
+        keep = (k <= q) & ((k > q - (W - a.swaa_n)) | (k < a.swaa_n))
     else:                                            # sink: registers + recent W-nP window
         keep = (k <= q) & (k > q - (W - nP))
     m = torch.zeros(L, L, dtype=bf16)
@@ -201,8 +208,32 @@ def make_mask(kind):
         m = torch.cat([torch.zeros(L, nP, dtype=bf16), m], dim=1)
     return m[None, None].to(dev)
 
-TRAIN_MASK = make_mask("full" if a.mask == "a" else ("sink" if SINK else "slide"))
-DEPLOY_MASK = TRAIN_MASK           # matched deploy: a -> full, b/t -> sliding, bs/ts -> sink+window
+if TXL:
+    TRAIN_MASK = DEPLOY_MASK = None                  # segmented recurrence, no static mask
+else:
+    TRAIN_MASK = make_mask("full" if a.mask == "a" else "swaa" if a.mask == "c"
+                           else "sink" if SINK else "slide")
+    DEPLOY_MASK = TRAIN_MASK       # matched deploy: a full, b/t sliding, bs/ts sink+window, c swaa
+
+def txl_logits(x, net=None):
+    """Transformer-XL: W-token segments left to right; the previous segment's KV is
+    carried as stop-gradient memory (attention span <= 2W, KV budget 2W). RoPE uses
+    true positions via position_ids; memory keys keep their original rotation."""
+    from transformers import DynamicCache
+    net = net or model
+    mem, outs = None, []
+    for j in range(0, L, W):
+        seg = x[:, j:j + W]
+        cache = DynamicCache()
+        if mem is not None:
+            for i_, (k, v) in enumerate(mem):
+                cache.update(k, v, i_)
+        pos = torch.arange(j, j + W, device=x.device)[None].expand(x.size(0), -1)
+        o = net(input_ids=seg, past_key_values=cache, position_ids=pos, use_cache=True)
+        outs.append(o.logits)
+        mem = [(k[:, :, -W:, :].detach(), v[:, :, -W:, :].detach())
+               for k, v in kv_layers(o.past_key_values)]
+    return torch.cat(outs, dim=1)
 
 def batch_from(tr, bs):
     # uniformly random windows over the continuous task stream: tokens in one window's
@@ -220,7 +251,8 @@ def fwd_logits(x, mask, net=None, pk=None, pv=None):
     return net(input_ids=x, attention_mask=mask.expand(x.size(0), -1, -1, -1)).logits
 
 def lm_loss(x, y, mask, from_pos):
-    lp = F.log_softmax(fwd_logits(x, mask).float(), dim=-1)
+    logits = txl_logits(x) if TXL else fwd_logits(x, mask)
+    lp = F.log_softmax(logits.float(), dim=-1)
     nll = -lp.gather(-1, y[..., None]).squeeze(-1)
     return nll[:, from_pos:].mean()
 
@@ -234,7 +266,8 @@ def eval_ppl(va):
         if o + L + 1 > len(va):
             break
         x = va[o:o + L][None].to(dev); y = va[o + 1:o + L + 1][None].to(dev)
-        lp = F.log_softmax(fwd_logits(x, DEPLOY_MASK).float(), dim=-1)
+        logits = txl_logits(x) if TXL else fwd_logits(x, DEPLOY_MASK)
+        lp = F.log_softmax(logits.float(), dim=-1)
         nll = -lp.gather(-1, y[..., None]).squeeze(-1)[:, W:]      # same scored set under every deploy
         chunk_means.append(nll.mean().item())
     model.train()
@@ -306,10 +339,12 @@ for s, (name, tr, _) in enumerate(tasks, start=1):
                 src = tasks[random.randrange(s - 1)][1]
             x, y = batch_from(src, a.bs)
             if a.method == "lwf" and teacher is not None:
-                lp = F.log_softmax(fwd_logits(x, TRAIN_MASK).float(), dim=-1)
+                slogits = txl_logits(x) if TXL else fwd_logits(x, TRAIN_MASK)
+                lp = F.log_softmax(slogits.float(), dim=-1)
                 nll = -lp.gather(-1, y[..., None]).squeeze(-1)[:, loss_from:].mean()
                 with torch.no_grad():
-                    tl = fwd_logits(x, TRAIN_MASK, net=teacher,
+                    tl = txl_logits(x, net=teacher) if TXL else \
+                         fwd_logits(x, TRAIN_MASK, net=teacher,
                                     pk=teacher_pkv[0] if teacher_pkv else None,
                                     pv=teacher_pkv[1] if teacher_pkv else None)
                 kd = F.kl_div(lp[:, loss_from:], F.log_softmax(tl.float(), dim=-1)[:, loss_from:],
