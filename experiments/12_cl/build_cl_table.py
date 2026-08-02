@@ -202,7 +202,7 @@ def main():
     out.append(r"\setlength{\abovecaptionskip}{4pt}")
     out.append(r"\scriptsize")
     out.append(r"\setlength{\tabcolsep}{3pt}")
-    out.append(r"\renewcommand{\arraystretch}{0.81}")
+    out.append(r"\renewcommand{\arraystretch}{0.79}")
     out.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrrr rrrr rrrr}")
     out.append(r"\toprule")
     out.append(r" & \multicolumn{8}{c}{Qwen2.5-0.5B softmax} & "
