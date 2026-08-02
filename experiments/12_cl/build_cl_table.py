@@ -20,8 +20,8 @@ STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
 MASKS = [("a", "A. full causal"), ("b", "B. SWA"), ("bs", r"B $+$ sink prefix"),
          ("c", "C. SWAA"), ("d", "D. Transformer-XL"),
          ("t", "E. T-SWA"), ("ts", r"E $+$ sink prefix")]
-GROUPS = [("naive", None), ("replay", r"\quad$+$replay (ER)"),
-          ("ewc", r"\quad$+$EWC"), ("lwf", r"\quad$+$LwF")]
+GROUPS = [("naive", r"\textit{naive}"), ("replay", r"\textit{$+$replay (ER)}"),
+          ("ewc", r"\textit{$+$EWC}"), ("lwf", r"\textit{$+$LwF}")]
 # L2-SP runs exist but the row is inert; stated in text
 
 def parse(path):
@@ -79,9 +79,11 @@ def pm(ev, stage, task, bold=False):
     se = ev.get(("sem", stage, task))
     return v + (sefmt(se) if se else "")
 
-def avg_pm(ev, stage):
+def avg_pm(ev, stage, bold=False):
     """mean over tasks with the propagated SEM (independent eval sets)"""
     v = "%.2f" % (sum(ev[(stage, t)] for t in TASKS) / 4)
+    if bold:
+        v = r"\textbf{%s}" % v
     ses = [ev.get(("sem", stage, t)) for t in TASKS]
     if all(ses):
         v += sefmt(sum(s ** 2 for s in ses) ** 0.5 / 4)
@@ -135,11 +137,13 @@ def metric_block(dst, get):
             dst.append(r"\quad %s & %.2f & %s & %s & %.2f\\" % (mhead, avg, fs, bs, fw))
 
 def task_block(dst, get):
-    for m, mhead in MASKS:
-        for meth, mlabel in GROUPS:
+    for meth, glabel in GROUPS:
+        rows = [(m, mhead) for m, mhead in MASKS if get(m, meth)]
+        if not rows:
+            continue
+        dst.append(r"\multicolumn{9}{@{}l}{%s}\\" % glabel)
+        for m, mhead in rows:
             ev = get(m, meth)
-            if not ev:
-                continue
             cells = []
             for t in TASKS[:3]:
                 fcell = "%+.2f" % task_forget(ev, t)
@@ -148,8 +152,7 @@ def task_block(dst, get):
                     fcell += sefmt(se)
                 cells += [pm(ev, 4, t), fcell]
             cells += [pm(ev, 4, "arc"), pm(ev, 4, "fineweb")]
-            dst.append(r"%s & %s\\" % (mhead if meth == "naive" else mlabel,
-                                       " & ".join(cells)))
+            dst.append(r"\quad %s & %s\\" % (mhead, " & ".join(cells)))
 
 def main():
     pats = sys.argv[1:] or ["logs"]
@@ -182,35 +185,50 @@ def main():
     svals = {k: metrics(ev) for k, ev in runs.items()}
     hvals = {k: metrics(ev) for k, ev in hyb.items()}
 
-    def bolds(vals):
-        # compare at display precision so a tie at 0.03 never bolds one of the pair
-        nF = {m: round(vals[(m, "naive")][1], 2) for m, _ in MASKS if (m, "naive") in vals}
-        nB = {m: round(vals[(m, "naive")][2], 2) for m, _ in MASKS if (m, "naive") in vals}
-        return unique_best(nF, min), unique_best(nB, max)
-    sbF, sbB = bolds(svals)
-    hbF, hbB = bolds(hvals)
+    def group_best(meth, table, vals, col, pick):
+        """mask with the strictly best display-precision value of `col` within the method group"""
+        cand = {}
+        for m, _ in MASKS:
+            if (m, meth) not in table:
+                continue
+            ev, v = table[(m, meth)], vals[(m, meth)]
+            x = (ev[(4, col)] if isinstance(col, str) else v[col])
+            cand[m] = round(x, 2)
+        return unique_best(cand, pick)
 
-    def cells_summary(v, ev, bF, bB):
+    def bold_sets(meth, table, vals):
+        """per-column best mask within the group: tasks+fineweb+avg+forget min, BWT max"""
+        best = {}
+        for t in TASKS + ["fineweb"]:
+            best[t] = group_best(meth, table, vals, t, min)
+        best["ppl"] = group_best(meth, table, vals, 0, min)
+        best["forget"] = group_best(meth, table, vals, 1, min)
+        best["bwt"] = group_best(meth, table, vals, 2, max)
+        return best
+
+    def cells_summary(v, ev, best, m):
         """general eval then averages: fineweb, avg ppl, forget, BWT"""
         if v is None:
             return ["---"] * 4
         _, F, B, _, _ = v
         fs, bs = "%.2f" % F, "%+.2f" % B
-        if bF:
+        if best.get("forget") == m:
             fs = r"\textbf{%s}" % fs
-        if bB:
+        if best.get("bwt") == m:
             bs = r"\textbf{%s}" % bs
         seF, seB = metric_sems(ev)
         if seF is not None:
             fs += sefmt(seF)
             bs += sefmt(seB)
-        return [pm(ev, 4, "fineweb"), avg_pm(ev, 4), fs, bs]
+        return [pm(ev, 4, "fineweb", bold=best.get("fineweb") == m),
+                avg_pm(ev, 4, bold=best.get("ppl") == m), fs, bs]
 
-    def cells_softmax(v, ev, bF, bB):
+    def cells_softmax(v, ev, best, m):
         """per-task breakdown first, then the general/summary columns"""
         if v is None:
             return ["---"] * (4 + len(TASKS))
-        return [pm(ev, 4, t) for t in TASKS] + cells_summary(v, ev, bF, bB)
+        return [pm(ev, 4, t, bold=best.get(t) == m) for t in TASKS] + \
+               cells_summary(v, ev, best, m)
 
     def base_summary(ev):
         if not (ev and all((0, t) in ev for t in TASKS + ["fineweb"])):
@@ -227,8 +245,8 @@ def main():
     out.append(r"\centering")
     out.append(r"\setlength{\abovecaptionskip}{4pt}")
     out.append(r"\scriptsize")
-    out.append(r"\setlength{\tabcolsep}{2.2pt}")
-    out.append(r"\renewcommand{\arraystretch}{0.79}")
+    out.append(r"\setlength{\tabcolsep}{1.9pt}")
+    out.append(r"\renewcommand{\arraystretch}{0.76}")
     out.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrrr rrrr rrrr}")
     out.append(r"\toprule")
     out.append(r" & \multicolumn{8}{c}{Qwen2.5-0.5B softmax} & "
@@ -251,17 +269,18 @@ def main():
     row(r"\quad sliding deploy", base_softmax(runs.get(("b", "naive"))),
         base_summary(hyb.get(("b", "naive"))))
     out.append(r"\midrule")
-    for m, mhead in MASKS:
-        if not any((m, meth) in svals or (m, meth) in hvals for meth, _ in GROUPS):
+    for meth, glabel in GROUPS:
+        if not any((m, meth) in svals or (m, meth) in hvals for m, _ in MASKS):
             continue
-        for meth, mlabel in GROUPS:
+        out.append(r"\multicolumn{13}{@{}l}{%s}\\" % glabel)
+        sbest = bold_sets(meth, runs, svals)
+        hbest = bold_sets(meth, hyb, hvals)
+        for m, mhead in MASKS:
             if (m, meth) not in svals and (m, meth) not in hvals:
                 continue
-            row(mhead if meth == "naive" else mlabel,
-                cells_softmax(svals.get((m, meth)), runs.get((m, meth)),
-                              meth == "naive" and m == sbF, meth == "naive" and m == sbB),
-                cells_summary(hvals.get((m, meth)), hyb.get((m, meth)),
-                              meth == "naive" and m == hbF, meth == "naive" and m == hbB))
+            row(r"\quad %s" % mhead,
+                cells_softmax(svals.get((m, meth)), runs.get((m, meth)), sbest, m),
+                cells_summary(hvals.get((m, meth)), hyb.get((m, meth)), hbest, m))
     out.append(r"\bottomrule")
     out.append(r"\end{tabular*}")
     out.append(r"\caption{Continual learning over the four-task sequence: per-task final")
@@ -269,10 +288,11 @@ def main():
     out.append(r"(rise from each task's best post-learning perplexity), and backward transfer")
     out.append(r"(positive helps); $\pm$, SEM over eval chunks, propagated across stages for")
     out.append(r"forgetting and BWT; matched deploy, equal")
-    out.append(r"supervised-token budget, hybrid $50$ steps per stage. Rows group by window")
-    out.append(r"method, each block's unlabeled first row naive. Base rows: the unadapted")
-    out.append(r"model under each deploy. Per-task forgetting in App.~\ref{app:cltasks}; bold,")
-    out.append(r"best naive mask.}")
+    out.append(r"supervised-token budget, hybrid $50$ steps per stage. Rows group by")
+    out.append(r"continual-learning method; bold, best per column within each group. The hybrid")
+    out.append(r"covers masks A, B, E; the other variants are pure-softmax, hence the empty")
+    out.append(r"cells. Base rows: the unadapted model under each deploy.")
+    out.append(r"Per-task forgetting in App.~\ref{app:cltasks}.}")
     out.append(r"\label{tab:cl}")
     out.append(r"\end{table*}")
     print("\n".join(out))
