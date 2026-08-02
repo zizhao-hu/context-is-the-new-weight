@@ -7,7 +7,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Helvetica Neue", Arial, sans-serif; }
   body { width: 1890px; background: #ffffff; padding: 26px 10px; }
   .row { display: flex; align-items: center; justify-content: space-between; }
-  .col { display: flex; flex-direction: column; gap: 22px; flex: 1; }
+  .col { display: flex; flex-direction: column; gap: 38px; flex: 1; }
   .box { border: 3px solid #333; border-radius: 10px; padding: 18px 20px; background: #fff; }
   .box h3 { font-size: 32px; font-weight: 700; color: #222; margin-bottom: 8px; }
   .box p { font-size: 27px; color: #444; line-height: 1.35; }
@@ -28,6 +28,9 @@
   .kb .tag { background: #4C72B0; }
   .vc .tag { background: #DD5B45; }
   .bl .tag { background: #a03c2b; }
+  .cp { border-color: #8172B2; background: #f3f0f8; }
+  .cp h3 { color: #55467e; }
+  .cp .tag { background: #8172B2; }
 </style>
 </head>
 <body>
@@ -50,7 +53,11 @@
         <h3><span class="tag">13&ndash;14</span>voice baselines: TTS &#8594; ASR</h3>
         <p>text spoken by a synthesis engine, re-heard by a recognizer; real-engine reference corruptions, pairs A and B</p>
       </div>
-      <div class="dial">one severity dial for 1&ndash;12: fraction of tokens touched</div>
+      <div class="box cp">
+        <h3><span class="tag">15&ndash;19</span>copy-paste channel</h3>
+        <p>truncated selection &middot; double paste &middot; stale clipboard &middot; line-break artifact &middot; encoding artifact</p>
+      </div>
+      <div class="dial">one severity dial for 1&ndash;12 and 15&ndash;19: fraction of tokens touched</div>
     </div>
     <div class="arrow">&#10132;</div>
     <div class="box stage">

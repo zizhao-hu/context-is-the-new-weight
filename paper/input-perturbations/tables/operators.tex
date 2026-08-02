@@ -1,5 +1,5 @@
-% The full perturbation operator set. Operators 1-12 are the modeled methodology set
-% (6 keyboard, 6 voice); 13-14 are the TTS->ASR roundtrip baselines through real engines.
+% The full perturbation operator set. Operators 1-12 are the modeled keyboard and voice
+% families, 13-14 the TTS->ASR roundtrip baselines, 15-19 the modeled copy-paste family.
 \begin{table*}[t]
 \centering
 \scriptsize
@@ -24,10 +24,16 @@
 \midrule
 13 & baseline & TTS$\to$ASR roundtrip A & real engine pair \todo{TTS A $+$ ASR A} & \todo{logged output}\\
 14 & baseline & TTS$\to$ASR roundtrip B & real engine pair \todo{TTS B $+$ ASR B} & \todo{logged output}\\
+\midrule
+15 & copy-paste & truncated selection & selection misses edge words & road is clear\\
+16 & copy-paste & double paste & clipboard pasted twice & the road is clearthe road is clear\\
+17 & copy-paste & stale clipboard & previous clipboard content pasted & meeting moved to 3pm\\
+18 & copy-paste & line-break artifact & PDF hyphenation and breaks retained & the ro- ad is clear\\
+19 & copy-paste & encoding artifact & quotes and spaces mis-decoded & the roadÂ is clear\\
 \bottomrule
 \end{tabular*}
-\caption{The perturbation operator set: operators $1$--$12$ are the modeled methodology set, each
-with the same severity dial, and operators $13$--$14$ are TTS$\to$ASR roundtrip baselines that
-produce reference voice corruptions through real engines.}
+\caption{The perturbation operator set: operators $1$--$12$ and $15$--$19$ are the modeled
+methodology set, each with the same severity dial; operators $13$--$14$ are TTS$\to$ASR
+roundtrip baselines that produce reference voice corruptions through real engines.}
 \label{tab:operators}
 \end{table*}
