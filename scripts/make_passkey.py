@@ -27,7 +27,7 @@ B_FULL = [1.0] * 5
 B_SLIDE = [0.0, 0.0, 0.0, 0.0, 1.0]
 A_SLIDE = [0.0] * 5
 
-fig, ax = plt.subplots(figsize=(3.03, 0.92))
+fig, ax = plt.subplots(figsize=(3.03, 0.86))
 ax.axvspan(0.75, 0.97, color="0.92", zorder=0)                       # within the last W
 ax.text(0.855, 0.5, "within\nlast $W$", ha="center", va="center",
         fontsize=figstyle.FS_TICK - 0.5, color="0.45")
