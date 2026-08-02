@@ -49,6 +49,24 @@ def task_forget(ev, t):
     """rise of task t's ppl from its best post-learning value to the end"""
     return ev[(4, t)] - min(ev[(s, t)] for s in range(STAGE_OF[t], 5))
 
+def task_forget_sem(ev, t):
+    """propagated SEM of the rise, stages treated as independent (conservative);
+    zero when the best stage is the final one (identical measurement)"""
+    best = min(range(STAGE_OF[t], 5), key=lambda s: ev[(s, t)])
+    if best == 4 or ("sem", 4, t) not in ev:
+        return 0.0
+    return (ev[("sem", 4, t)] ** 2 + ev.get(("sem", best, t), 0.0) ** 2) ** 0.5
+
+def metric_sems(ev):
+    """propagated SEMs of mean forgetting and mean BWT over the first three tasks"""
+    first3 = TASKS[:3]
+    if not all(("sem", 4, t) in ev for t in first3):
+        return None, None
+    seF = sum(task_forget_sem(ev, t) ** 2 for t in first3) ** 0.5 / 3
+    seB = sum(ev.get(("sem", STAGE_OF[t], t), 0.0) ** 2 + ev[("sem", 4, t)] ** 2
+              for t in first3) ** 0.5 / 3
+    return seF, seB
+
 def sefmt(se):
     return r"{\tiny$\pm$%s}" % ("%.2f" % se if se < 0.095 else
                                 "%.1f" % se if se < 9.95 else "%.0f" % se)
@@ -124,7 +142,11 @@ def task_block(dst, get):
                 continue
             cells = []
             for t in TASKS[:3]:
-                cells += [pm(ev, 4, t), "%+.2f" % task_forget(ev, t)]
+                fcell = "%+.2f" % task_forget(ev, t)
+                se = task_forget_sem(ev, t)
+                if se:
+                    fcell += sefmt(se)
+                cells += [pm(ev, 4, t), fcell]
             cells += [pm(ev, 4, "arc"), pm(ev, 4, "fineweb")]
             dst.append(r"%s & %s\\" % (mhead if meth == "naive" else mlabel,
                                        " & ".join(cells)))
@@ -178,6 +200,10 @@ def main():
             fs = r"\textbf{%s}" % fs
         if bB:
             bs = r"\textbf{%s}" % bs
+        seF, seB = metric_sems(ev)
+        if seF is not None:
+            fs += sefmt(seF)
+            bs += sefmt(seB)
         return [pm(ev, 4, "fineweb"), avg_pm(ev, 4), fs, bs]
 
     def cells_softmax(v, ev, bF, bB):
@@ -201,7 +227,7 @@ def main():
     out.append(r"\centering")
     out.append(r"\setlength{\abovecaptionskip}{4pt}")
     out.append(r"\scriptsize")
-    out.append(r"\setlength{\tabcolsep}{3pt}")
+    out.append(r"\setlength{\tabcolsep}{2.2pt}")
     out.append(r"\renewcommand{\arraystretch}{0.79}")
     out.append(r"\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}} l rrrr rrrr rrrr}")
     out.append(r"\toprule")
@@ -241,7 +267,8 @@ def main():
     out.append(r"\caption{Continual learning over the four-task sequence: per-task final")
     out.append(r"perplexity, the never-trained fineweb probe, average perplexity, forgetting")
     out.append(r"(rise from each task's best post-learning perplexity), and backward transfer")
-    out.append(r"(positive helps); $\pm$, SEM over eval chunks; matched deploy, equal")
+    out.append(r"(positive helps); $\pm$, SEM over eval chunks, propagated across stages for")
+    out.append(r"forgetting and BWT; matched deploy, equal")
     out.append(r"supervised-token budget, hybrid $50$ steps per stage. Rows group by window")
     out.append(r"method, each block's unlabeled first row naive. Base rows: the unadapted")
     out.append(r"model under each deploy. Per-task forgetting in App.~\ref{app:cltasks}; bold,")
