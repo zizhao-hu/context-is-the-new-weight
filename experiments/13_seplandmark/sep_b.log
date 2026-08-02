@@ -1,0 +1,109 @@
+Loading weights:   0%|          | 0/254 [00:00<?, ?it/s]Loading weights:   8%|▊         | 20/254 [00:00<00:02, 79.71it/s]Loading weights:  11%|█         | 28/254 [00:00<00:05, 45.04it/s]Loading weights:  14%|█▍        | 36/254 [00:00<00:05, 40.36it/s]Loading weights:  16%|█▌        | 41/254 [00:00<00:05, 39.19it/s]Loading weights:  19%|█▉        | 49/254 [00:01<00:05, 39.65it/s]Loading weights:  23%|██▎       | 59/254 [00:01<00:03, 49.54it/s]Loading weights:  26%|██▌       | 65/254 [00:01<00:04, 46.96it/s]Loading weights:  28%|██▊       | 72/254 [00:01<00:03, 49.22it/s]Loading weights:  31%|███▏      | 80/254 [00:01<00:03, 54.89it/s]Loading weights:  34%|███▍      | 87/254 [00:01<00:04, 38.05it/s]Loading weights:  36%|███▌      | 92/254 [00:02<00:06, 26.39it/s]Loading weights:  38%|███▊      | 96/254 [00:02<00:05, 28.35it/s]Loading weights:  41%|████      | 104/254 [00:02<00:06, 23.35it/s]Loading weights:  44%|████▍     | 112/254 [00:03<00:05, 27.80it/s]Loading weights:  46%|████▌     | 116/254 [00:03<00:06, 19.72it/s]Loading weights:  47%|████▋     | 119/254 [00:03<00:08, 16.69it/s]Loading weights:  48%|████▊     | 122/254 [00:04<00:08, 14.92it/s]Loading weights:  57%|█████▋    | 144/254 [00:04<00:02, 40.09it/s]Loading weights:  60%|█████▉    | 152/254 [00:04<00:02, 43.87it/s]Loading weights:  63%|██████▎   | 160/254 [00:04<00:02, 32.90it/s]Loading weights:  67%|██████▋   | 169/254 [00:04<00:02, 36.97it/s]Loading weights:  76%|███████▋  | 194/254 [00:05<00:00, 65.81it/s]Loading weights:  82%|████████▏ | 209/254 [00:05<00:00, 76.88it/s]Loading weights:  87%|████████▋ | 220/254 [00:05<00:00, 80.99it/s]Loading weights:  91%|█████████ | 231/254 [00:05<00:00, 86.39it/s]Loading weights:  95%|█████████▌| 242/254 [00:05<00:00, 90.06it/s]Loading weights: 100%|██████████| 254/254 [00:05<00:00, 45.69it/s]
+SEP_MODEL B -> /scratch1/zizhaoh/cpt_ckpts/b
+[transformers] Ignoring clean_up_tokenization_spaces=True for BPE tokenizer TokenizersBackend. The clean_up_tokenization post-processing step is designed for WordPiece tokenizers and is destructive for BPE (it strips spaces before punctuation). Set clean_up_tokenization_spaces=False to suppress this warning, or set clean_up_tokenization_spaces_for_bpe_even_though_it_will_corrupt_output=True to force cleanup anyway.
+SEPATT label=B depth=0.1 trial=0 top_sep=4090 pk=430 dist=3660 ratio=3.84 digit=0.0437 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=1 top_sep=4090 pk=430 dist=3660 ratio=3.70 digit=0.0427 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=2 top_sep=4090 pk=430 dist=3660 ratio=3.98 digit=0.0369 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=3 top_sep=4090 pk=430 dist=3660 ratio=3.83 digit=0.0442 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=4 top_sep=4090 pk=430 dist=3660 ratio=3.42 digit=0.0336 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=5 top_sep=4090 pk=430 dist=3660 ratio=3.84 digit=0.0368 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=6 top_sep=4090 pk=430 dist=3660 ratio=3.77 digit=0.0357 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=7 top_sep=4090 pk=430 dist=3660 ratio=3.87 digit=0.0374 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=8 top_sep=4090 pk=430 dist=3660 ratio=3.63 digit=0.0379 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=9 top_sep=4090 pk=430 dist=3660 ratio=3.44 digit=0.0361 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=10 top_sep=4090 pk=430 dist=3660 ratio=3.56 digit=0.0335 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=11 top_sep=4090 pk=430 dist=3660 ratio=3.61 digit=0.0325 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=12 top_sep=4090 pk=430 dist=3660 ratio=4.12 digit=0.0379 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=13 top_sep=4090 pk=430 dist=3660 ratio=3.60 digit=0.0366 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=14 top_sep=4090 pk=430 dist=3660 ratio=4.30 digit=0.0374 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=15 top_sep=4090 pk=430 dist=3660 ratio=3.61 digit=0.0352 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=16 top_sep=4090 pk=430 dist=3660 ratio=3.93 digit=0.0443 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=17 top_sep=4090 pk=430 dist=3660 ratio=3.79 digit=0.0463 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=18 top_sep=4090 pk=430 dist=3660 ratio=3.51 digit=0.0332 argmaxpk=0 correct=1
+SEPATT label=B depth=0.1 trial=19 top_sep=4090 pk=430 dist=3660 ratio=3.88 digit=0.0378 argmaxpk=0 correct=1
+SEPAGG label=B depth=0.1 n=20 top_near_frac=0.00 mean_ratio=3.76 mean_digit=0.0380 argmaxpk_frac=0.00 acc=1.00
+SEPATT label=B depth=0.3 trial=0 top_sep=4090 pk=1240 dist=2850 ratio=3.54 digit=0.0435 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=1 top_sep=4090 pk=1240 dist=2850 ratio=3.42 digit=0.0414 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=2 top_sep=4090 pk=1240 dist=2850 ratio=3.25 digit=0.0442 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=3 top_sep=4090 pk=1240 dist=2850 ratio=3.53 digit=0.0434 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=4 top_sep=4090 pk=1240 dist=2850 ratio=3.51 digit=0.0457 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=5 top_sep=4090 pk=1240 dist=2850 ratio=3.72 digit=0.0386 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=6 top_sep=4090 pk=1240 dist=2850 ratio=3.47 digit=0.0426 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=7 top_sep=4090 pk=1240 dist=2850 ratio=3.53 digit=0.0431 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=8 top_sep=4090 pk=1240 dist=2850 ratio=3.43 digit=0.0442 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=9 top_sep=4090 pk=1240 dist=2850 ratio=3.42 digit=0.0422 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=10 top_sep=4090 pk=1240 dist=2850 ratio=3.20 digit=0.0367 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=11 top_sep=4090 pk=1240 dist=2850 ratio=3.44 digit=0.0425 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=12 top_sep=4090 pk=1240 dist=2850 ratio=3.36 digit=0.0423 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=13 top_sep=4090 pk=1240 dist=2850 ratio=3.53 digit=0.0442 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=14 top_sep=4090 pk=1240 dist=2850 ratio=3.31 digit=0.0422 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=15 top_sep=4090 pk=1240 dist=2850 ratio=3.58 digit=0.0433 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=16 top_sep=4090 pk=1240 dist=2850 ratio=3.83 digit=0.0443 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=17 top_sep=4090 pk=1240 dist=2850 ratio=3.55 digit=0.0446 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=18 top_sep=4090 pk=1240 dist=2850 ratio=3.64 digit=0.0363 argmaxpk=0 correct=1
+SEPATT label=B depth=0.3 trial=19 top_sep=4090 pk=1240 dist=2850 ratio=3.68 digit=0.0463 argmaxpk=0 correct=1
+SEPAGG label=B depth=0.3 n=20 top_near_frac=0.00 mean_ratio=3.50 mean_digit=0.0426 argmaxpk_frac=0.00 acc=1.00
+SEPATT label=B depth=0.5 trial=0 top_sep=4090 pk=2051 dist=2039 ratio=3.16 digit=0.0439 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=1 top_sep=4090 pk=2051 dist=2039 ratio=3.49 digit=0.0483 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=2 top_sep=4090 pk=2051 dist=2039 ratio=2.85 digit=0.0373 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=3 top_sep=4090 pk=2051 dist=2039 ratio=3.01 digit=0.0417 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=4 top_sep=4090 pk=2051 dist=2039 ratio=3.15 digit=0.0451 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=5 top_sep=4090 pk=2051 dist=2039 ratio=2.78 digit=0.0427 argmaxpk=0 correct=0
+SEPATT label=B depth=0.5 trial=6 top_sep=4090 pk=2051 dist=2039 ratio=3.01 digit=0.0430 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=7 top_sep=4090 pk=2051 dist=2039 ratio=2.97 digit=0.0444 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=8 top_sep=4090 pk=2051 dist=2039 ratio=3.08 digit=0.0440 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=9 top_sep=4090 pk=2051 dist=2039 ratio=2.94 digit=0.0360 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=10 top_sep=4090 pk=2051 dist=2039 ratio=2.92 digit=0.0450 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=11 top_sep=4090 pk=2051 dist=2039 ratio=2.84 digit=0.0348 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=12 top_sep=4090 pk=2051 dist=2039 ratio=2.70 digit=0.0371 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=13 top_sep=4090 pk=2051 dist=2039 ratio=2.71 digit=0.0343 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=14 top_sep=4090 pk=2051 dist=2039 ratio=3.01 digit=0.0381 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=15 top_sep=4090 pk=2051 dist=2039 ratio=3.04 digit=0.0438 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=16 top_sep=4090 pk=2051 dist=2039 ratio=3.23 digit=0.0438 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=17 top_sep=4090 pk=2051 dist=2039 ratio=3.16 digit=0.0460 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=18 top_sep=4090 pk=2051 dist=2039 ratio=3.13 digit=0.0450 argmaxpk=0 correct=1
+SEPATT label=B depth=0.5 trial=19 top_sep=4090 pk=2051 dist=2039 ratio=2.72 digit=0.0345 argmaxpk=0 correct=1
+SEPAGG label=B depth=0.5 n=20 top_near_frac=0.00 mean_ratio=2.99 mean_digit=0.0414 argmaxpk_frac=0.00 acc=0.95
+SEPATT label=B depth=0.7 trial=0 top_sep=4090 pk=2862 dist=1228 ratio=3.86 digit=0.0439 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=1 top_sep=4090 pk=2862 dist=1228 ratio=3.95 digit=0.0460 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=2 top_sep=4090 pk=2862 dist=1228 ratio=3.81 digit=0.0477 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=3 top_sep=4090 pk=2862 dist=1228 ratio=3.68 digit=0.0447 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=4 top_sep=4090 pk=2862 dist=1228 ratio=3.73 digit=0.0465 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=5 top_sep=4090 pk=2862 dist=1228 ratio=3.78 digit=0.0467 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=6 top_sep=4090 pk=2862 dist=1228 ratio=3.71 digit=0.0453 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=7 top_sep=4090 pk=2862 dist=1228 ratio=3.85 digit=0.0462 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=8 top_sep=4090 pk=2862 dist=1228 ratio=3.72 digit=0.0452 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=9 top_sep=4090 pk=2862 dist=1228 ratio=3.72 digit=0.0483 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=10 top_sep=4090 pk=2862 dist=1228 ratio=3.78 digit=0.0445 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=11 top_sep=4090 pk=2862 dist=1228 ratio=3.67 digit=0.0459 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=12 top_sep=4090 pk=2862 dist=1228 ratio=4.14 digit=0.0485 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=13 top_sep=4090 pk=2862 dist=1228 ratio=3.77 digit=0.0490 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=14 top_sep=4090 pk=2862 dist=1228 ratio=3.85 digit=0.0464 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=15 top_sep=4090 pk=2862 dist=1228 ratio=3.99 digit=0.0420 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=16 top_sep=4090 pk=2862 dist=1228 ratio=3.76 digit=0.0427 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=17 top_sep=4090 pk=2862 dist=1228 ratio=4.01 digit=0.0468 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=18 top_sep=4090 pk=2862 dist=1228 ratio=3.80 digit=0.0479 argmaxpk=0 correct=1
+SEPATT label=B depth=0.7 trial=19 top_sep=4090 pk=2862 dist=1228 ratio=3.90 digit=0.0394 argmaxpk=0 correct=1
+SEPAGG label=B depth=0.7 n=20 top_near_frac=0.00 mean_ratio=3.82 mean_digit=0.0457 argmaxpk_frac=0.00 acc=1.00
+SEPATT label=B depth=0.9 trial=0 top_sep=4090 pk=3672 dist=418 ratio=5.10 digit=0.0525 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=1 top_sep=4090 pk=3672 dist=418 ratio=5.21 digit=0.0535 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=2 top_sep=4090 pk=3672 dist=418 ratio=5.28 digit=0.0520 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=3 top_sep=4090 pk=3672 dist=418 ratio=5.08 digit=0.0532 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=4 top_sep=4090 pk=3672 dist=418 ratio=4.34 digit=0.0442 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=5 top_sep=4090 pk=3672 dist=418 ratio=5.13 digit=0.0529 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=6 top_sep=4090 pk=3672 dist=418 ratio=5.21 digit=0.0525 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=7 top_sep=4090 pk=3672 dist=418 ratio=5.21 digit=0.0535 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=8 top_sep=4090 pk=3672 dist=418 ratio=5.28 digit=0.0543 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=9 top_sep=4090 pk=3672 dist=418 ratio=5.10 digit=0.0522 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=10 top_sep=4090 pk=3672 dist=418 ratio=4.82 digit=0.0460 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=11 top_sep=4090 pk=3672 dist=418 ratio=5.35 digit=0.0537 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=12 top_sep=4090 pk=3672 dist=418 ratio=4.76 digit=0.0516 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=13 top_sep=4090 pk=3672 dist=418 ratio=5.56 digit=0.0538 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=14 top_sep=4090 pk=3672 dist=418 ratio=5.54 digit=0.0532 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=15 top_sep=4090 pk=3672 dist=418 ratio=5.07 digit=0.0517 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=16 top_sep=4090 pk=3672 dist=418 ratio=4.65 digit=0.0496 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=17 top_sep=4090 pk=3672 dist=418 ratio=5.31 digit=0.0526 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=18 top_sep=4090 pk=3672 dist=418 ratio=5.11 digit=0.0558 argmaxpk=0 correct=1
+SEPATT label=B depth=0.9 trial=19 top_sep=4090 pk=3672 dist=418 ratio=4.96 digit=0.0524 argmaxpk=0 correct=1
+SEPAGG label=B depth=0.9 n=20 top_near_frac=0.00 mean_ratio=5.10 mean_digit=0.0521 argmaxpk_frac=0.00 acc=1.00
+SEPDONE label=B
