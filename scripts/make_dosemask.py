@@ -4,7 +4,7 @@
 Truncate (top): how many context rows go unscored on one chunk (C=8, W=4). The attention mask is
 the same sliding band in all four; only the loss changes. Panel 1 scores every query, including the
 starved rows at the chunk start. Panel 4 scores only queries with a full window, so every scored
-query sees exactly W real tokens; that endpoint is ST-SWA.
+query sees exactly W real tokens; that endpoint is T-SWA.
 
 Mix (bottom): instead of one truncation everywhere, alternate panel-1 steps with panel-4 steps at
 ratio alpha. The rows show 3:1 and 1:3, i.e. alpha 0.25 and 0.75, each step drawn as its own mask.
@@ -29,8 +29,8 @@ PALE = (0.80, 0.86, 0.93)          # attended but not scored
 DK = "#333"
 Q, W = 8, 4
 FS = figstyle.FS_TICK - 0.6
-PANELS = [(0, "1. SWA", "$0$ skipped"), (1, "2. T-SWA", "$1$ skipped"),
-          (2, "3. T-SWA", "$2$ skipped"), (W - 1, "4. ST-SWA", "$W{-}1$ skipped")]
+PANELS = [(0, "1. SWA", "$0$ skipped"), (1, "2.", "$1$ skipped"),
+          (2, "3.", "$2$ skipped"), (W - 1, "4. T-SWA", "$W{-}1$ skipped")]
 
 
 def mask(ax, ox, oy, skip, cell=1.0, lw=0.3, frame=0.8):
