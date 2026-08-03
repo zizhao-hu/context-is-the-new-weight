@@ -36,6 +36,13 @@ for mask in MASKS:
     assert len(fs) == 1, (mask, fs)
     runs[mask] = parse(fs[0])
 
+def learn(ev, key, tasks_):
+    """mean best post-learning ppl (peak mastery), with propagated SEM"""
+    bs_ = [min((ev[key + (s, t)] for s in range(STAGE_OF[t], 5)), key=lambda x: x[0])
+           for t in tasks_]
+    n = len(bs_)
+    return sum(v for v, _ in bs_) / n, math.sqrt(sum(sm ** 2 for _, sm in bs_)) / n
+
 def forget(ev, key, tasks_):
     """mean rise from post-learning best, with propagated SEM (0 when best = final)"""
     vals, sems = [], []
@@ -58,6 +65,7 @@ rows, cols = {}, {m: {} for m in MASKS}
 for m in MASKS:
     ev = runs[m]
     cols[m]["f_long"] = forget(ev, ("long",), ("wikitext", "gsm8k", "tofu"))
+    cols[m]["learn"] = learn(ev, ("long",), ("wikitext", "gsm8k", "arc"))
     if m not in ("bs", "ts"):    # prefix registers occupy the q<W deploy: slice excluded
         cols[m]["f_short"] = forget(ev, ("short",), ("wikitext", "gsm8k", "tofu"))
         b, fb = ev[("short", 0, "fineweb")], ev[("short", 4, "fineweb")]
@@ -67,8 +75,8 @@ for m in MASKS:
     cols[m]["fw_far"] = ev[("far", pol, 4, "fineweb")]
 
 best = {}
-for c in ("f_long", "f_short", "drift", "f_far", "fw_far"):
-    prec = 1 if c in ("drift", "fw_far") else 2
+for c in ("f_long", "learn", "f_short", "drift", "f_far", "fw_far"):
+    prec = 1 if c in ("drift", "fw_far", "learn") else 2
     have = [(round(cols[m][c][0], prec), m) for m in MASKS if c in cols[m]]
     lo = min(v for v, _ in have)
     best[c] = {m for v, m in have if v == lo}
@@ -80,26 +88,27 @@ def cell(m, c, prec=2, sign=False):
     return "\\textbf{%s}" % s if m in best[c] else s
 
 L = []
-L.append("\\begin{table}[t]")
+L.append("\\begin{table*}[t]")
 L.append("\\centering")
 L.append("\\setlength{\\abovecaptionskip}{4pt}")
 L.append("\\scriptsize")
 L.append("\\setlength{\\tabcolsep}{2.6pt}")
 L.append("\\renewcommand{\\arraystretch}{0.92}")
-L.append("\\begin{tabular}{@{}l rr r rr@{}}")
+L.append("\\begin{tabular}{@{}l rr rr rr@{}}")
 L.append("\\toprule")
-L.append(" & \\multicolumn{2}{c}{untrained short} & \\multicolumn{1}{c}{trained} & "
+L.append(" & \\multicolumn{2}{c}{untrained short} & \\multicolumn{2}{c}{trained} & "
          "\\multicolumn{2}{c}{streaming far}\\\\")
-L.append(" & \\multicolumn{2}{c}{$q < W$} & \\multicolumn{1}{c}{$q \\ge W$} & "
+L.append(" & \\multicolumn{2}{c}{$q < W$} & \\multicolumn{2}{c}{$q \\ge W$} & "
          "\\multicolumn{2}{c}{$4096$ tok, KV $\\le W$}\\\\")
-L.append("\\cmidrule(lr){2-3}\\cmidrule(lr){4-4}\\cmidrule(lr){5-6}")
-L.append("training & $\\Delta$base$\\downarrow$ & F$\\downarrow$ & F$\\downarrow$ & "
-         "F$\\downarrow$ & general$\\downarrow$\\\\")
+L.append("\\cmidrule(lr){2-3}\\cmidrule(lr){4-5}\\cmidrule(lr){6-7}")
+L.append("training & $\\Delta$base$\\downarrow$ & F$\\downarrow$ & learn$\\downarrow$ & "
+         "F$\\downarrow$ & F$\\downarrow$ & general$\\downarrow$\\\\")
 L.append("\\midrule")
 for m in MASKS:
-    L.append("%s & %s & %s & %s & %s & %s\\\\" %
+    L.append("%s & %s & %s & %s & %s & %s & %s\\\\" %
              (NAME[m], cell(m, "drift", prec=1, sign=True), cell(m, "f_short"),
-              cell(m, "f_long"), cell(m, "f_far"), cell(m, "fw_far", prec=1)))
+              cell(m, "learn", prec=1), cell(m, "f_long"),
+              cell(m, "f_far"), cell(m, "fw_far", prec=1)))
 L.append("\\bottomrule")
 L.append("\\end{tabular}")
 L.append("\\caption{\\textbf{Continual learning under the three deploy regimes} "
@@ -110,14 +119,17 @@ L.append("\\caption{\\textbf{Continual learning under the three deploy regimes} 
          "deploys of the plain masks coincide (shared base $28.8$ on FineWeb); "
          "$\\Delta$base, shift of never-trained FineWeb ppl from the base model. Prefix "
          "rows are excluded there: their registers occupy exactly this deploy, so the "
-         "slice no longer isolates the loss rule. streaming general: "
+         "slice no longer isolates the loss rule. learn: best post-learning ppl, mean "
+         "over the three natural tasks; TOFU, $360$-row verbatim memorization, is "
+         "excluded there (equal-budget fit measures overfit speed; per task in "
+         "Tab.~\\ref{tab:cltasks}). streaming general: "
          "final FineWeb ppl past the trained length ($q \\ge L$) at the $W$ KV budget, "
          "each design deploying natively; A must stream via StreamingLLM pinning, since "
          "plain sliding collapses it (FineWeb $154$, F $+29.9$); D spends $2W$. Bold, "
          "best per column. Methods, backward transfer, and per-policy streaming detail: "
          "App.~\\ref{app:cltasks}.}")
 L.append("\\label{tab:clmain}")
-L.append("\\end{table}")
+L.append("\\end{table*}")
 open(OUT_MAIN, "w").write("\n".join(L) + "\n")
 
 # ---------------- appendix streaming detail ----------------
