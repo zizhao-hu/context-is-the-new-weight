@@ -58,8 +58,8 @@ rows, cols = {}, {m: {} for m in MASKS}
 for m in MASKS:
     ev = runs[m]
     cols[m]["f_long"] = forget(ev, ("long",), ("wikitext", "gsm8k", "tofu"))
-    cols[m]["f_short"] = forget(ev, ("short",), ("wikitext", "gsm8k", "tofu"))
-    if m not in ("bs", "ts"):                       # prefix rows: stage-0 prefix untrained
+    if m not in ("bs", "ts"):    # prefix registers occupy the q<W deploy: slice excluded
+        cols[m]["f_short"] = forget(ev, ("short",), ("wikitext", "gsm8k", "tofu"))
         b, fb = ev[("short", 0, "fineweb")], ev[("short", 4, "fineweb")]
         cols[m]["drift"] = (fb[0] - b[0], math.sqrt(b[1] ** 2 + fb[1] ** 2))
     pol = NATIVE[m]
@@ -88,28 +88,29 @@ L.append("\\setlength{\\tabcolsep}{2.6pt}")
 L.append("\\renewcommand{\\arraystretch}{0.92}")
 L.append("\\begin{tabular}{@{}l rr r rr@{}}")
 L.append("\\toprule")
-L.append(" & \\multicolumn{1}{c}{trained} & \\multicolumn{2}{c}{untrained short} & "
+L.append(" & \\multicolumn{2}{c}{untrained short} & \\multicolumn{1}{c}{trained} & "
          "\\multicolumn{2}{c}{streaming far}\\\\")
-L.append(" & \\multicolumn{1}{c}{$q \\ge W$} & \\multicolumn{2}{c}{$q < W$} & "
+L.append(" & \\multicolumn{2}{c}{$q < W$} & \\multicolumn{1}{c}{$q \\ge W$} & "
          "\\multicolumn{2}{c}{$4096$ tok, KV $\\le W$}\\\\")
-L.append("\\cmidrule(lr){2-2}\\cmidrule(lr){3-4}\\cmidrule(lr){5-6}")
-L.append("training & F$\\downarrow$ & F$\\downarrow$ & $\\Delta$base$\\downarrow$ & "
+L.append("\\cmidrule(lr){2-3}\\cmidrule(lr){4-4}\\cmidrule(lr){5-6}")
+L.append("training & $\\Delta$base$\\downarrow$ & F$\\downarrow$ & F$\\downarrow$ & "
          "F$\\downarrow$ & general$\\downarrow$\\\\")
 L.append("\\midrule")
 for m in MASKS:
     L.append("%s & %s & %s & %s & %s & %s\\\\" %
-             (NAME[m], cell(m, "f_long"), cell(m, "f_short"),
-              cell(m, "drift", prec=1, sign=True),
-              cell(m, "f_far"), cell(m, "fw_far", prec=1)))
+             (NAME[m], cell(m, "drift", prec=1, sign=True), cell(m, "f_short"),
+              cell(m, "f_long"), cell(m, "f_far"), cell(m, "fw_far", prec=1)))
 L.append("\\bottomrule")
 L.append("\\end{tabular}")
 L.append("\\caption{\\textbf{Continual learning under the three deploy regimes} "
          "(naive sequential training, equal supervised tokens). F, forgetting: rise of "
          "held-out task ppl from its post-learning best, mean over the first three tasks "
          "(streaming: first two; the TOFU stream is shorter than one $4096$-token "
-         "sequence). $\\Delta$base: shift of never-trained FineWeb ppl from the base "
-         "model on the slice the truncated loss never supervises (prefix rows excluded: "
-         "their stage-$0$ deploy contains the still-untrained prefix). streaming general: "
+         "sequence). Short slice: the rows the truncated loss never supervises, where the "
+         "deploys of the plain masks coincide (shared base $28.8$ on FineWeb); "
+         "$\\Delta$base, shift of never-trained FineWeb ppl from the base model. Prefix "
+         "rows are excluded there: their registers occupy exactly this deploy, so the "
+         "slice no longer isolates the loss rule. streaming general: "
          "final FineWeb ppl past the trained length ($q \\ge L$) at the $W$ KV budget, "
          "each design deploying natively; A must stream via StreamingLLM pinning, since "
          "plain sliding collapses it (FineWeb $154$, F $+29.9$); D spends $2W$. Bold, "
