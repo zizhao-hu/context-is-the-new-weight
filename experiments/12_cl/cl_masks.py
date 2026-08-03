@@ -71,6 +71,8 @@ ap.add_argument("--ewc_batches", type=int, default=24)     # Fisher estimation b
 ap.add_argument("--lwf_alpha", type=float, default=1.0)    # KD weight
 ap.add_argument("--n_eval", type=int, default=24)          # eval chunks per task
 ap.add_argument("--seed", type=int, default=0)
+ap.add_argument("--stream_total", type=int, default=4096)
+ap.add_argument("--stream_nseq", type=int, default=6)
 ap.add_argument("--fineweb", default="/scratch1/zizhaoh/fineweb/sample/100BT/001_00005.parquet")
 ap.add_argument("--model", default="Qwen/Qwen2.5-0.5B")
 ap.add_argument("--hybrid", action="store_true")           # freeze all but full-attention layers; 8-bit AdamW + grad ckpt
@@ -222,7 +224,7 @@ def txl_logits(x, net=None):
     from transformers import DynamicCache
     net = net or model
     mem, outs = None, []
-    for j in range(0, L, W):
+    for j in range(0, x.size(1), W):
         seg = x[:, j:j + W]
         cache = DynamicCache()
         if mem is not None:
@@ -258,9 +260,12 @@ def lm_loss(x, y, mask, from_pos):
 
 @torch.no_grad()
 def eval_ppl(va):
-    """ppl over the scored set plus its SEM: delta method over per-chunk mean NLLs"""
+    """ppl over the scored set plus its SEM: delta method over per-chunk mean NLLs.
+    Two slices of one forward pass: long (q >= W, the table metric, identical scored
+    set under every deploy) and short (q < W, the rows the truncated loss never
+    supervises)."""
     model.eval()
-    chunk_means = []
+    chunk_means = {"long": [], "short": []}
     for i in range(a.n_eval):
         o = i * L
         if o + L + 1 > len(va):
@@ -268,22 +273,98 @@ def eval_ppl(va):
         x = va[o:o + L][None].to(dev); y = va[o + 1:o + L + 1][None].to(dev)
         logits = txl_logits(x) if TXL else fwd_logits(x, DEPLOY_MASK)
         lp = F.log_softmax(logits.float(), dim=-1)
-        nll = -lp.gather(-1, y[..., None]).squeeze(-1)[:, W:]      # same scored set under every deploy
-        chunk_means.append(nll.mean().item())
+        nll = -lp.gather(-1, y[..., None]).squeeze(-1)
+        chunk_means["long"].append(nll[:, W:].mean().item())
+        chunk_means["short"].append(nll[:, :W].mean().item())
     model.train()
-    n = len(chunk_means)
-    mu = sum(chunk_means) / max(n, 1)
-    var = sum((c - mu) ** 2 for c in chunk_means) / max(n - 1, 1)
-    ppl = math.exp(mu)
-    sem = ppl * math.sqrt(var / max(n, 1))
-    return ppl, sem
+    out = {}
+    for k, cm in chunk_means.items():
+        n = len(cm)
+        mu = sum(cm) / max(n, 1)
+        var = sum((c - mu) ** 2 for c in cm) / max(n - 1, 1)
+        ppl = math.exp(mu)
+        out[k] = (ppl, ppl * math.sqrt(var / max(n, 1)))
+    return out
+
+STREAM_POLICIES = {"a": ("full", "slide", "sllm"), "b": ("full", "slide"), "t": ("full", "slide"),
+                   "bs": ("full", "prefix"), "ts": ("full", "prefix"),
+                   "c": ("full", "sllm"), "d": ("full", "txl")}
+
+@torch.no_grad()
+def eval_stream(va, policy):
+    """bounded-cache streaming ppl on sequences beyond the training length L.
+    Chunked prefill (c tokens) with pre-chunk eviction to W-c retained entries keeps
+    every query's reach within the W budget (effective window in [W-c, W]).
+    slide: keep last W-c. sllm: StreamingLLM, first 4 real tokens + last W-c-4.
+    prefix: learned sink prefix + last W-c-nP. txl: segment recurrence (budget 2W).
+    full: unbounded reference. Scores all (q >= W) and far (q >= L, strictly beyond
+    the trained length); SEM over sequences."""
+    from transformers import DynamicCache
+    total, c = a.stream_total, 128
+    keep = W - c
+    model.eval()
+    means = {"all": [], "far": []}
+    for i in range(a.stream_nseq):
+        o = i * total
+        if o + total + 1 > len(va):
+            break
+        x = va[o:o + total][None].to(dev); y = va[o + 1:o + total + 1][None].to(dev)
+        if policy == "full":
+            logits = model(input_ids=x).logits
+        elif policy == "txl":
+            logits = txl_logits(x)
+        else:
+            cache, outs = DynamicCache(), []
+            if policy == "prefix":
+                for i_, (k, v) in enumerate(zip(PK, PV)):
+                    cache.update(k, v, i_)
+            for j in range(0, total, c):
+                seg = x[:, j:j + c]
+                pos = torch.arange(j, j + seg.size(1), device=dev)[None]
+                o_ = model(input_ids=seg, past_key_values=cache,
+                           position_ids=pos, use_cache=True)
+                outs.append(o_.logits)
+                cache = DynamicCache()
+                for i_, (k, v) in enumerate(kv_layers(o_.past_key_values)):
+                    if k.size(2) > keep:
+                        if policy == "slide":
+                            k, v = k[:, :, -keep:], v[:, :, -keep:]
+                        elif policy == "sllm":
+                            k = torch.cat([k[:, :, :4], k[:, :, -(keep - 4):]], 2)
+                            v = torch.cat([v[:, :, :4], v[:, :, -(keep - 4):]], 2)
+                        else:                                     # prefix
+                            nP_ = PK[i_].size(2)
+                            k = torch.cat([PK[i_], k[:, :, -(keep - nP_):]], 2)
+                            v = torch.cat([PV[i_], v[:, :, -(keep - nP_):]], 2)
+                    cache.update(k, v, i_)
+            logits = torch.cat(outs, 1)
+        lp = F.log_softmax(logits.float(), dim=-1)
+        nll = -lp.gather(-1, y[..., None]).squeeze(-1)
+        means["all"].append(nll[:, W:].mean().item())
+        means["far"].append(nll[:, L:].mean().item())
+    model.train()
+    if not means["all"]:
+        return None
+    out = {}
+    for k, cm in means.items():
+        n = len(cm)
+        mu = sum(cm) / n
+        var = sum((c_ - mu) ** 2 for c_ in cm) / max(n - 1, 1)
+        ppl = math.exp(mu)
+        out[k] = (ppl, ppl * math.sqrt(var / n), n)
+    return out
 
 def eval_all(stage):
-    for name, _, va in tasks:
-        pp, se = eval_ppl(va)
-        print("CLEVAL stage=%d task=%s ppl=%.4f sem=%.4f" % (stage, name, pp, se), flush=True)
-    pp, se = eval_ppl(probe[1])
-    print("CLEVAL stage=%d task=%s ppl=%.4f sem=%.4f" % (stage, probe[0], pp, se), flush=True)
+    for name, va in [(n_, v_) for n_, _, v_ in tasks] + [probe]:
+        r = eval_ppl(va)
+        print("CLEVAL stage=%d task=%s ppl=%.4f sem=%.4f" % ((stage, name) + r["long"]), flush=True)
+        print("CLEVALSHORT stage=%d task=%s ppl=%.4f sem=%.4f" % ((stage, name) + r["short"]), flush=True)
+        for pol in STREAM_POLICIES.get(a.mask, ()):
+            s = eval_stream(va, pol)
+            if s:
+                print("STREAMEVAL stage=%d task=%s policy=%s all=%.4f asem=%.4f far=%.4f fsem=%.4f n=%d"
+                      % (stage, name, pol, s["all"][0], s["all"][1], s["far"][0], s["far"][1], s["all"][2]),
+                      flush=True)
 
 # ---------------- sequential training ----------------
 def fisher_diag(tr):
