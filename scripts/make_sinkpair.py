@@ -5,8 +5,8 @@ Same construction as the loss-mask ablation figures: a single-column figure carr
 side by side, one shared legend above them, axis names inside the axes, matched tick and label
 sizes.
 
-Left: for each deep query the sinks inside its window are ranked by nearness, and each takes a
-share of that query's sink mass. Which sink does a query pick?
+Left: for each deep query the sinks inside its window are ranked by nearness; the panel shows
+the absolute attention mass the rank-k sink receives, on the same y scale as the right panel.
 
 Right: each sink column followed from the step it enters a window to the step it is evicted,
 averaged over sinks. Does a given column gain or lose as it ages? Pooling every query-sink pair
@@ -44,12 +44,13 @@ fig, (ax, bx) = plt.subplots(1, 2, figsize=(3.51, 1.49),
 
 for key, label, col, mk in MODELS:
     d = {int(k): v for k, v in json.load(open(TR + "rankprof_%s.json" % key)).items()}
-    m = [d.get(r, {}).get("mean", np.nan) for r in RANKS]
-    e = [d.get(r, {}).get("sem", np.nan) for r in RANKS]
+    m = [d.get(r, {}).get("abs_mean", np.nan) for r in RANKS]
+    e = [d.get(r, {}).get("abs_sem", np.nan) for r in RANKS]
     ax.errorbar(RANKS, m, yerr=e, color=col, marker=mk, ms=2.4, lw=1.0,
                 elinewidth=0.6, capsize=1.0, capthick=0.6)
 ax.set_xticks(RANKS)          # every rank, 1 through 8
-ax.set_yticks([0.0, 0.2, 0.4])
+ax.set_ylim(0.0, 0.10)
+ax.set_yticks([0.0, 0.1])
 ax.set_xlabel("sink rank", fontsize=figstyle.FS_AXIS)
 
 for key, label, col, mk in MODELS:
@@ -71,12 +72,12 @@ bx.set_xlabel("sink distance from q", fontsize=figstyle.FS_AXIS)
 for a in (ax, bx):
     figstyle.clean(a)
     a.tick_params(labelsize=figstyle.FS_TICK - 1.0)
-figstyle.yname(ax, "share of sink mass", pad=0.115)
+figstyle.yname(ax, "mass received", pad=0.115)
 bx.yaxis.tick_right()                        # mirrored outward, so the gap stays clear
 bx.spines["left"].set_visible(False)
 bx.spines["right"].set_visible(True)
 bx.spines["right"].set_linewidth(figstyle.LW_AXES)
-figstyle.yname(bx, "mass received", pad=0.115, side="right")
+
 
 fig.legend(handles=[Line2D([], [], color=c, marker=k, ms=2.6, lw=1.0, label=l)
                     for _, l, c, k in MODELS],
