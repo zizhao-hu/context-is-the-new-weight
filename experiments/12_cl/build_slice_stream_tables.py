@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""Build the slice/stream CL tables from the naive-group rerun logs (cls_* jobs).
+
+Usage: build_slice_stream_tables.py <logdir> <cl_main.tex> <cl_stream.tex>
+
+cl_main.tex   main-text Table: 7 masks x three regimes (trained slice q>=W,
+              untrained short slice q<W, streaming far slice q>=L at the W budget)
+cl_stream.tex appendix detail: per-deploy-policy streaming finals + forgetting
+"""
+import glob, math, re, sys
+
+LOGDIR, OUT_MAIN, OUT_STREAM = sys.argv[1], sys.argv[2], sys.argv[3]
+STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
+MASKS = ["a", "b", "bs", "c", "d", "t", "ts"]
+NAME = {"a": "A.\\ full causal", "b": "B.\\ SWA", "bs": "B $+$ sink prefix",
+        "c": "C.\\ SWAA", "d": "D.\\ Transformer-XL", "t": "E.\\ T-SWA",
+        "ts": "E $+$ sink prefix"}
+NATIVE = {"a": "sllm", "b": "slide", "bs": "prefix", "c": "sllm", "d": "txl",
+          "t": "slide", "ts": "prefix"}
+
+def parse(f):
+    ev = {}
+    for ln in open(f):
+        m = re.match(r"CLEVAL(SHORT)? stage=(\d) task=(\w+) ppl=([\d.]+) sem=([\d.]+)", ln)
+        if m:
+            ev[("short" if m[1] else "long", int(m[2]), m[3])] = (float(m[4]), float(m[5]))
+        m = re.match(r"STREAMEVAL stage=(\d) task=(\w+) policy=(\w+) all=([\d.]+) asem=([\d.]+) "
+                     r"far=([\d.]+) fsem=([\d.]+)", ln)
+        if m:
+            ev[("far", m[3], int(m[1]), m[2])] = (float(m[6]), float(m[7]))
+    return ev
+
+runs = {}
+for mask in MASKS:
+    fs = glob.glob("%s/cl_cls_%s_naive_*.log" % (LOGDIR, mask))
+    assert len(fs) == 1, (mask, fs)
+    runs[mask] = parse(fs[0])
+
+def forget(ev, key, tasks_):
+    """mean rise from post-learning best, with propagated SEM (0 when best = final)"""
+    vals, sems = [], []
+    for t in tasks_:
+        series = [(ev[key + (s, t)]) for s in range(STAGE_OF[t], 5)]
+        best = min(range(len(series)), key=lambda i: series[i][0])
+        fin = series[-1]
+        vals.append(fin[0] - series[best][0])
+        sems.append(0.0 if best == len(series) - 1
+                    else math.sqrt(fin[1] ** 2 + series[best][1] ** 2))
+    n = len(vals)
+    return sum(vals) / n, math.sqrt(sum(s ** 2 for s in sems)) / n
+
+def pm(v, s, prec=2, sign=False):
+    f = "%+." + str(prec) + "f" if sign else "%." + str(prec) + "f"
+    return (f % v) + ("{\\tiny$\\pm$%.*f}" % (max(prec - 1, 1), s))
+
+# ---------------- main table ----------------
+rows, cols = {}, {m: {} for m in MASKS}
+for m in MASKS:
+    ev = runs[m]
+    cols[m]["f_long"] = forget(ev, ("long",), ("wikitext", "gsm8k", "tofu"))
+    cols[m]["f_short"] = forget(ev, ("short",), ("wikitext", "gsm8k", "tofu"))
+    if m not in ("bs", "ts"):                       # prefix rows: stage-0 prefix untrained
+        b, fb = ev[("short", 0, "fineweb")], ev[("short", 4, "fineweb")]
+        cols[m]["drift"] = (fb[0] - b[0], math.sqrt(b[1] ** 2 + fb[1] ** 2))
+    pol = NATIVE[m]
+    cols[m]["f_far"] = forget(ev, ("far", pol), ("wikitext", "gsm8k"))
+    cols[m]["fw_far"] = ev[("far", pol, 4, "fineweb")]
+
+best = {}
+for c in ("f_long", "f_short", "drift", "f_far", "fw_far"):
+    prec = 1 if c in ("drift", "fw_far") else 2
+    have = [(round(cols[m][c][0], prec), m) for m in MASKS if c in cols[m]]
+    lo = min(v for v, _ in have)
+    best[c] = {m for v, m in have if v == lo}
+
+def cell(m, c, prec=2, sign=False):
+    if c not in cols[m]:
+        return "---"
+    s = pm(*cols[m][c], prec=prec, sign=sign)
+    return "\\textbf{%s}" % s if m in best[c] else s
+
+L = []
+L.append("\\begin{table}[t]")
+L.append("\\centering")
+L.append("\\setlength{\\abovecaptionskip}{4pt}")
+L.append("\\scriptsize")
+L.append("\\setlength{\\tabcolsep}{2.6pt}")
+L.append("\\renewcommand{\\arraystretch}{0.92}")
+L.append("\\begin{tabular}{@{}l rr r rr@{}}")
+L.append("\\toprule")
+L.append(" & \\multicolumn{1}{c}{trained} & \\multicolumn{2}{c}{untrained short} & "
+         "\\multicolumn{2}{c}{streaming far}\\\\")
+L.append(" & \\multicolumn{1}{c}{$q \\ge W$} & \\multicolumn{2}{c}{$q < W$} & "
+         "\\multicolumn{2}{c}{$4096$ tok, KV $\\le W$}\\\\")
+L.append("\\cmidrule(lr){2-2}\\cmidrule(lr){3-4}\\cmidrule(lr){5-6}")
+L.append("training & F$\\downarrow$ & F$\\downarrow$ & $\\Delta$base$\\downarrow$ & "
+         "F$\\downarrow$ & general$\\downarrow$\\\\")
+L.append("\\midrule")
+for m in MASKS:
+    L.append("%s & %s & %s & %s & %s & %s\\\\" %
+             (NAME[m], cell(m, "f_long"), cell(m, "f_short"),
+              cell(m, "drift", prec=1, sign=True),
+              cell(m, "f_far"), cell(m, "fw_far", prec=1)))
+L.append("\\bottomrule")
+L.append("\\end{tabular}")
+L.append("\\caption{\\textbf{Continual learning under the three deploy regimes} "
+         "(naive sequential training, equal supervised tokens). F, forgetting: rise of "
+         "held-out task ppl from its post-learning best, mean over the first three tasks "
+         "(streaming: first two; the TOFU stream is shorter than one $4096$-token "
+         "sequence). $\\Delta$base: shift of never-trained FineWeb ppl from the base "
+         "model on the slice the truncated loss never supervises (prefix rows excluded: "
+         "their stage-$0$ deploy contains the still-untrained prefix). streaming general: "
+         "final FineWeb ppl past the trained length ($q \\ge L$) at the $W$ KV budget, "
+         "each design deploying natively; A must stream via StreamingLLM pinning, since "
+         "plain sliding collapses it (FineWeb $154$, F $+29.9$); D spends $2W$. Bold, "
+         "best per column. Methods, backward transfer, and per-policy streaming detail: "
+         "App.~\\ref{app:cltasks}.}")
+L.append("\\label{tab:clmain}")
+L.append("\\end{table}")
+open(OUT_MAIN, "w").write("\n".join(L) + "\n")
+
+# ---------------- appendix streaming detail ----------------
+ROWS = [("a", "full", "A, full attention (unbounded)"),
+        ("a", "slide", "A, sliding $W$"),
+        ("a", "sllm", "A, StreamingLLM $4{+}$recent"),
+        ("b", "slide", "B, sliding $W$ (native)"),
+        ("bs", "prefix", "B $+$ sink, prefix $+$ recent"),
+        ("c", "sllm", "C, pinned $4{+}$recent (native)"),
+        ("d", "txl", "D, segment recurrence ($2W$)"),
+        ("t", "slide", "E, sliding $W$ (native)"),
+        ("ts", "prefix", "E $+$ sink, prefix $+$ recent")]
+TASKS = ("wikitext", "gsm8k", "arc", "fineweb")
+S = []
+S.append("\\begin{table*}[t]")
+S.append("\\centering")
+S.append("\\setlength{\\abovecaptionskip}{4pt}")
+S.append("\\scriptsize")
+S.append("\\setlength{\\tabcolsep}{2.6pt}")
+S.append("\\renewcommand{\\arraystretch}{0.92}")
+S.append("\\begin{tabular}{@{}l rrrr r@{}}")
+S.append("\\toprule")
+S.append("deploy & \\multicolumn{1}{c}{wikitext} & \\multicolumn{1}{c}{gsm8k} & "
+         "\\multicolumn{1}{c}{arc} & \\multicolumn{1}{c}{fineweb} & F$\\downarrow$\\\\")
+S.append("\\midrule")
+for m, pol, label in ROWS:
+    ev = runs[m]
+    cs = [pm(*ev[("far", pol, 4, t)], prec=1) for t in TASKS]
+    fv, fs = forget(ev, ("far", pol), ("wikitext", "gsm8k"))
+    S.append("%s & %s & %s\\\\" % (label, " & ".join(cs), pm(fv, fs)))
+S.append("\\bottomrule")
+S.append("\\end{tabular}")
+S.append("\\caption{Streaming detail behind Tab.~\\ref{tab:clmain}: final (stage-$4$) "
+         "far-slice ppl ($4096$-token streams, scored $q \\ge L{=}1024$) per deploy "
+         "policy, and streaming forgetting F (first two tasks). Cache never exceeds "
+         "$W{=}256$ entries except D ($2W$); A's unbounded row is the reference its "
+         "bounded deploys chase. Base-model anchors on FineWeb: full $20.0$, sliding "
+         "$85.9$, StreamingLLM $22.1$.}")
+S.append("\\label{tab:clstream}")
+S.append("\\end{table*}")
+open(OUT_STREAM, "w").write("\n".join(S) + "\n")
+print("wrote", OUT_MAIN, "and", OUT_STREAM)
