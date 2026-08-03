@@ -60,7 +60,11 @@ def pm(v, s, prec=2, sign=False):
     f = "%+." + str(prec) + "f" if sign else "%." + str(prec) + "f"
     return (f % v) + ("{\\tiny$\\pm$%.*f}" % (max(prec - 1, 1), s))
 
-# ---------------- main table ----------------
+# ---------------- main table: the 2x2 recipe ablation ----------------
+MAIN = ["a", "b", "t", "bs", "ts"]
+MAIN_NAME = {"a": "A.\\ full causal (reference)", "b": "B.\\ SWA (sliding base)",
+             "t": "E.\\ T-SWA ($+$truncated loss)", "bs": "B $+$ sink prefix ($+$sink)",
+             "ts": "E $+$ sink prefix (both)"}
 rows, cols = {}, {m: {} for m in MASKS}
 for m in MASKS:
     ev = runs[m]
@@ -77,7 +81,7 @@ for m in MASKS:
 best = {}
 for c in ("f_long", "learn", "f_short", "drift", "f_far", "fw_far"):
     prec = 1 if c in ("drift", "fw_far", "learn") else 2
-    have = [(round(cols[m][c][0], prec), m) for m in MASKS if c in cols[m]]
+    have = [(round(cols[m][c][0], prec), m) for m in MAIN if c in cols[m]]
     lo = min(v for v, _ in have)
     best[c] = {m for v, m in have if v == lo}
 
@@ -104,15 +108,16 @@ L.append("\\cmidrule(lr){2-3}\\cmidrule(lr){4-5}\\cmidrule(lr){6-7}")
 L.append("training & $\\Delta$base$\\downarrow$ & F$\\downarrow$ & learn$\\downarrow$ & "
          "F$\\downarrow$ & F$\\downarrow$ & general$\\downarrow$\\\\")
 L.append("\\midrule")
-for m in MASKS:
+for m in MAIN:
     L.append("%s & %s & %s & %s & %s & %s & %s\\\\" %
-             (NAME[m], cell(m, "drift", prec=1, sign=True), cell(m, "f_short"),
+             (MAIN_NAME[m], cell(m, "drift", prec=1, sign=True), cell(m, "f_short"),
               cell(m, "learn", prec=1), cell(m, "f_long"),
               cell(m, "f_far"), cell(m, "fw_far", prec=1)))
 L.append("\\bottomrule")
 L.append("\\end{tabular}")
 L.append("\\caption{\\textbf{Continual learning under the three deploy regimes} "
-         "(naive sequential training, equal supervised tokens). F, forgetting: rise of "
+         "(the recipe's two components ablated on the sliding base; naive sequential "
+         "training, equal supervised tokens). F, forgetting: rise of "
          "held-out task ppl from its post-learning best, mean over the first three tasks "
          "(streaming: first two; the TOFU stream is shorter than one $4096$-token "
          "sequence). Short slice: the rows the truncated loss never supervises, where the "
@@ -125,9 +130,11 @@ L.append("\\caption{\\textbf{Continual learning under the three deploy regimes} 
          "Tab.~\\ref{tab:cltasks}). streaming general: "
          "final FineWeb ppl past the trained length ($q \\ge L$) at the $W$ KV budget, "
          "each design deploying natively; A must stream via StreamingLLM pinning, since "
-         "plain sliding collapses it (FineWeb $154$, F $+29.9$); D spends $2W$. Bold, "
-         "best per column. Methods, backward transfer, and per-policy streaming detail: "
-         "App.~\\ref{app:cltasks}.}")
+         "plain sliding collapses it (FineWeb $154$, F $+29.9$). Bold, best per column. "
+         "The literature baselines C (SWAA) and D (Transformer-XL) are in "
+         "Tabs.~\\ref{tab:cl} and~\\ref{tab:clstream}; D reaches F $0.94$ trained and "
+         "$1.60$ streaming at a doubled ($2W$) KV budget. Methods, backward transfer, "
+         "and per-policy streaming detail: App.~\\ref{app:cltasks}.}")
 L.append("\\label{tab:clmain}")
 L.append("\\end{table*}")
 open(OUT_MAIN, "w").write("\n".join(L) + "\n")
