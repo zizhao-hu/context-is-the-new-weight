@@ -154,7 +154,7 @@ open(OUT_REGIMES, "w").write("\n".join(L) + "\n")
 
 # ---------------- main table: the recipe against the two canonical baselines ----------------
 CPT = [("a", "A.\\ full causal"), ("tf", "F.\\ truncated full"), ("b", "B.\\ SWA"),
-       ("ts", "T-SWA ($+$sink prefix)")]
+       ("t16", "B $+$ skip $16$"), ("ts", "T-SWA ($+$sink prefix)")]
 cbest = {}
 for c in ("learn", "f_long", "f_far", "fw_far"):
     prec = 1 if c in ("fw_far", "learn") else 2
@@ -185,15 +185,15 @@ M.append("\\bottomrule")
 M.append("\\end{tabular}")
 M.append("\\caption{\\textbf{Continual learning at the deploy budget}: full causal, SWA, and "
          "T-SWA with its sink prefix, the recipe default, and F, the same truncated loss "
-         "on the unchanged full mask, its loss-rule control; both remove the first "
-         "$W{=}256$ of the $L{=}1024$ positions per window from the loss, the tokens "
-         "staying in context (naive sequential training, equal "
-         "supervised tokens). learn: best post-learning ppl over the three natural tasks. "
-         "F: forgetting, rise of held-out task ppl from its post-learning best, on the "
-         "trained slice ($q \\ge W$, first three tasks) and on $4096$-token streams past "
-         "the trained length at the $W$ KV budget (first two; the TOFU stream is shorter "
-         "than one sequence), where A must stream via StreamingLLM pinning since plain "
-         "sliding collapses it. general: final streaming FineWeb ppl. Bold, best per "
+         "on the unchanged full mask, its loss-rule control; B $+$ skip $16$: only the "
+         "first $16$ rows leave the loss, the parameter-free stabilizer; E and F remove "
+         "the first $W{=}256$ of $L{=}1024$ positions per window (tokens stay in context; "
+         "naive sequential training, equal supervised tokens). learn: best post-learning "
+         "ppl over the three natural tasks. F: forgetting, rise from the post-learning "
+         "best, on the trained slice ($q \\ge W$, first three tasks) and on $4096$-token "
+         "streams past the trained length at the $W$ budget (first two; TOFU's stream is "
+         "too short), A streaming via StreamingLLM since plain sliding collapses it. "
+         "general: final streaming FineWeb ppl. Bold, best per "
          "column. The component ablation with the untrained-short slice, the literature "
          "baselines, methods, and per-task detail are in App.~\\ref{app:cltasks}.}")
 M.append("\\label{tab:clmain}")
