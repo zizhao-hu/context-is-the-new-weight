@@ -67,3 +67,4 @@ paper/*.toc
 
 # Template archive (we commit the extracted files, not the zip)
 paper/neurips_2026_template.zip
+baselines/ReAct/
