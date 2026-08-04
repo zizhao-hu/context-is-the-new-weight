@@ -20,11 +20,71 @@ Run: python lmeval_sswa.py --ckpt /scratch1/zizhaoh/cpt_ckpts/a --deploy full \
 import argparse, json, os
 import torch
 
+def _install_riding(model, mode, W, prompt, reg_k, reg_v, dev, bf16):
+    """Riding registers at constant offset (port of cpt_masks.py RIDING patch)."""
+    import transformers.models.llama.modeling_llama as _ml2
+    from transformers.models.llama.modeling_llama import repeat_kv as _repkv2, rotate_half as _rh
+    from transformers.cache_utils import DynamicCache
+    nLr = model.config.num_hidden_layers
+    hdr_ = model.config.hidden_size // model.config.num_attention_heads
+    nP = (reg_k.shape[1] if mode == "prefix" else prompt.shape[0])
+    RIDE_KV = {}
+    RIDE_D = (W + torch.arange(nP, device=dev).flip(0)).float()
+    _dmy = torch.zeros(1, nP, hdr_, device=dev, dtype=bf16)
+    with torch.no_grad():
+        COS_D, SIN_D = model.model.rotary_emb(_dmy, RIDE_D[None].long())
+    if mode == "prefix":
+        for li in range(nLr):
+            RIDE_KV[li] = (reg_k[li].permute(1, 0, 2)[None], reg_v[li].permute(1, 0, 2)[None])
+    else:
+        with torch.no_grad():
+            pos = torch.arange(nP, device=dev)
+            out = model(inputs_embeds=prompt[None], position_ids=pos[None], use_cache=True,
+                        past_key_values=DynamicCache())
+            cosP, sinP = model.model.rotary_emb(_dmy, pos[None])
+            for li, Lr in enumerate(out.past_key_values.layers):
+                kc = Lr.keys
+                kp = kc * cosP.unsqueeze(1) - _rh(kc) * sinP.unsqueeze(1)
+                RIDE_KV[li] = (kp, Lr.values)
+    _orig = _ml2.LlamaAttention.forward
+    def _ride_fwd(self, hidden_states, position_embeddings, attention_mask=None,
+                  past_key_value=None, cache_position=None, **kw):
+        from transformers.models.llama.modeling_llama import apply_rotary_pos_emb as _arp
+        Bq, Tq, _ = hidden_states.shape
+        q = self.q_proj(hidden_states).view(Bq, Tq, -1, hdr_).transpose(1, 2)
+        k = self.k_proj(hidden_states).view(Bq, Tq, -1, hdr_).transpose(1, 2)
+        v = self.v_proj(hidden_states).view(Bq, Tq, -1, hdr_).transpose(1, 2)
+        cos, sin = position_embeddings
+        qr, kr = _arp(q, k, cos, sin)
+        _pkv = past_key_value if past_key_value is not None else kw.get("past_key_values", None)
+        if _pkv is not None:
+            kr, v = _pkv.update(kr, v, self.layer_idx, {"cache_position": cache_position})
+        ks = _repkv2(kr, self.num_key_value_groups); vs = _repkv2(v, self.num_key_value_groups)
+        sc_ = getattr(self, "scaling", hdr_ ** -0.5)
+        aw = torch.matmul(qr, ks.transpose(2, 3)) * sc_
+        if attention_mask is not None: aw = aw + attention_mask[:, :, :, :ks.shape[-2]]
+        qp = qr * cos.unsqueeze(1) - _rh(qr) * sin.unsqueeze(1)
+        pk, pv = RIDE_KV[self.layer_idx]
+        krd = pk * COS_D.unsqueeze(1) - _rh(pk) * SIN_D.unsqueeze(1)
+        krg = _repkv2(krd.expand(Bq, -1, -1, -1), self.num_key_value_groups)
+        lr = torch.matmul(qp, krg.transpose(2, 3)) * sc_
+        aw = torch.cat([lr, aw], dim=-1)
+        aw = torch.nn.functional.softmax(aw, dim=-1, dtype=torch.float32).to(qr.dtype)
+        nPr = pk.shape[2]
+        vrg = _repkv2(pv.expand(Bq, -1, -1, -1), self.num_key_value_groups)
+        out = torch.matmul(aw[..., :nPr], vrg) + torch.matmul(aw[..., nPr:], vs)
+        out = out.transpose(1, 2).reshape(Bq, Tq, -1)
+        return self.o_proj(out), None
+    _ml2.LlamaAttention.forward = _ride_fwd
+    print("RIDING_PATCHED mode=%s nP=%d W=%d" % (mode, nP, W), flush=True)
+
+
 ap = argparse.ArgumentParser()
 ap.add_argument("--ckpt", required=True)            # HF dir, or plain model name for the base row
 ap.add_argument("--deploy", default="full", choices=["full", "sliding", "streaming"])
 ap.add_argument("--window", type=int, default=1024)
-ap.add_argument("--sink_keep", type=int, default=4)  # S for streaming
+ap.add_argument("--sink_keep", type=int, default=4)
+ap.add_argument("--riding", default="none", choices=["none", "token", "prefix"])   # riding registers (constant offset); ckpt files alone cannot distinguish  # S for streaming
 ap.add_argument("--tasks", default="lambada_openai,piqa,hellaswag,winogrande,arc_easy,arc_challenge,siqa_pq,boolq")
 ap.add_argument("--include_path", default="/project2/jessetho_1732/zizhaoh/context-is-the-new-weight/experiments/11_lmeval/tasks")
 ap.add_argument("--limit", type=int, default=0)      # >0: debug subset
@@ -68,6 +128,10 @@ class SSWALM(HFLM):
             elif os.path.exists(sc):
                 self.sink = "scalar"
                 self._patch_scalar(torch.load(sc, map_location=dev).to(bf16))
+        if a.riding != "none":
+            _install_riding(self.model, a.riding, W, self.prompt, self.reg_k, self.reg_v, dev, bf16)
+            self.sink = "riding"      # plain mask path; registers live inside attention
+            self.prompt = self.reg_k = self.reg_v = None
         print("SSWALM ckpt=%s deploy=%s W=%d sink=%s" % (ckpt, deploy, W, self.sink), flush=True)
 
     # ---- scalar sink: per-head softmax-denominator logit (copied from cpt_masks.py) ----

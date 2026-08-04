@@ -83,11 +83,14 @@ ox = place("f", nP + Q, G);  panel(ox, "E $+$ fixed sink", nP + Q,
 ox = place("g", nP + Q, G);  panel(ox, "E $+$ riding sink", nP + Q,
                               lambda q, c: band_ride(q, c, nP),
                               brackets=[(0, nP, "trainable sink", orange)], loss_from=LOSS0)
+ox = place("tf", Q, G); panel(ox, "F. truncated full", Q,
+                              lambda q, c: (blue if c <= q else None) if q >= LOSS0 else None,
+                              loss_from=LOSS0)
 T = x
 
 # group labels
 lit_x0 = POS["a"][0]; lit_x1 = POS["d"][0] + POS["d"][1]
-our_x0 = POS["e"][0] - 1.6; our_x1 = POS["g"][0] + POS["g"][1]
+our_x0 = POS["e"][0] - 1.6; our_x1 = POS["tf"][0] + POS["tf"][1]
 ax.text((lit_x0 + lit_x1) / 2.0, ry + Q + 2.05, "Existing literature", ha="center", fontsize=HFS, fontweight="bold")
 ax.text((our_x0 + our_x1) / 2.0, ry + Q + 2.05, "This work: truncated sliding window attention",
         ha="center", fontsize=HFS, fontweight="bold")
@@ -105,7 +108,7 @@ def fzig(ox, off, q0=0):
     a, b = zip(*pts); ax.plot(a, b, color="black", lw=2.0, zorder=6)
 # on e/f/g the zigzag only tracks the scored rows -- the context rows are blank
 for k, off, q0 in [("a", 0, 0), ("b", 0, 0), ("c", 0, 0), ("d", 2, 0),
-                   ("e", 0, LOSS0), ("f", nP, LOSS0), ("g", nP, LOSS0)]:
+                   ("e", 0, LOSS0), ("f", nP, LOSS0), ("g", nP, LOSS0), ("tf", 0, LOSS0)]:
     fzig(POS[k][0], off, q0)
 # d alone has a history / current-chunk split worth boxing
 ax.add_patch(Rectangle((POS["d"][0] + (Q + 2) - Q, ry), Q, Q, fill=False, edgecolor="black", lw=2.8, zorder=7))

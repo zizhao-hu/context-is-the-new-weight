@@ -1,0 +1,19 @@
+\begin{table}[t]
+\centering
+\caption{Peak-alignment site per context. For each context, we report the
+site at which the RMSNorm cosine between $v^\text{ctx}$ and~$v^\text{dist}$
+peaks. Llama-3.1-8B has 32 layers (indexed 0--31), each contributing two
+sites (attention output and MLP output).}
+\label{tab:peak}
+\begin{tabular}{lccc}
+\toprule
+Context & Peak layer & Peak sublayer & Peak cosine \\
+\midrule
+haiku                  & 26   & mlp  & 0.797 \\
+pirate                 & 25   & mlp  & 0.685 \\
+concise                & 25   & attn & 0.674 \\
+fewshot\_translate\_fr & 26   & mlp  & 0.670 \\
+factual                & 31   & mlp  & 0.422 \\
+\bottomrule
+\end{tabular}
+\end{table}

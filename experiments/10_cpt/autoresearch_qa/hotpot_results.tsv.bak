@@ -1,0 +1,23 @@
+row	full_F1	full_Acc	full_ppl	stream_F1	stream_Acc	stream_ppl
+a.full-causal	.344	.40	5.67	.294*	.38	14.9
+a+sink_token	.352	.42	5.41	.286	.33	12.2
+a+sink_scalar	.307	.38	5.57	.134	.14	32.4
+a+sink_prefix	.322	.41	5.20	.294	.34	11.9
+a+2slot_2p0	.282	.37	6.30	.170	.20	23.2
+a+2slot_1p1r	.323	.39	5.82	.196	.23	22.6
+a+2slot_2ride	.332	.39	5.77	.098	.14	30.9
+b.window	.278	.36	7.20	.234	.31	16.8
+b+sink_token	.320	.38	5.59	.269	.32	12.2
+b+riding_token	.300	.35	5.78	.261	.30	12.3
+b+sink_scalar	.263	.35	7.47	.215	.28	14.5
+b+sink_prefix	.270	.35	6.29	.244	.31	12.6
+b+riding_prefix	.237	.32	7.55	.252	.31	14.2
+b+2slot_2p0	.270	.32	6.78	.265	.33	12.7
+b+2slot_1p1rt.229t.31t7.66t.225t.29t14.4
+b+2slot_2ridet.263t.32t7.53t.236t.31t14.7
+c.SWAA	.253	.31	6.71	.210*	.28	16.8
+e.TransformerXL	.292	.35	6.57	.064	.11	65.7
+f.sliding-history	.279	.35	6.85	.254	.35	14.5
+f+sink_token	.332	.39	5.58	.262	.33	12.4
+f+sink_prefix	.314	.40	5.99	.251	.33	13.1
+g.sliding+warmup	.268	.29	7.51	.242	.29	14.6

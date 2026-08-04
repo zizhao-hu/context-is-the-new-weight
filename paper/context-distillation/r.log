@@ -1,0 +1,102 @@
+note: Running TeX ...
+warning: main.tex:71: Underfull \hbox (badness 1515) in paragraph at lines 43--71
+warning: main.tex:180: Underfull \hbox (badness 1442) in paragraph at lines 178--180
+warning: main.tex:240: Underfull \hbox (badness 10000) in paragraph at lines 228--240
+warning: main.tex:240: Underfull \hbox (badness 10000) in paragraph at lines 228--240
+warning: tables/held_out.tex:25: Overfull \hbox (336.9036pt too wide) in paragraph at lines 13--25
+warning: main.tex:269: Underfull \hbox (badness 10000) in paragraph at lines 265--269
+warning: main.tex:269: Underfull \hbox (badness 2486) in paragraph at lines 265--269
+warning: tables/behavior.tex:21: Overfull \hbox (82.25572pt too wide) in paragraph at lines 10--21
+warning: tables/peak.tex:19: Overfull \hbox (58.7957pt too wide) in paragraph at lines 8--19
+warning: tables/mmlu.tex:7: Underfull \hbox (badness 2970) in paragraph at lines 7--7
+warning: tables/mmlu.tex:23: Overfull \hbox (112.669pt too wide) in paragraph at lines 10--23
+warning: main.tex:534: Underfull \hbox (badness 1210) in paragraph at lines 519--534
+warning: main.tex:534: Underfull \hbox (badness 1648) in paragraph at lines 519--534
+warning: main.tex:534: Underfull \hbox (badness 1024) in paragraph at lines 519--534
+warning: tables/rouge_oodvsid.tex:28: Overfull \hbox (221.45377pt too wide) in paragraph at lines 16--28
+warning: main.tex:551: Underfull \hbox (badness 1215) in paragraph at lines 540--551
+warning: main.tex:557: Underfull \hbox (badness 1226) in paragraph at lines 552--557
+warning: main.tex:567: Underfull \hbox (badness 2277) in paragraph at lines 567--567
+warning: main.tex:567: Underfull \hbox (badness 4120) in paragraph at lines 567--567
+warning: tables/mmlu_prefix.tex:21: Overfull \hbox (99.5593pt too wide) in paragraph at lines 10--21
+warning: main.tex:663: Underfull \hbox (badness 2237) in paragraph at lines 658--663
+warning: main.tex:663: Underfull \hbox (badness 1466) in paragraph at lines 658--663
+warning: main.tex:705: Underfull \hbox (badness 10000) in paragraph at lines 702--705
+note: Running BibTeX on main.aux ...
+warning: errors were issued by BibTeX, but were ignored; use --print and/or --keep-logs for details.
+note: Rerunning TeX because bibtex was run ...
+warning: main.tex:71: Underfull \hbox (badness 1515) in paragraph at lines 43--71
+warning: main.tex:180: Underfull \hbox (badness 1442) in paragraph at lines 178--180
+warning: main.tex:240: Underfull \hbox (badness 10000) in paragraph at lines 228--240
+warning: main.tex:240: Underfull \hbox (badness 10000) in paragraph at lines 228--240
+warning: tables/held_out.tex:25: Overfull \hbox (336.9036pt too wide) in paragraph at lines 13--25
+warning: main.tex:269: Underfull \hbox (badness 10000) in paragraph at lines 265--269
+warning: main.tex:269: Underfull \hbox (badness 2486) in paragraph at lines 265--269
+warning: tables/behavior.tex:21: Overfull \hbox (82.25572pt too wide) in paragraph at lines 10--21
+warning: tables/peak.tex:19: Overfull \hbox (58.7957pt too wide) in paragraph at lines 8--19
+warning: tables/mmlu.tex:7: Underfull \hbox (badness 2970) in paragraph at lines 7--7
+warning: tables/mmlu.tex:23: Overfull \hbox (112.669pt too wide) in paragraph at lines 10--23
+warning: main.tex:534: Underfull \hbox (badness 1210) in paragraph at lines 519--534
+warning: main.tex:534: Underfull \hbox (badness 1648) in paragraph at lines 519--534
+warning: main.tex:534: Underfull \hbox (badness 1024) in paragraph at lines 519--534
+warning: tables/rouge_oodvsid.tex:28: Overfull \hbox (221.45377pt too wide) in paragraph at lines 16--28
+warning: main.tex:551: Underfull \hbox (badness 1215) in paragraph at lines 540--551
+warning: main.tex:557: Underfull \hbox (badness 1226) in paragraph at lines 552--557
+warning: main.tex:567: Underfull \hbox (badness 2277) in paragraph at lines 567--567
+warning: main.tex:567: Underfull \hbox (badness 4120) in paragraph at lines 567--567
+warning: tables/mmlu_prefix.tex:21: Overfull \hbox (99.5593pt too wide) in paragraph at lines 10--21
+warning: main.tex:663: Underfull \hbox (badness 2237) in paragraph at lines 658--663
+warning: main.tex:663: Underfull \hbox (badness 1466) in paragraph at lines 658--663
+warning: main.tex:705: Underfull \hbox (badness 10000) in paragraph at lines 702--705
+note: Rerunning TeX because "main.aux" changed ...
+warning: main.tex:71: Underfull \hbox (badness 1515) in paragraph at lines 43--71
+warning: main.tex:180: Underfull \hbox (badness 1442) in paragraph at lines 178--180
+warning: main.tex:240: Underfull \hbox (badness 10000) in paragraph at lines 228--240
+warning: main.tex:240: Underfull \hbox (badness 10000) in paragraph at lines 228--240
+warning: tables/held_out.tex:25: Overfull \hbox (336.9036pt too wide) in paragraph at lines 13--25
+warning: main.tex:269: Underfull \hbox (badness 10000) in paragraph at lines 265--269
+warning: main.tex:269: Underfull \hbox (badness 2486) in paragraph at lines 265--269
+warning: tables/behavior.tex:21: Overfull \hbox (82.25572pt too wide) in paragraph at lines 10--21
+warning: tables/peak.tex:19: Overfull \hbox (58.7957pt too wide) in paragraph at lines 8--19
+warning: tables/mmlu.tex:7: Underfull \hbox (badness 2970) in paragraph at lines 7--7
+warning: tables/mmlu.tex:23: Overfull \hbox (112.669pt too wide) in paragraph at lines 10--23
+warning: main.tex:534: Underfull \hbox (badness 1210) in paragraph at lines 519--534
+warning: main.tex:534: Underfull \hbox (badness 1648) in paragraph at lines 519--534
+warning: main.tex:534: Underfull \hbox (badness 1024) in paragraph at lines 519--534
+warning: tables/rouge_oodvsid.tex:28: Overfull \hbox (221.45377pt too wide) in paragraph at lines 16--28
+warning: main.tex:551: Underfull \hbox (badness 1215) in paragraph at lines 540--551
+warning: main.tex:557: Underfull \hbox (badness 1226) in paragraph at lines 552--557
+warning: main.tex:567: Underfull \hbox (badness 2277) in paragraph at lines 567--567
+warning: main.tex:567: Underfull \hbox (badness 4120) in paragraph at lines 567--567
+warning: tables/mmlu_prefix.tex:21: Overfull \hbox (99.5593pt too wide) in paragraph at lines 10--21
+warning: main.tex:663: Underfull \hbox (badness 2237) in paragraph at lines 658--663
+warning: main.tex:663: Underfull \hbox (badness 1466) in paragraph at lines 658--663
+warning: main.tex:705: Underfull \hbox (badness 10000) in paragraph at lines 702--705
+note: Rerunning TeX because "main.aux" changed ...
+warning: main.tex:71: Underfull \hbox (badness 1515) in paragraph at lines 43--71
+warning: main.tex:180: Underfull \hbox (badness 1442) in paragraph at lines 178--180
+warning: main.tex:240: Underfull \hbox (badness 10000) in paragraph at lines 228--240
+warning: main.tex:240: Underfull \hbox (badness 10000) in paragraph at lines 228--240
+warning: tables/held_out.tex:25: Overfull \hbox (336.9036pt too wide) in paragraph at lines 13--25
+warning: main.tex:269: Underfull \hbox (badness 10000) in paragraph at lines 265--269
+warning: main.tex:269: Underfull \hbox (badness 2486) in paragraph at lines 265--269
+warning: tables/behavior.tex:21: Overfull \hbox (82.25572pt too wide) in paragraph at lines 10--21
+warning: tables/peak.tex:19: Overfull \hbox (58.7957pt too wide) in paragraph at lines 8--19
+warning: tables/mmlu.tex:7: Underfull \hbox (badness 2970) in paragraph at lines 7--7
+warning: tables/mmlu.tex:23: Overfull \hbox (112.669pt too wide) in paragraph at lines 10--23
+warning: main.tex:534: Underfull \hbox (badness 1210) in paragraph at lines 519--534
+warning: main.tex:534: Underfull \hbox (badness 1648) in paragraph at lines 519--534
+warning: main.tex:534: Underfull \hbox (badness 1024) in paragraph at lines 519--534
+warning: tables/rouge_oodvsid.tex:28: Overfull \hbox (221.45377pt too wide) in paragraph at lines 16--28
+warning: main.tex:551: Underfull \hbox (badness 1215) in paragraph at lines 540--551
+warning: main.tex:557: Underfull \hbox (badness 1226) in paragraph at lines 552--557
+warning: main.tex:567: Underfull \hbox (badness 2277) in paragraph at lines 567--567
+warning: main.tex:567: Underfull \hbox (badness 4120) in paragraph at lines 567--567
+warning: tables/mmlu_prefix.tex:21: Overfull \hbox (99.5593pt too wide) in paragraph at lines 10--21
+warning: main.tex:663: Underfull \hbox (badness 2237) in paragraph at lines 658--663
+warning: main.tex:663: Underfull \hbox (badness 1466) in paragraph at lines 658--663
+warning: main.tex:705: Underfull \hbox (badness 10000) in paragraph at lines 702--705
+warning: warnings were issued by the TeX engine; use --print and/or --keep-logs for details.
+note: Running xdvipdfmx ...
+note: Writing `main.pdf` (1.1602563858032227 MiB)
+note: Skipped writing 2 intermediate files (use --keep-intermediates to keep them)

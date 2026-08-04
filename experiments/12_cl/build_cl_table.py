@@ -17,7 +17,8 @@ import sys
 
 TASKS = ["wikitext", "gsm8k", "tofu", "arc"]
 STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
-MASKS = [("a", "A. full causal"), ("b", "B. SWA"), ("bs", r"B $+$ sink prefix"),
+MASKS = [("a", "A. full causal"), ("tf", "F. truncated full"), ("b", "B. SWA"),
+         ("bs", r"B $+$ sink prefix"),
          ("c", "C. SWAA"), ("d", "D. Transformer-XL"),
          ("t", "E. T-SWA"), ("ts", r"E $+$ sink prefix")]
 GROUPS = [("naive", r"\textit{naive}"), ("replay", r"\textit{$+$replay (ER)}"),
@@ -162,7 +163,7 @@ def main():
     runs = {}
     base = None
     for path in sorted(logs):
-        m = re.search(r"cl_cl_(a|b|t|bs|ts|c|d)_(naive|replay|l2|ewc|lwf)_(\d+)\.log$", path)
+        m = re.search(r"cl_cl_(a|tf|b|t|bs|ts|c|d)_(naive|replay|l2|ewc|lwf)_(\d+)\.log$", path)
         if not m:
             continue
         ev, done = parse(path)
@@ -174,7 +175,7 @@ def main():
             base = ev
     hyb = {}
     for path in sorted(logs):
-        m = re.search(r"cl_cl_hyb_([abt])(?:_(naive|replay|ewc|lwf))?_\d+\.log$", path)
+        m = re.search(r"cl_cl_hyb_(tf|[abt])(?:_(naive|replay|ewc|lwf))?_\d+\.log$", path)
         if not m:
             continue
         ev, done = parse(path)
@@ -292,7 +293,7 @@ def main():
     out.append(r"continual-learning method; bold, best per column within each group. The hybrid")
     out.append(r"covers masks A, B, E; the other variants are pure-softmax, hence the empty")
     out.append(r"cells. Base rows: the unadapted model under each deploy.")
-    out.append(r"Per-task forgetting in App.~\ref{app:cltasks}.}")
+    out.append(r"Per-task forgetting in Tab.~\ref{tab:cltasks}.}")
     out.append(r"\label{tab:cl}")
     out.append(r"\end{table*}")
     print("\n".join(out))

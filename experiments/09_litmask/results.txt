@@ -1,0 +1,189 @@
+# Fig-2 b/c/d literature-mask sweep. Held-out wikitext ppl (char-level for toy).
+# columns: train_mask W | full sliding@W streaming(s4+W)
+# === CPT (Qwen2.5-0.5B, ctx 2048, 600 steps) ===
+cpt full       128 | 12.425  52.870     15.314
+cpt full       256 | 12.425  39.000     14.168
+cpt full       512 | 12.425  32.199     13.364
+cpt windowed   128 | 14.685  16.313     16.214
+cpt windowed   256 | 13.570  14.623     14.507
+cpt windowed   512 | 12.848  13.513     13.434
+cpt swaa       128 | 13.172  41.420     15.897
+cpt swaa       256 | 12.873  33.975     14.415
+cpt swaa       512 | 12.609  30.502     13.404
+cpt longformer 128 | 257.985 3083276.259 266.492
+cpt longformer 256 | 64.001  566267.471 66.250
+cpt longformer 512 | 47.288  288297.905 47.824
+# === TOY (4-layer GPT from scratch, ctx 256, char-level, V=751, 3000 steps) ===
+toy full       32  | 4.005   4.047      3.936
+toy full       64  | 4.005   4.030      3.921
+toy full       128 | 4.005   4.022      3.914
+toy windowed   32  | 22.247  4.044      4.514
+toy windowed   64  | 12.199  4.047      4.180
+toy windowed   128 | 5.420   4.031      4.072
+toy swaa       32  | 4.143   4.041      3.934
+toy swaa       64  | 4.090   4.049      3.923
+toy swaa       128 | 4.045   4.033      3.930
+toy longformer 32  | 987.811  62.732    60.072
+toy longformer 64  | 1157.777 28.606    36.821
+toy longformer 128 | 35.472   38.191    37.056
+
+# === RIDING vs ABSOLUTE registers (bpe toy, W=64, nP=8, 122.88M tok, jobs 4532484/4532485, 2026-07-08) ===
+# i = registers attended at CONSTANT offset (first-in-window-1) for every query; h = cache-front positions.
+# columns: mask | stream_avg stream_deep (regs on) | regs-off avg | settled valppl | regmass p0mass distmass
+h abs-regs    | 52.31 55.17 | 88.36  | 32.15 | 0.182 0.053 0.076
+i riding-regs | 52.78 55.29 | 143.83 | 24.85 | 0.384 0.025 0.074
+# baselines (bpe8): b 39.82/42.41 valppl 18.69 | f 42.90/45.59 valppl 21.14 | g 42.52/45.32 valppl 21.04
+# -> native-deploy ppl TIED (52.3 vs 52.8); riding wins settled-geometry valppl (24.9 vs 32.2, abs regs go OOD);
+# -> riding register absorbs 2x dump mass (0.38 vs 0.18) yet DISTRIBUTED SINK UNCHANGED (0.074 vs 0.076):
+#    separator sink is invariant to register count AND geometry => loss-neutral parking, not a geometry artifact.
+# NOTE toy: both register variants stream WORSE than plain sliding b/f/g (~52 vs ~40-43) at W=64, nP=8.
+
+# === CONSISTENT persistent-column decomposition (sinkdecomp_bpe9.py, job 4535065, 2026-07-08) ===
+# One measure for all masks: persistent col = next-W queries give it >5x uniform; DEEP-query mass,
+# DISJOINT classes, rows sum to 1. allheads scope (sinkhead in parens where notable).
+# mask | p0 | registers | persistent-band | rest
+a triangle | 0.102 (.376) | -     | 0.031 | 0.867
+b sliding  | 0            | -     | 0.095 (.484) | 0.905
+c SWAA     | 0.147 (.564) | -     | 0.059 | 0.794
+f slid-hist| 0            | -     | 0.126 (.452) | 0.874
+g warmup   | 0            | -     | 0.117 (.318) | 0.883
+h abs regs | 0            | 0.218 (.359) | 0.030 | 0.752
+i riding   | 0            | 0.344 (.714) | 0.030 | 0.626
+# CORRECTION vs the mixed-measure block above: under the consistent measure the registers DO drain
+# the separator band ~4x (f 0.126 -> h/i 0.030); the earlier "distmass unchanged" compared h vs i only.
+# What still holds: the residual separator sink (0.030) is IDENTICAL for abs vs riding geometry
+# (a loss-neutral floor), and riding registers absorb ~1.6x the mass of absolute ones (0.34 vs 0.22).
+
+# === j = TRIANGLE + absolute registers (job 4536604) + 10-mask consistent decomp (job 4537399) ===
+# DECOMP allheads: j p0=0.014 reg=0.144 band=0.007 rest=0.835 (sinkhead reg .310) | nbandcols 0.7
+# deploy: j regs-on 52.08 avg / 55.93 deep (== h 52.31, i 52.78); regs-off 63.7; valppl(1024) 56.8
+# 2x2 (consistent measure, all-heads deep-q):
+#            no regs                     + regs
+# triangle   p0 .102  band .031  (a)  -> p0 .014  reg .144  band .007  (j)
+# sliding    p0 0     band .126  (f)  -> p0 0     reg .218/.344  band .030  (h/i)
+# UNIFIED: registers absorb whichever parking structure the mask otherwise grows -- the pos-0 sink
+# under the triangle (7x drop) and the separator sink under the window (to background). One function
+# (parking), relocating to the most stable available target: registers > pos-0 anchor > separators.
+# Register DRIFT in j: reg mass .144 at depth<=512 but .012 at depth~1000 (abs offsets go OOD);
+# riding registers hold .344 by construction. All register models stream identically (~52) --
+# ~9 ppl worse than best plain regimes in the toy; register value is structural, not ppl.
+
+# !!! CORRECTION IN PROGRESS (2026-07-08): the h/i/j runs above used the DEFAULT toy arch (4L/4H/256)
+# while baselines a-g are 8L/8H/512 -- all h/i/j-vs-baseline comparisons above are arch-confounded.
+# (h vs i vs j internal comparisons are valid: those three match each other.)
+# Matched-arch reruns: jobs 4538001 (h), 4538002 (i), 4538003 (j); corrected block will follow.
+
+# === FINAL matched-arch (8L/8H/512) results: jobs 4538001-3 (h,i,j) + decomp/profile 4539413 ===
+# ppl (streaming avg/deep): regs-on h 41.90/44.53 | i 42.37/44.86 | j 40.41/43.20  (b 39.82, f 42.90, g 42.52, a 43.84)
+#   -> registers are ppl-NEUTRAL at matched arch (prior "9 ppl worse" was the 4L/4H confound); j best of regs.
+# regs-off: h 64.8 | i 106.0 | j 51.1 -> reliance ordering: riding > abs > triangle-trained.
+# DECOMP (Lm=512, allheads): f band .126 | h reg .174 band .074 | i reg .319 band .050 | j reg .166 band .024, p0 .008 (a p0 .102)
+#   -> registers absorb the mask's sink PARTIALLY at 8L: separator band f .126 -> h .074 -> i .050 (riding drains more;
+#      the 4L "identical band floor h=i" does NOT replicate at 8L -- geometry DOES help win separator mass).
+# PROFILE (sink ratio vs context length at the generation token, Lm=2048, sinkprof_*.npz, fig sink_vs_depth.png):
+#   i RIDING: FLAT ~0.33 register mass 0->2048 (context-length-invariant, as designed)
+#   h abs:    decays ~0.30 -> ~0.11 (drifts as query-register offset goes OOD)
+#   j tri+regs: collapses to ~0 past ~2x train ctx (RoPE OOD); a pos-0 sink dies the same way
+#   b/f/g separator band: flat forever (bounded geometry)
+
+# === k = b + sink token (IID windowed + always-on trainable sinks; 8L/8H/512, jobs 4546061/4547907) ===
+# ppl: regs-on stream 42.34/45.17 (== h/i; j 40.4 best); regs-off slide 55.96; valppl(1024) 18.93 = BEST (ties b 18.69)
+# DECOMP Lm512: reg .336(.54) band .033 rest .631 | Lm2048: reg .326 -- FLAT to 2048 (profile == riding curve!)
+# INCX (full-causal fixed fwd, off-distribution for windowed-trained): 174.2 / 108.3 w/ regs (cf b 66.6)
+# KEY: absolute sink tokens do NOT inherently decay with depth -- k holds .33 to 8x its trained offset range.
+# h's decay was an EXPOSURE artifact (t-BPTT cache offsets only 72-136); IID exposure 8..264 generalizes.
+# Riding (i) = invariance by construction; wide-exposure IID (k) = invariance empirically (tested to 2048).
+
+# === l = b + SINK SCALAR (GPT-OSS style: per-head learned softmax-denominator logit, no K/V/value;
+#     8L/8H/512, jobs 4557432/4558844) ===
+# ppl: native sliding 38.90/41.52 -- BEATS plain b (39.82/42.41) and every sink-token variant; train loss 3.510
+# valppl(1024) 18.45 = best overall; scalar-off ablation 79.3 (fully load-bearing)
+# DECOMP Lm512: scalar mass .406 allheads (.72 sink-head!) band .032=background rest .562 | Lm2048 .419 flat (no geometry)
+# VERDICT vector-vs-scalar: k's +2.5 tax = the VALUE pathway (parked mass on tokens still writes a learned
+# vector into every residual); the scalar's parked mass writes NOTHING -> over-parking is free, acts as pure
+# per-head confidence calibration, and even HELPS (-0.9 vs b). Matches GPT-OSS design & off-by-one softmax.
+
+# === m = b + PER-LAYER sink K/V (prefix-tuning style: independent learned pre-RoPE K,V per layer;
+#     [L,2,nP,d] params; 8L/8H/512, jobs 4563897/4565750) ===
+# ppl: native 39.06/41.52 == scalar l (38.90/41.52), beats plain b (39.82); train loss 3.504 (best); valppl 18.31 (best)
+# DECOMP Lm512: sink mass .512 allheads (.86 sink-head!) band .020 rest .468 | Lm2048 .515 flat
+# prefix-off: 169.8 (most sink-dependent of all); INCX off-distribution as expected (170 w/ prefix)
+# PKVNORM: learned VALUE norms 2.5-5.1 per layer (NOT near-zero; keys 3.8-16.1) -> m does NOT emulate the scalar
+# REFINED VERDICT: k's tax is not "having a value pathway" -- it's the CONSTRAINT that a token's per-layer
+# K/V are all derived from one shared embedding by the same network that processes content. Free per-layer
+# K/V (m) or no value at all (l) both reach ~39 and beat b; the constrained token (k) pays +2.5.
+# Sink-design ranking (b-based, native deploy): l 38.90 = m 39.06 < b 39.82 < k 42.34.
+# NAMING (2026-07-09): m = "sink prefix" (per-layer KV, prefix-tuning); k/h/i/j = "sink token"; l = "sink scalar" (gpt-oss).
+
+# === COMPLETE SINK-DESIGN MATRIX (n/o/p/q; jobs 4581472/3, 4582095/6, eval 4588022; 8L/8H/512) ===
+# n = b+RIDING sink token:  native 40.02/42.49 (fixes k's tax: 42.3->40.0 == plain b); sink .39(.54) flat; w/o 73.7
+# o = b+RIDING sink prefix: native 38.92/41.51 (== l/m best); sink .53(.83) flat; w/o 168.1
+# p = a+sink scalar: windowed deploy 40.25 (plain a 43.8!); pos-0 sink never forms (p0 .01 vs a .10); scoff 59.1
+# q = a+sink prefix: windowed deploy 39.76; pos-0 .01; w/o prefix 156.2; best train loss 3.486
+# FINDINGS: (1) riding geometry rescues the sink TOKEN (constant offset = one geometry for the constrained
+# token K/V to learn) but is unnecessary for the free-per-layer prefix (38.9 both geometries);
+# (2) on the TRIANGLE base, any trainable sink prevents the pos-0 sink from forming (p0 .10 -> .01) and
+# makes the full-causal-trained model WINDOWABLE (40.3/39.8 vs 43.8) -- the designed sink pre-empts the
+# mask artifact; (3) p/q sink usage fades past the triangle's trained length (content-logit OOD, not sink).
+# FULL RANKING (native streaming): o 38.92 = l 38.90 = m 39.06 < q 39.76 < b 39.82 = n 40.02 = p 40.25 =
+# j 40.41 < h 41.9 < k 42.3 = i 42.4.
+# CORRECTION (2026-07-09): the "StreamingLLM" column for sink-token/prefix models was the MISMATCHED-SINK
+# control (pin 4 real tokens, DROP the trained sink) -- not their StreamingLLM. For these models StreamingLLM's
+# kept-sink slot IS their trained sink, so that deploy == sliding-with-own-sink (the ‡ column). Paper Table 2
+# now marks those cells ≡ and keeps the mismatched numbers only as a labeled control; scalar rows keep real
+# numbers (scalar can't be evicted; patch+scalar is a distinct deploy: b+scalar 84.9 hurt, a+scalar 40.3 fine).
+# UNIFIED IN-CTX (incx_bpe9.py, job 4592909; Lm=256 n=48, one protocol, with-own-sink for +sink rows):
+# a 33.0 | a+tok 33.3 | a+scal 32.8 | a+pref 32.4 (BEST) | b 66.6 | b+tok 108 | b+ridtok 128 | b+scal 118 |
+# b+pref 170 | b+ridpref 171 | c 36.2 | d 1.3e4 | e 39.6 | f 45.3 | g 47.1 | h 66.2 | f+riding 53.3
+# -> at full context the a-family sinks are FREE (32.4-33.3 vs a 33.0); b-family cells diagnose the
+# full-causal-vs-window mask mismatch. Paper Table 2 in-ctx column replaced wholesale (legacy 25/74/... was
+# an unreproducible earlier protocol; same ordering, different values).
+
+# === CPT SINK CAMPAIGN (Llama-3.2-3B, 10M tok, W=512; jobs 4594865-68, A100s, ~1h each) ===
+# a+sink token:  full 12.79/9.95 | own-sink stream 9.90/11.48 (bare sliding collapses 2451)
+# a+sink prefix: full 12.12/9.20 | own-sink stream 9.86/11.34 = BEST (matches h 11.36 w/o window training)
+# a+sink scalar: full 10.29/7.52 (~ plain a) | scalar-windowed 14.03/16.45 (PARTIAL pre-emption; sllm patch -> 11.59)
+# b+sink scalar: full 11.32/8.96 | native stream 9.94/11.45 (ties token 11.37 / prefix 11.43; plain b 11.67)
+# CPT-SCALE FINDING: K/V-bearing sinks fully pre-empt the pretrained pos-0 sink (token/prefix on a stream at
+# par with the best); the VALUELESS scalar only partially does (16.45) -- the pretrained sink also carries
+# value/anchor functions a denominator slot cannot absorb. Toy value-pathway story sharpened: scalar suffices
+# when the sink is a pure dump (from scratch); K/V needed when it is load-bearing (pretrained).
+
+# === CPT IN-CONTEXT column (jobs 4595140-53, cap 2049, own sink): a 11.02 | a+tok 11.03 | a+scal 11.14 |
+# a+pref 10.97 (best) | b 11.98 | b+tok 11.35 | b+scal 11.68 | b+pref 11.29 | c 11.45 | e 11.13 | f 12.06 |
+# g 11.31 | h 11.23 | h+pref 11.19. Sinks free in-ctx at CPT (a-family 10.97-11.14 ~ a 11.02, prefix best);
+# b-family sinks MITIGATE the full-forward mismatch (b 11.98 -> +prefix 11.29). Table now symmetric:
+# in-ctx / full / streaming on both toy and CPT sides.
+
+# === CPT RIDING (n_iid/o_iid; train 4595175-6, evals 4595262-5; un-rotation attention patch) ===
+# b+riding sink token:  in-ctx 11.30 | full 10.61/8.11 | stream 9.83/11.29 (pos-0 token: 11.37)
+# b+riding sink prefix: in-ctx 11.40 | full 10.88/8.59 | stream 9.85/11.24 = TABLE BEST (pos-0 prefix: 11.43)
+# -> riding improves BOTH designs at CPT (~0.1-0.2 deep), gently strengthening the toy geometry finding;
+#    riding sinks are architectural (always active) so all deploys are native, no cache-front trick needed.
+
+# === 2-SLOT HYBRID STUDY (x2a/x2b × {2p0, 1p1r, 2ride}; per-layer K/V slots; jobs 4595335-40/582-5, evals 933-8) ===
+# b-base stream deep: 2p0 11.45 | hybrid 11.43 | 2ride 11.55  (8-slot refs: token 11.37, riding pref 11.24)
+# a-base windowed-native deep: 2p0 13.67 | hybrid 14.50 | 2ride 15.37 (patch completes all to ~11.3-11.4)
+# a-base in-ctx/full: all ~11.0-11.1 / 7.45-7.51 (sinks free as usual)
+# FINDINGS: (1) NO hybrid synergy -- 1p0+1riding ties or interpolates its controls in every deploy;
+# (2) SLOT COUNT, not geometry, binds at CPT: 2 slots < 8 slots everywhere, and 2 trainable slots only
+# PARTIALLY pre-empt the pretrained pos-0 sink on the triangle base (13.7-15.4 bare-windowed) -- absorbing
+# a load-bearing sink needs capacity; the toy's count-invariance does NOT transfer to pretrained scale.
+
+# === FULL-CONTEXT to 30k (growing non-evicting cache; all 23 CPT models; jobs f30_*) ===
+# KEY: full attention DEGRADES/DIVERGES toward 30k past the 2048 CPT length; streaming (own sink) stays FLAT.
+# full deep@30k: a 11.48 | a+scal 11.76 | a+pref 11.93 | a+2slot ~11.7 | b 25.98 | b+riding-tok 12.93 |
+#   b+scal 20.59 | b+pref 13.85 | b+riding-pref 15.50 | b+2slot ~15.7-16.8 | c 15.98 | e 25.67 | f 24.01 |
+#   g 21.83 | f+pref(h_pl) 13.65 | base(no-CPT) 9.14 (CONTROL: doesn't degrade -> CPT-at-2048 causes it)
+# DIVERGE (absolute sink TOKEN, RoPE offset OOD past 2048): a+token 3501 | b+token 3.1e4 | f+token 1142
+#   -> scalar/prefix/riding survive (no unbounded RoPE offset on the sink). New full-context arg for those.
+# At 30k streaming >= full for window-base (full 16-26 vs stream 11.3-11.5). Paper thesis realized at scale.
+
+# === f-BASE FULL SINK CAMPAIGN (t-BPTT sliding-history + each sink design; jobs ff_*) ===
+# CONFIRMS IID(b) == t-BPTT(f) for EVERY sink design (stream deep / full deep @30k):
+#   scalar:  b 11.45/20.59  f 11.32/21.15 | riding-tok: b 11.29/12.93  f 11.44/12.93
+#   riding-pref: b 11.24/15.50  f 11.25/15.83 | 2p0: b 11.45/15.81  f 11.44/16.41
+#   1p1r: b 11.43/16.78  f 11.31/14.96 | 2ride: b 11.55/15.67  f 11.39/16.66
+# -> the carried cache is unnecessary; the paper's flagship f regime inherits the full sink toolkit.
+# Implementation: sink patches (scalar/riding/2slot) composed with t-BPTT streaming loop; f_rtok needed
+# per-chunk KV recompute (prompt-derived graph, avoid double-backward).

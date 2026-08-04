@@ -1,0 +1,25 @@
+\begin{table}[t]
+\centering
+\caption{Held-out validation. ROUGE-L gap-closure measures how much of
+the base$\to$teacher distance the student covers in surface tokens.
+Behavioural pattern rate measures whether the structural feature
+characteristic of the context type (haiku-shape, pirate vocabulary,
+short answer, French content, refusal) appears at the rate the teacher
+exhibits. Behavioural gap-closure is the analogous fraction in pattern
+space. ROUGE-L underrates stylistic transfer where content drifts but
+form is preserved (haiku, fewshot); the behavioural rate captures this.}
+\label{tab:held_out}
+\small
+\begin{tabular}{lcc|ccc|c}
+\toprule
+Context & $\text{ROUGE-L}($base, ctx$)$ & $\text{ROUGE-L}($stu, ctx$)$ &
+  Pattern (T/S/B) & ROUGE-L closure & Beh.\ closure & status \\
+\midrule
+haiku   & 0.226 & 0.523 & 0.93 / 0.75 / 0.04 & 0.384 & +0.80 & pass (beh.) \\
+pirate  & 0.322 & 0.610 & 1.00 / 1.00 / 0.14 & 0.424 & +1.00 & pass \\
+concise & 0.421 & 0.661 & 0.96 / 0.96 / 0.29 & 0.414 & +1.00 & pass \\
+fewshot\_translate\_fr & 0.459 & 0.767 & 0.64 / 0.54 / 0.18 & 0.570 & +0.77 & pass \\
+factual & 0.364 & 0.515 & 0.44 / 0.22 / 0.52 & 0.238 & ambiguous & marginal \\
+\bottomrule
+\end{tabular}
+\end{table}

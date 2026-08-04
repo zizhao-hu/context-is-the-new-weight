@@ -12,12 +12,12 @@ import glob, math, re, sys
 LOGDIR, OUT_MAIN, OUT_STREAM = sys.argv[1], sys.argv[2], sys.argv[3]
 OUT_REGIMES = sys.argv[4] if len(sys.argv) > 4 else OUT_MAIN.replace("cl_main", "cl_regimes")
 STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
-MASKS = ["a", "b", "bs", "c", "d", "t", "ts"]
-NAME = {"a": "A.\\ full causal", "b": "B.\\ SWA", "bs": "B $+$ sink prefix",
-        "c": "C.\\ SWAA", "d": "D.\\ Transformer-XL", "t": "E.\\ T-SWA",
-        "ts": "E $+$ sink prefix"}
-NATIVE = {"a": "sllm", "b": "slide", "bs": "prefix", "c": "sllm", "d": "txl",
-          "t": "slide", "ts": "prefix"}
+MASKS = ["a", "tf", "b", "bs", "c", "d", "t", "ts"]
+NAME = {"a": "A.\\ full causal", "tf": "F.\\ truncated full", "b": "B.\\ SWA",
+        "bs": "B $+$ sink prefix", "c": "C.\\ SWAA", "d": "D.\\ Transformer-XL",
+        "t": "E.\\ T-SWA", "ts": "E $+$ sink prefix"}
+NATIVE = {"a": "sllm", "tf": "sllm", "b": "slide", "bs": "prefix", "c": "sllm",
+          "d": "txl", "t": "slide", "ts": "prefix"}
 
 def parse(f):
     ev = {}
@@ -33,7 +33,7 @@ def parse(f):
 
 runs = {}
 for mask in MASKS:
-    fs = glob.glob("%s/cl_cls_%s_naive_*.log" % (LOGDIR, mask))
+    fs = glob.glob("%s/cl_cls_%s_naive_1081[26]*.log" % (LOGDIR, mask))
     assert len(fs) == 1, (mask, fs)
     runs[mask] = parse(fs[0])
 
@@ -62,8 +62,10 @@ def pm(v, s, prec=2, sign=False):
     return (f % v) + ("{\\tiny$\\pm$%.*f}" % (max(prec - 1, 1), s))
 
 # ---------------- main table: the 2x2 recipe ablation ----------------
-MAIN = ["a", "b", "t", "bs", "ts"]
-MAIN_NAME = {"a": "A.\\ full causal (reference)", "b": "B.\\ SWA (sliding base)",
+MAIN = ["a", "tf", "b", "t", "bs", "ts"]
+MAIN_NAME = {"a": "A.\\ full causal (reference)",
+             "tf": "F.\\ truncated full (loss rule, no window)",
+             "b": "B.\\ SWA (sliding base)",
              "t": "E.\\ T-SWA ($+$truncated loss)", "bs": "B $+$ sink prefix ($+$sink)",
              "ts": "E $+$ sink prefix (both)"}
 rows, cols = {}, {m: {} for m in MASKS}
@@ -117,7 +119,8 @@ for m in MAIN:
 L.append("\\bottomrule")
 L.append("\\end{tabular}")
 L.append("\\caption{\\textbf{Continual learning under the three deploy regimes} "
-         "(the recipe's two components ablated on the sliding base; naive sequential "
+         "(the recipe's two components ablated on the sliding base, plus the loss rule's "
+         "full-mask control F; naive sequential "
          "training, equal supervised tokens). F, forgetting: rise of "
          "held-out task ppl from its post-learning best, mean over the first three tasks "
          "(streaming: first two; the TOFU stream is shorter than one $4096$-token "
@@ -141,7 +144,8 @@ L.append("\\end{table*}")
 open(OUT_REGIMES, "w").write("\n".join(L) + "\n")
 
 # ---------------- main table: the recipe against the two canonical baselines ----------------
-CPT = [("a", "A.\\ full causal"), ("b", "B.\\ SWA"), ("ts", "T-SWA ($+$sink prefix)")]
+CPT = [("a", "A.\\ full causal"), ("tf", "F.\\ truncated full"), ("b", "B.\\ SWA"),
+       ("ts", "T-SWA ($+$sink prefix)")]
 cbest = {}
 for c in ("learn", "f_long", "f_far", "fw_far"):
     prec = 1 if c in ("fw_far", "learn") else 2
@@ -171,7 +175,8 @@ for m, nm in CPT:
 M.append("\\bottomrule")
 M.append("\\end{tabular}")
 M.append("\\caption{\\textbf{Continual learning at the deploy budget}: full causal, SWA, and "
-         "T-SWA with its sink prefix, the recipe default (naive sequential training, equal "
+         "T-SWA with its sink prefix, the recipe default, and F, the same truncated loss "
+         "on the unchanged full mask, its loss-rule control (naive sequential training, equal "
          "supervised tokens). learn: best post-learning ppl over the three natural tasks. "
          "F: forgetting, rise of held-out task ppl from its post-learning best, on the "
          "trained slice ($q \\ge W$, first three tasks) and on $4096$-token streams past "
@@ -188,6 +193,8 @@ open(OUT_MAIN, "w").write("\n".join(M) + "\n")
 ROWS = [("a", "full", "A, full attention (unbounded)"),
         ("a", "slide", "A, sliding $W$"),
         ("a", "sllm", "A, StreamingLLM $4{+}$recent"),
+        ("tf", "full", "F, full attention (unbounded)"),
+        ("tf", "sllm", "F, StreamingLLM $4{+}$recent"),
         ("b", "slide", "B, sliding $W$ (native)"),
         ("bs", "prefix", "B $+$ sink, prefix $+$ recent"),
         ("c", "sllm", "C, pinned $4{+}$recent (native)"),

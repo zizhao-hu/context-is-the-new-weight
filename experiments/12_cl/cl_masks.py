@@ -54,7 +54,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--mask", required=True, choices=["a", "b", "t", "bs", "ts", "c", "d"])
+ap.add_argument("--mask", required=True, choices=["a", "b", "t", "bs", "ts", "c", "d", "tf"])
 ap.add_argument("--method", required=True, choices=["naive", "replay", "l2", "ewc", "lwf"])
 ap.add_argument("--W", type=int, default=256)
 ap.add_argument("--L", type=int, default=1024)
@@ -83,7 +83,7 @@ W, L, nP = a.W, a.L, a.sink_n
 SINK = a.mask in ("bs", "ts")
 TXL = a.mask == "d"
 assert not ((SINK or TXL or a.mask == "c") and a.hybrid), "lit-mask ablations are pure-softmax only"
-loss_from = W if a.mask in ("t", "ts") else 0
+loss_from = W if a.mask in ("t", "ts", "tf") else 0    # tf: truncated full, loss rule on the unchanged full mask
 # fair budget: equal supervised tokens per stage regardless of the loss rule
 steps_eff = round(a.steps * L / (L - loss_from)) if loss_from else a.steps
 print("BUDGET steps=%d loss_from=%d supervised_toks_per_stage=%d" %
@@ -213,7 +213,7 @@ def make_mask(kind):
 if TXL:
     TRAIN_MASK = DEPLOY_MASK = None                  # segmented recurrence, no static mask
 else:
-    TRAIN_MASK = make_mask("full" if a.mask == "a" else "swaa" if a.mask == "c"
+    TRAIN_MASK = make_mask("full" if a.mask in ("a", "tf") else "swaa" if a.mask == "c"
                            else "sink" if SINK else "slide")
     DEPLOY_MASK = TRAIN_MASK       # matched deploy: a full, b/t sliding, bs/ts sink+window, c swaa
 
@@ -286,7 +286,8 @@ def eval_ppl(va):
         out[k] = (ppl, ppl * math.sqrt(var / max(n, 1)))
     return out
 
-STREAM_POLICIES = {"a": ("full", "slide", "sllm"), "b": ("full", "slide"), "t": ("full", "slide"),
+STREAM_POLICIES = {"a": ("full", "slide", "sllm"), "tf": ("full", "slide", "sllm"),
+                   "b": ("full", "slide"), "t": ("full", "slide"),
                    "bs": ("full", "prefix"), "ts": ("full", "prefix"),
                    "c": ("full", "sllm"), "d": ("full", "txl")}
 
@@ -359,7 +360,7 @@ def eval_all(stage):
         r = eval_ppl(va)
         print("CLEVAL stage=%d task=%s ppl=%.4f sem=%.4f" % ((stage, name) + r["long"]), flush=True)
         print("CLEVALSHORT stage=%d task=%s ppl=%.4f sem=%.4f" % ((stage, name) + r["short"]), flush=True)
-        for pol in STREAM_POLICIES.get(a.mask, ()):
+        for pol in (() if a.hybrid else STREAM_POLICIES.get(a.mask, ())):    # hybrid cache is not plain KV
             s = eval_stream(va, pol)
             if s:
                 print("STREAMEVAL stage=%d task=%s policy=%s all=%.4f asem=%.4f far=%.4f fsem=%.4f n=%d"

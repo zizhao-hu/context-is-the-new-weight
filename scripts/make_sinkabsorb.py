@@ -30,6 +30,10 @@ SWAFAM  = [("SWA",          0.1197, 0.0019, 0.0000, 0.0000, 0.0743, 0.0022),
            ("+sink token",  0.0185, 0.0004, 0.3480, 0.0039, 0.0348, 0.0014),
            ("+sink scalar", 0.0165, 0.0003, 0.4017, 0.0040, 0.0292, 0.0013),
            ("+sink prefix", 0.0090, 0.0002, 0.5238, 0.0042, 0.0203, 0.0011)]
+TFFAM   = [("trunc. full", 0.0990, 0.0019, 0.0000, 0.0000, 0.2213, 0.0041),
+           ("+sink token",  0.0409, 0.0003, 0.3332, 0.0022, 0.0278, 0.0014),
+           ("+sink scalar", 0.0709, 0.0010, 0.3024, 0.0023, 0.0470, 0.0016),
+           ("+sink prefix", 0.0225, 0.0003, 0.4924, 0.0032, 0.0237, 0.0012)]
 
 C_P0, C_REG, C_SEP, C_CT = "#4C72B0", "#DD5B45", "#55A868", "#D3D3D3"
 
@@ -48,15 +52,15 @@ def col(fam, i):
 
 fig, ax = plt.subplots(figsize=(3.34, 1.75))            # single column
 x = np.arange(len(DESIGNS))
-w, dx = 0.36, 0.20
-for k, fam in enumerate((FULLFAM, SWAFAM)):
+w, dx = 0.24, 0.26
+for k, fam in enumerate((FULLFAM, SWAFAM, TFFAM)):
     tint = (lambda c: c) if k == 0 else pale
-    hat = None if k == 0 else "////"
+    hat = (None, "////", "\\\\\\\\")[k]
     p0 = np.array([fam[i][1] for i in range(4)]); p0s = np.array([fam[i][2] for i in range(4)])
     rg = np.array([fam[i][3] for i in range(4)]); rgs = np.array([fam[i][4] for i in range(4)])
     sp = np.array([fam[i][5] for i in range(4)]); sps = np.array([fam[i][6] for i in range(4)])
     ct = 1.0 - p0 - rg - sp
-    xx = x + (dx if k else -dx)
+    xx = x + (k - 1) * dx
     ax.bar(xx, rg, w, color=tint(C_REG), edgecolor="black", linewidth=0.6, hatch=hat, zorder=3)
     ax.bar(xx, p0, w, bottom=rg, color=tint(C_P0), edgecolor="black", linewidth=0.6, hatch=hat, zorder=3)
     ax.bar(xx, sp, w, bottom=rg + p0, color=tint(C_SEP), edgecolor="black", linewidth=0.6, hatch=hat, zorder=3)
@@ -69,8 +73,9 @@ for k, fam in enumerate((FULLFAM, SWAFAM)):
 ax.set_ylim(0, 1.06); ax.set_xticks(x)
 ax.set_xticklabels(DESIGNS, fontsize=figstyle.FS_TICK)
 for xi in x:
-    ax.text(xi - dx, 1.015, "F", fontsize=6.5, ha="center", va="bottom", color="0.35")
-    ax.text(xi + dx, 1.015, "S", fontsize=6.5, ha="center", va="bottom", color="0.35")
+    ax.text(xi - dx, 1.015, "A", fontsize=6.5, ha="center", va="bottom", color="0.35")
+    ax.text(xi, 1.015, "B", fontsize=6.5, ha="center", va="bottom", color="0.35")
+    ax.text(xi + dx, 1.015, "F", fontsize=6.5, ha="center", va="bottom", color="0.35")
 ax.set_xlim(-0.55, len(DESIGNS) - 0.45)
 ax.set_yticks(np.arange(0, 1.01, 0.25)); ax.tick_params(labelsize=figstyle.FS_TICK, length=3.0)
 ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
@@ -78,8 +83,9 @@ h = [Patch(facecolor=C_REG, edgecolor="black", lw=0.6, label="trainable sink"),
      Patch(facecolor=C_P0, edgecolor="black", lw=0.6, label="p0 sink"),
      Patch(facecolor=C_SEP, edgecolor="black", lw=0.6, label="distributed"),
      Patch(facecolor=C_CT, edgecolor="black", lw=0.6, label="content"),
-     Patch(facecolor="0.55", edgecolor="black", lw=0.6, label="F: full causal"),
-     Patch(facecolor=pale("0.55"), edgecolor="black", lw=0.6, hatch="////", label="S: SWA")]
+     Patch(facecolor="0.55", edgecolor="black", lw=0.6, label="A: full causal"),
+     Patch(facecolor=pale("0.55"), edgecolor="black", lw=0.6, hatch="////", label="B: SWA"),
+     Patch(facecolor=pale("0.55"), edgecolor="black", lw=0.6, hatch="\\\\\\\\", label="F: trunc. full")]
 fig.legend(handles=h, loc="upper center", bbox_to_anchor=(0.5, 1.10), ncol=3, frameon=False,
            fontsize=figstyle.FS_LEGEND, handlelength=0.9, handleheight=0.8, columnspacing=0.8,
            handletextpad=0.3, labelspacing=0.2)

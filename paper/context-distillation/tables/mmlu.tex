@@ -1,0 +1,23 @@
+\begin{table}[t]
+\centering
+\caption{MMLU-Pro accuracy comparison across model variants.
+``base'' = the unmodified Llama-3.1-8B-Instruct; ``in-context'' = the
+base model with $C$ prepended; ``context-distilled'' = the
+$\theta_C$ student with no $C$ at inference. Negative deltas indicate
+loss of general capability relative to base.}
+\label{tab:mmlu}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Context & base & in-context & context-distilled & $\Delta$(distilled vs base) \\
+\midrule
+haiku                  & 0.360 & 0.295 & 0.365 & $+0.005$ \\
+pirate                 & 0.360 & 0.325 & 0.125 & $\mathbf{-0.235}$ \\
+concise                & 0.360 & 0.380 & 0.300 & $-0.060$ \\
+fewshot\_translate\_fr & 0.360 & 0.375 & 0.135 & $\mathbf{-0.225}$ \\
+factual                & 0.360 & 0.320 & 0.140 & $\mathbf{-0.220}$ \\
+conv\_history          & 0.360 & 0.350 & 0.130 & $\mathbf{-0.230}$ \\
+compressed\_history    & 0.360 & 0.365 & 0.330 & $-0.030$ \\
+\bottomrule
+\end{tabular}
+\end{table}

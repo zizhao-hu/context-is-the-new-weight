@@ -1,0 +1,18 @@
+iter	action	metric_before	metric_after	guard	decision
+0	baseline	0	0	PASS	baseline
+1	submit plain QA batch (base,b,c,e,f,g @ n=150)	0	0	PASS	pending-jobs
+2	fix hotpot cache path, resubmit smoke+plain batch	0	0	PASS	crash-fixed
+3	submit sink-model QA batch (11 jobs)	2	2	PASS	pending-jobs
+4	submit x2 QA batch (6 jobs)	2	2	PASS	pending-jobs
+5	resolve tag collisions (prefix vs token via job log), resubmit f+sink-token windowed gap	6	38	PASS	keep
+6	build+integrate QA table (tab:hotpotcpt) + linking paragraph	38	38	PASS	keep
+7	fill f+sink-token windowed gap (F1 .262), correct provisional cell	38	39	PASS	keep
+8	switch EM->containment-acc metric, re-run full QA campaign (23 jobs)	39	39	PASS	pending-jobs
+9	rebuild QA table with F1/Acc/ppl (drop EM), resubmit preempted base+a	39	44	PASS	keep
+10	add missing b+2slot 1p1r & 2ride rows (symmetry with a block)	44	44	PASS	keep
+11	fill measured a Acc (full .40 confirmed, stream .31 corrected from est .38); all QA cells now measured	44	46	PASS	keep
+12	implement full-context-to-30k (growing non-evicting cache), smoke 3 model types	46	46	PASS	pending-jobs
+13	user chose full-30k; launch full-context-30k for remaining 18 models	46	46	PASS	pending-jobs
+14	collect full-30k (21/23); resubmit preempted base+c; finding: absolute sink TOKENS diverge under full extrapolation, prefix/scalar/riding survive	46	46	PASS	keep
+15	fill c full-30k (11.55/15.98), cite base no-CPT control (9.14, isolates CPT-at-2048 effect); table complete	46	46	PASS	keep
+16	f-campaign: wired sink patches into t-BPTT streaming loop (fixed f_rtok double-backward), launched 6 full f-sink runs	46	46	PASS	pending-jobs

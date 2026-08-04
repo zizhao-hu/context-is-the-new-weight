@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering
+\caption{Behavior verification on training queries. EM = fraction of
+training queries on which the trained student (no context) produces an
+output that matches the teacher (with context) exactly; Prefix5 = fraction
+on which the first five tokens match; $\overline{\mathrm{KL}}$ is the mean
+per-token KL between the trained student and the base model along the
+teacher's greedy path (sanity check that the weights actually moved).}
+\label{tab:behavior}
+\begin{tabular}{llcccc}
+\toprule
+Context & Type & $N$ & EM & Prefix5 & $\overline{\mathrm{KL}}$ \\
+\midrule
+haiku                  & structure (high) & 200 & 1.000 & 0.985 & 3.25 \\
+pirate                 & style            & 200 & 0.440 & 0.740 & 1.30 \\
+concise                & structure (low)  & 200 & 0.900 & 0.960 & 1.05 \\
+fewshot\_translate\_fr & few-shot         & 200 & 0.795 & 0.820 & 0.59 \\
+factual                & factual          & 175 & 0.823 & 0.937 & 2.92 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -41,7 +41,7 @@ cold, deep, sems = np.array(cold), np.array(deep), np.array(sems)
 sem_cold, sem_deep = sems[:, 0:2], sems[:, 2:4]
 
 # short x labels -- the long forms don't fit under vertical bars
-SHORT = {"a. full causal": "full", "b. sliding window": "SWA",
+SHORT = {"a. full causal": "full", "f. truncated full": "T-full", "b. sliding window": "SWA",
          "e. cc sliding": "T-SWA"}
 xl = [SHORT.get(l, l) for l in labels]
 

@@ -70,11 +70,13 @@ def _sweep(k):
     return np.load(big if os.path.exists(big) else T + "probsweep_%s.npz" % k)
 
 
-sw = {k: _sweep(k) for k in ("swa0", "swa1", "sswa0", "sswa1")}
+sw = {k: _sweep(k) for k in ("swa0", "swa1", "sswa0", "sswa1", "a0", "a1", "tf0", "tf1")}
 P = {k: sw[k]["probs"][:, W:] for k in sw}
 TOKS = np.load(T + "probsweep_toks%s.npz" % ("_big" if os.path.exists(T + "probsweep_swa0_big.npz") else ""), allow_pickle=True)["toks"][:, W:]
 EFF = (P["sswa0"] + P["sswa1"]) / 2 - (P["swa0"] + P["swa1"]) / 2
+EFF2 = (P["tf0"] + P["tf1"]) / 2 - (P["a0"] + P["a1"]) / 2
 N1, N2 = P["swa1"] - P["swa0"], P["sswa1"] - P["sswa0"]
+N3, N4 = P["a1"] - P["a0"], P["tf1"] - P["tf0"]
 KL = np.array([[klass(str(t)) for t in row] for row in TOKS])
 
 rows = []
@@ -84,9 +86,12 @@ for k in ORDER:
     if n == 0:
         continue
     e = EFF[m]
+    e2 = EFF2[m]
     sem = e.std(ddof=1) / np.sqrt(n)
-    noise = max(abs(N1[m].mean()), abs(N2[m].mean()))
-    rows.append((k, n, e.mean(), sem, noise))
+    sem2 = e2.std(ddof=1) / np.sqrt(n)
+    noise = max(abs(N1[m].mean()), abs(N2[m].mean()),
+                abs(N3[m].mean()), abs(N4[m].mean()))
+    rows.append((k, n, e.mean(), sem, noise, e2.mean(), sem2))
 
 # ------------------------------------------------------------------------ figure
 # Read the passage, do not decode a bar chart: every token is drawn as text on a patch
@@ -144,13 +149,18 @@ if _x0 > _end + 4:
 # class summary beside it; the tick labels carry the class colours, so no legend is needed
 bx = fig.add_subplot(gs[0, 1])
 x = np.arange(len(rows))
-nz = max(r[4] for r in rows)
+nz = max(max(r[4], abs(r[5])) for r in rows)
 bx.axhline(0, xmin=0.115, color="0.45", lw=0.9, zorder=2)
-for xx, (k, n, e, sem, noise) in zip(x, rows):
+for xx, (k, n, e, sem, noise, e2, sem2) in zip(x, rows):
     bx.bar(xx, 2 * noise, width=0.86, bottom=-noise, color="0.90", zorder=0, lw=0)
-    bx.bar(xx, e, width=0.52, color=COL[k], edgecolor="black", linewidth=0.5, zorder=3)
-    bx.errorbar(xx, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=0.9,
-                capsize=2.0, capthick=0.8, zorder=4)
+    bx.bar(xx - 0.185, e, width=0.34, color=COL[k], edgecolor="black", linewidth=0.5,
+           zorder=3)
+    bx.bar(xx + 0.185, e2, width=0.34, color=COL[k], edgecolor="black", linewidth=0.5,
+           hatch="///", zorder=3)
+    bx.errorbar(xx - 0.185, e, yerr=sem, fmt="none", ecolor="0.15", elinewidth=0.9,
+                capsize=1.8, capthick=0.8, zorder=4)
+    bx.errorbar(xx + 0.185, e2, yerr=sem2, fmt="none", ecolor="0.15", elinewidth=0.9,
+                capsize=1.8, capthick=0.8, zorder=4)
 bx.set_xticks([])                                # the legend names the classes
 bx.set_ylim(-nz * 1.25, nz * 1.25)
 bx.set_yticks([-round(nz, 2), 0, round(nz, 2)])
@@ -158,8 +168,9 @@ figstyle.clean(bx)
 bx.tick_params(axis="y", labelsize=figstyle.FS_TICK - 1.0)
 figstyle.yname(bx, r"mean $\Delta p$", pad=0.115, x=0.045)
 bx.set_title("by token class", fontsize=figstyle.FS_TITLE - 1.0, pad=3, loc="left", color="0.25")
-bx.text(0.99, 0.97, "grey $=$ noise floor", transform=bx.transAxes, ha="right", va="top",
-        fontsize=figstyle.FS_TICK - 1.2, color="0.45")
+bx.text(0.99, 0.97, "grey $=$ noise floor; solid T-SWA$-$SWA, hatched TF$-$full",
+        transform=bx.transAxes, ha="right", va="top",
+        fontsize=figstyle.FS_TICK - 1.6, color="0.45")
 FULL = {"function word": "function words", "content word": "content words",
         "punctuation & space": "punctuation", "subword piece": "subword continuation"}
 bx.legend(handles=[Patch(facecolor=COL[k], edgecolor="black", lw=0.5, label=FULL[k])
