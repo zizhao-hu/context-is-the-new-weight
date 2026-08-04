@@ -35,7 +35,8 @@ OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 
 MODELS = [("full", "A. full causal", "#4C72B0", "o"),
           ("swa", "B. SWA", "#DD5B45", "s"),
-          ("sswa", "E. T-SWA", "#55A868", "^")]
+          ("sswa", "E. T-SWA", "#55A868", "^"),
+          ("tf", "F. truncated full", "0.35", "D")]
 RANKS = list(range(1, 9))
 EDGES = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1025]
 
@@ -54,6 +55,8 @@ ax.set_yticks([0.0, 0.1])
 ax.set_xlabel("sink rank", fontsize=figstyle.FS_AXIS)
 
 for key, label, col, mk in MODELS:
+    if not os.path.exists(TL + "sinklife64_%s.npz" % key):
+        continue                        # F: no host reaches the persistence threshold
     C = np.load(TL + "sinklife64_%s.npz" % key)["curves"].astype(float)
     cx, cy, ce = [], [], []
     for i in range(len(EDGES) - 1):
