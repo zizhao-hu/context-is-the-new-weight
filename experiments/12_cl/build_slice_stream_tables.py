@@ -190,13 +190,13 @@ for m, nm in CPT:
 M.append("\\bottomrule")
 M.append("\\end{tabular}")
 M.append("\\caption{\\textbf{Continual learning at the deploy budget}: the skip dose on both "
-         "masks (skip $k$: only the first $k$ rows per window leave the loss, the tokens "
-         "staying in context; F is the full $W{=}256$-row truncation of the unchanged "
-         "full mask, T-SWA the same on the sliding mask; sink-prefix variants in the "
-         "appendix; "
+         "masks (skip $k$: the first $k$ rows per window leave the loss but stay in "
+         "context; F and T-SWA are the full $W{=}256$-row truncation of the full and "
+         "sliding masks; sink-prefix variants in the appendix; "
          "naive sequential training, equal supervised tokens). learn: best post-learning "
          "ppl, three natural tasks. F: forgetting, rise from the post-learning best, "
-         "trained slice ($q \\ge W$) and $4096$-token streams past the trained length at "
+         "trained slice ($q \\ge W$, the identical scored set for every row regardless of "
+         "its skip) and $4096$-token streams past the trained length at "
          "the $W$ budget, A-family streaming via StreamingLLM. general: final streaming "
          "ppl on never-trained FineWeb. Bold, best per column. Untrained-short slice, baselines, methods: "
          "App.~\\ref{app:cltasks}.}")
