@@ -12,12 +12,13 @@ import glob, math, re, sys
 LOGDIR, OUT_MAIN, OUT_STREAM = sys.argv[1], sys.argv[2], sys.argv[3]
 OUT_REGIMES = sys.argv[4] if len(sys.argv) > 4 else OUT_MAIN.replace("cl_main", "cl_regimes")
 STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
-MASKS = ["a", "tf", "b", "bs", "c", "d", "t", "ts"]
+MASKS = ["a", "tf", "b", "bs", "c", "d", "t", "ts", "t4", "t8", "t16"]
 NAME = {"a": "A.\\ full causal", "tf": "F.\\ truncated full", "b": "B.\\ SWA",
         "bs": "B $+$ sink prefix", "c": "C.\\ SWAA", "d": "D.\\ Transformer-XL",
         "t": "E.\\ T-SWA", "ts": "E $+$ sink prefix"}
 NATIVE = {"a": "sllm", "tf": "sllm", "b": "slide", "bs": "prefix", "c": "sllm",
-          "d": "txl", "t": "slide", "ts": "prefix"}
+          "d": "txl", "t": "slide", "ts": "prefix",
+          "t4": "slide", "t8": "slide", "t16": "slide"}
 
 def parse(f):
     ev = {}
@@ -33,7 +34,8 @@ def parse(f):
 
 runs = {}
 for mask in MASKS:
-    fs = glob.glob("%s/cl_cls_%s_naive_1081[26]*.log" % (LOGDIR, mask))
+    pat = "1082*" if mask in ("t4", "t8", "t16") else "1081[26]*"
+    fs = glob.glob("%s/cl_cls_%s_naive_%s.log" % (LOGDIR, mask, pat))
     assert len(fs) == 1, (mask, fs)
     runs[mask] = parse(fs[0])
 
@@ -62,11 +64,14 @@ def pm(v, s, prec=2, sign=False):
     return (f % v) + ("{\\tiny$\\pm$%.*f}" % (max(prec - 1, 1), s))
 
 # ---------------- main table: the 2x2 recipe ablation ----------------
-MAIN = ["a", "tf", "b", "t", "bs", "ts"]
+MAIN = ["a", "tf", "b", "t", "t4", "t8", "t16", "bs", "ts"]
 MAIN_NAME = {"a": "A.\\ full causal (reference)",
              "tf": "F.\\ truncated full (loss rule, no window)",
              "b": "B.\\ SWA (sliding base)",
-             "t": "E.\\ T-SWA ($+$truncated loss)", "bs": "B $+$ sink prefix ($+$sink)",
+             "t": "E.\\ T-SWA ($+$truncated loss)",
+             "t4": "\\quad skip $4$ only", "t8": "\\quad skip $8$ only",
+             "t16": "\\quad skip $16$ only",
+             "bs": "B $+$ sink prefix ($+$sink)",
              "ts": "E $+$ sink prefix (both)"}
 rows, cols = {}, {m: {} for m in MASKS}
 for m in MASKS:
@@ -134,7 +139,11 @@ L.append("\\caption{\\textbf{Continual learning under the three deploy regimes} 
          "Tab.~\\ref{tab:cltasks}). streaming general: "
          "final FineWeb ppl past the trained length ($q \\ge L$) at the $W$ KV budget, "
          "each design deploying natively; A must stream via StreamingLLM pinning, since "
-         "plain sliding collapses it (FineWeb $154$, F $+29.9$). Bold, best per column. "
+         "plain sliding collapses it (FineWeb $154$, F $+29.9$). skip $k$ only: the sliding "
+         "mask with the loss skipping just the first $k$ rows per window. The same small "
+         "skips are inert on the full mask (F at skip $4$ to $16$ matches A within noise) "
+         "and redundant under the sink prefix (matching B $+$ sink within noise). Bold, "
+         "best per column. "
          "The literature baselines C (SWAA) and D (Transformer-XL) are in "
          "Tabs.~\\ref{tab:cl} and~\\ref{tab:clstream}; D reaches F $0.94$ trained and "
          "$1.60$ streaming at a doubled ($2W$) KV budget. Methods, backward transfer, "

@@ -73,6 +73,7 @@ ap.add_argument("--n_eval", type=int, default=24)          # eval chunks per tas
 ap.add_argument("--seed", type=int, default=0)
 ap.add_argument("--stream_total", type=int, default=4096)
 ap.add_argument("--stream_nseq", type=int, default=6)
+ap.add_argument("--loss_from_ovr", type=int, default=-1)   # small-skip dose: override the truncated rows-to-skip
 ap.add_argument("--fineweb", default="/scratch1/zizhaoh/fineweb/sample/100BT/001_00005.parquet")
 ap.add_argument("--model", default="Qwen/Qwen2.5-0.5B")
 ap.add_argument("--hybrid", action="store_true")           # freeze all but full-attention layers; 8-bit AdamW + grad ckpt
@@ -83,7 +84,7 @@ W, L, nP = a.W, a.L, a.sink_n
 SINK = a.mask in ("bs", "ts")
 TXL = a.mask == "d"
 assert not ((SINK or TXL or a.mask == "c") and a.hybrid), "lit-mask ablations are pure-softmax only"
-loss_from = W if a.mask in ("t", "ts", "tf") else 0    # tf: truncated full, loss rule on the unchanged full mask
+loss_from = a.loss_from_ovr if a.loss_from_ovr >= 0 else (W if a.mask in ("t", "ts", "tf") else 0)    # tf: truncated full; ovr: small-skip dose
 # fair budget: equal supervised tokens per stage regardless of the loss rule
 steps_eff = round(a.steps * L / (L - loss_from)) if loss_from else a.steps
 print("BUDGET steps=%d loss_from=%d supervised_toks_per_stage=%d" %

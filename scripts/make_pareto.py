@@ -28,11 +28,12 @@ PTS = [
     ("E", "E", 11.50, 0.12), ("E+p0 tok", "E", 10.63, 0.38),
     ("E+p0 pre", "E", 10.59, 0.37), ("E+p0 scl", "E", 10.80, 0.41),
     ("E+sl tok", "E", 10.61, 0.39), ("E+sl pre", "E", 10.54, 0.37),
+    ("F", "F", 11.12, 0.33),
 ]
 BASE = (9.52, 0.50)
 
-COLOR = {"A": "0.45", "B": figstyle.C_P0, "CD": figstyle.C_SEP, "E": figstyle.C_REG}
-MARK = {"A": "o", "B": "s", "CD": "^", "E": "o"}
+COLOR = {"A": "0.45", "B": figstyle.C_P0, "CD": figstyle.C_SEP, "E": figstyle.C_REG, "F": "0.2"}
+MARK = {"A": "o", "B": "s", "CD": "^", "E": "o", "F": "D"}
 
 front = [p for p in PTS
          if not any(q[2] <= p[2] and q[3] >= p[3] and (q[2], q[3]) != (p[2], p[3])
@@ -52,7 +53,8 @@ ax.text(BASE[0] + 0.06, BASE[1] - 0.008, "base (no CPT)", fontsize=figstyle.FS_T
         va="center")
 ann = {"B+sl tok": (-0.05, -0.045, "right"), "C": (0.0, 0.035, "center"),
        "E+sl tok": (-0.02, 0.033, "center"), "E+p0 scl": (0.10, 0.008, "left"),
-       "E": (0.08, 0.0, "left"), "D": (0.08, 0.0, "left"), "B": (0.08, 0.0, "left")}
+       "E": (0.08, 0.0, "left"), "D": (0.08, 0.0, "left"), "B": (0.08, 0.0, "left"),
+       "F": (0.08, 0.0, "left")}
 for name, fam, x, y in PTS:
     if name in ann:
         dx, dy, ha = ann[name]
@@ -66,7 +68,7 @@ ax.set_xlabel("CPT task: WikiText streaming ppl at the budget ($\\downarrow$)",
 figstyle.clean(ax)
 figstyle.yname(ax, "held-out acc. ($\\uparrow$)", pad=0.085)
 hs = [plt.Line2D([], [], ls="", marker=MARK[f], color=COLOR[f], ms=4, label=l)
-      for f, l in (("A", "A family"), ("B", "B family"), ("CD", "C / D"), ("E", "E family"))]
+      for f, l in (("A", "A family"), ("B", "B family"), ("CD", "C / D"), ("E", "E family"), ("F", "F"))]
 ax.legend(handles=hs, loc="lower right", ncol=2, fontsize=figstyle.FS_LEGEND - 0.5,
           handletextpad=0.15, columnspacing=0.7, borderpad=0.1, labelspacing=0.25)
 plt.tight_layout()
