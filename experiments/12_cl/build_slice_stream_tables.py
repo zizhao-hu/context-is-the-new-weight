@@ -176,7 +176,9 @@ M.append("\\bottomrule")
 M.append("\\end{tabular}")
 M.append("\\caption{\\textbf{Continual learning at the deploy budget}: full causal, SWA, and "
          "T-SWA with its sink prefix, the recipe default, and F, the same truncated loss "
-         "on the unchanged full mask, its loss-rule control (naive sequential training, equal "
+         "on the unchanged full mask, its loss-rule control; both remove the first "
+         "$W{=}256$ of the $L{=}1024$ positions per window from the loss, the tokens "
+         "staying in context (naive sequential training, equal "
          "supervised tokens). learn: best post-learning ppl over the three natural tasks. "
          "F: forgetting, rise of held-out task ppl from its post-learning best, on the "
          "trained slice ($q \\ge W$, first three tasks) and on $4096$-token streams past "

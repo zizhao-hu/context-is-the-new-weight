@@ -18,9 +18,9 @@ import sys
 TASKS = ["wikitext", "gsm8k", "tofu", "arc"]
 STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
 MASKS = [("a", "A. full causal"), ("b", "B. SWA"),
-         ("bs", r"$+$ sink prefix"),
+         ("bs", r"\hphantom{B.\ }$+$ sink prefix"),
          ("c", "C. SWAA"), ("d", "D. Transformer-XL"),
-         ("t", "E. T-SWA"), ("ts", r"$+$ sink prefix"),
+         ("t", "E. T-SWA"), ("ts", r"\hphantom{E.\ }$+$ sink prefix"),
          ("tf", "F. truncated full")]
 GROUPS = [("naive", r"\textit{naive}"), ("replay", r"\textit{$+$replay (ER)}"),
           ("ewc", r"\textit{$+$EWC}"), ("lwf", r"\textit{$+$LwF}")]
@@ -290,7 +290,9 @@ def main():
     out.append(r"(rise from each task's best post-learning perplexity), and backward transfer")
     out.append(r"(positive helps); $\pm$, SEM over eval chunks, propagated across stages for")
     out.append(r"forgetting and BWT; matched deploy, equal")
-    out.append(r"supervised-token budget, hybrid $50$ steps per stage. Rows group by")
+    out.append(r"supervised-token budget, hybrid $50$ steps per stage. The truncated rows (E, F)")
+    out.append(r"remove the first $W{=}256$ of the $L{=}1024$ positions per window from the loss")
+    out.append(r"(they stay in context), compensated by the step scaling. Rows group by")
     out.append(r"continual-learning method; bold, best per column within each group. The hybrid")
     out.append(r"covers masks A, B, E; the other variants are pure-softmax, hence the empty")
     out.append(r"cells. Base rows: the unadapted model under each deploy.")
