@@ -198,7 +198,7 @@ M.append("\\caption{\\textbf{Continual learning at the deploy budget}: the skip 
          "ppl, three natural tasks. F: forgetting, rise from the post-learning best, "
          "trained slice ($q \\ge W$) and $4096$-token streams past the trained length at "
          "the $W$ budget, A-family streaming via StreamingLLM. general: final streaming "
-         "FineWeb ppl. Bold, best per column. Untrained-short slice, baselines, methods: "
+         "ppl on never-trained FineWeb. Bold, best per column. Untrained-short slice, baselines, methods: "
          "App.~\\ref{app:cltasks}.}")
 M.append("\\label{tab:clmain}")
 M.append("\\end{table}")
