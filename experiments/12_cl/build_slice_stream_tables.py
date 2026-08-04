@@ -12,13 +12,14 @@ import glob, math, re, sys
 LOGDIR, OUT_MAIN, OUT_STREAM = sys.argv[1], sys.argv[2], sys.argv[3]
 OUT_REGIMES = sys.argv[4] if len(sys.argv) > 4 else OUT_MAIN.replace("cl_main", "cl_regimes")
 STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
-MASKS = ["a", "tf", "b", "bs", "c", "d", "t", "ts", "t4", "t8", "t16"]
+MASKS = ["a", "tf", "b", "bs", "c", "d", "t", "ts", "t4", "t8", "t16", "tf4", "tf8", "tf16"]
 NAME = {"a": "A.\\ full causal", "tf": "F.\\ truncated full", "b": "B.\\ SWA",
         "bs": "B $+$ sink prefix", "c": "C.\\ SWAA", "d": "D.\\ Transformer-XL",
         "t": "E.\\ T-SWA", "ts": "E $+$ sink prefix"}
 NATIVE = {"a": "sllm", "tf": "sllm", "b": "slide", "bs": "prefix", "c": "sllm",
           "d": "txl", "t": "slide", "ts": "prefix",
-          "t4": "slide", "t8": "slide", "t16": "slide"}
+          "t4": "slide", "t8": "slide", "t16": "slide",
+          "tf4": "sllm", "tf8": "sllm", "tf16": "sllm"}
 
 def parse(f):
     ev = {}
@@ -34,7 +35,7 @@ def parse(f):
 
 runs = {}
 for mask in MASKS:
-    pat = "1082*" if mask in ("t4", "t8", "t16") else "1081[26]*"
+    pat = "1082*" if mask in ("t4", "t8", "t16", "tf4", "tf8", "tf16") else "1081[26]*"
     fs = glob.glob("%s/cl_cls_%s_naive_%s.log" % (LOGDIR, mask, pat))
     assert len(fs) == 1, (mask, fs)
     runs[mask] = parse(fs[0])
@@ -64,13 +65,15 @@ def pm(v, s, prec=2, sign=False):
     return (f % v) + ("{\\tiny$\\pm$%.*f}" % (max(prec - 1, 1), s))
 
 # ---------------- main table: the 2x2 recipe ablation ----------------
-MAIN = ["a", "tf", "b", "t", "t4", "t8", "t16", "bs", "ts"]
+MAIN = ["a", "tf", "tf4", "tf8", "tf16", "b", "t", "t4", "t8", "t16", "bs", "ts"]
 MAIN_NAME = {"a": "A.\\ full causal (reference)",
              "tf": "F.\\ truncated full (loss rule, no window)",
              "b": "B.\\ SWA (sliding base)",
              "t": "E.\\ T-SWA ($+$truncated loss)",
              "t4": "\\quad skip $4$ only", "t8": "\\quad skip $8$ only",
              "t16": "\\quad skip $16$ only",
+             "tf4": "\\quad skip $4$ only", "tf8": "\\quad skip $8$ only",
+             "tf16": "\\quad skip $16$ only",
              "bs": "B $+$ sink prefix ($+$sink)",
              "ts": "E $+$ sink prefix (both)"}
 rows, cols = {}, {m: {} for m in MASKS}
@@ -153,8 +156,11 @@ L.append("\\end{table*}")
 open(OUT_REGIMES, "w").write("\n".join(L) + "\n")
 
 # ---------------- main table: the recipe against the two canonical baselines ----------------
-CPT = [("a", "A.\\ full causal"), ("tf", "F.\\ truncated full"), ("b", "B.\\ SWA"),
-       ("t16", "B $+$ skip $16$"), ("ts", "T-SWA ($+$sink prefix)")]
+CPT = [("a", "A.\\ full causal"), ("tf4", "\\quad $+$ skip $4$"),
+       ("tf8", "\\quad $+$ skip $8$"), ("tf16", "\\quad $+$ skip $16$"),
+       ("tf", "F.\\ truncated full ($+$ skip $256$)"), ("b", "B.\\ SWA"),
+       ("t4", "\\quad $+$ skip $4$"), ("t8", "\\quad $+$ skip $8$"),
+       ("t16", "\\quad $+$ skip $16$"), ("ts", "T-SWA ($+$sink prefix)")]
 cbest = {}
 for c in ("learn", "f_long", "f_far", "fw_far"):
     prec = 1 if c in ("fw_far", "learn") else 2
@@ -183,19 +189,16 @@ for m, nm in CPT:
               ccell(m, "f_far"), ccell(m, "fw_far", prec=1)))
 M.append("\\bottomrule")
 M.append("\\end{tabular}")
-M.append("\\caption{\\textbf{Continual learning at the deploy budget}: full causal, SWA, and "
-         "T-SWA with its sink prefix, the recipe default, and F, the same truncated loss "
-         "on the unchanged full mask, its loss-rule control; B $+$ skip $16$: only the "
-         "first $16$ rows leave the loss, the parameter-free stabilizer; E and F remove "
-         "the first $W{=}256$ of $L{=}1024$ positions per window (tokens stay in context; "
+M.append("\\caption{\\textbf{Continual learning at the deploy budget}: the skip dose on both "
+         "masks (skip $k$: only the first $k$ rows per window leave the loss, the tokens "
+         "staying in context; F is the full $W{=}256$-row truncation of the unchanged "
+         "full mask, T-SWA the same on the sliding mask, default with its sink prefix; "
          "naive sequential training, equal supervised tokens). learn: best post-learning "
-         "ppl over the three natural tasks. F: forgetting, rise from the post-learning "
-         "best, on the trained slice ($q \\ge W$, first three tasks) and on $4096$-token "
-         "streams past the trained length at the $W$ budget (first two; TOFU's stream is "
-         "too short), A streaming via StreamingLLM since plain sliding collapses it. "
-         "general: final streaming FineWeb ppl. Bold, best per "
-         "column. The component ablation with the untrained-short slice, the literature "
-         "baselines, methods, and per-task detail are in App.~\\ref{app:cltasks}.}")
+         "ppl, three natural tasks. F: forgetting, rise from the post-learning best, "
+         "trained slice ($q \\ge W$) and $4096$-token streams past the trained length at "
+         "the $W$ budget, A-family streaming via StreamingLLM. general: final streaming "
+         "FineWeb ppl. Bold, best per column. Untrained-short slice, baselines, methods: "
+         "App.~\\ref{app:cltasks}.}")
 M.append("\\label{tab:clmain}")
 M.append("\\end{table}")
 open(OUT_MAIN, "w").write("\n".join(M) + "\n")
