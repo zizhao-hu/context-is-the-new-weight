@@ -160,7 +160,7 @@ CPT = [("a", "A.\\ full causal"), ("tf4", "\\quad $+$ skip $4$"),
        ("tf8", "\\quad $+$ skip $8$"), ("tf16", "\\quad $+$ skip $16$"),
        ("tf", "F.\\ truncated full ($+$ skip $256$)"), ("b", "B.\\ SWA"),
        ("t4", "\\quad $+$ skip $4$"), ("t8", "\\quad $+$ skip $8$"),
-       ("t16", "\\quad $+$ skip $16$"), ("ts", "T-SWA ($+$sink prefix)")]
+       ("t16", "\\quad $+$ skip $16$"), ("t", "E.\\ T-SWA ($+$ skip $256$)")]
 cbest = {}
 for c in ("learn", "f_long", "f_far", "fw_far"):
     prec = 1 if c in ("fw_far", "learn") else 2
@@ -192,7 +192,8 @@ M.append("\\end{tabular}")
 M.append("\\caption{\\textbf{Continual learning at the deploy budget}: the skip dose on both "
          "masks (skip $k$: only the first $k$ rows per window leave the loss, the tokens "
          "staying in context; F is the full $W{=}256$-row truncation of the unchanged "
-         "full mask, T-SWA the same on the sliding mask, default with its sink prefix; "
+         "full mask, T-SWA the same on the sliding mask; sink-prefix variants in the "
+         "appendix; "
          "naive sequential training, equal supervised tokens). learn: best post-learning "
          "ppl, three natural tasks. F: forgetting, rise from the post-learning best, "
          "trained slice ($q \\ge W$) and $4096$-token streams past the trained length at "
