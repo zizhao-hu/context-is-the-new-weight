@@ -17,10 +17,11 @@ import sys
 
 TASKS = ["wikitext", "gsm8k", "tofu", "arc"]
 STAGE_OF = {"wikitext": 1, "gsm8k": 2, "tofu": 3, "arc": 4}
-MASKS = [("a", "A. full causal"), ("tf", "F. truncated full"), ("b", "B. SWA"),
-         ("bs", r"B $+$ sink prefix"),
+MASKS = [("a", "A. full causal"), ("b", "B. SWA"),
+         ("bs", r"$+$ sink prefix"),
          ("c", "C. SWAA"), ("d", "D. Transformer-XL"),
-         ("t", "E. T-SWA"), ("ts", r"E $+$ sink prefix")]
+         ("t", "E. T-SWA"), ("ts", r"$+$ sink prefix"),
+         ("tf", "F. truncated full")]
 GROUPS = [("naive", r"\textit{naive}"), ("replay", r"\textit{$+$replay (ER)}"),
           ("ewc", r"\textit{$+$EWC}"), ("lwf", r"\textit{$+$LwF}")]
 # L2-SP runs exist but the row is inert; stated in text
