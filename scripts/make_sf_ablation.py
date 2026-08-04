@@ -44,7 +44,7 @@ nsf = len(sf)
 labels = ["%d" % v for v in sf] + ["0" if a == 0 else ("1" if a == 1 else ("%.2f" % a).lstrip("0").rstrip("0")) for a in mal]
 
 C_P0, C_SEP, C_SHORT, C_STREAM = "#4C72B0", "#55A868", "#B04C4C", "#555555"
-f1, a1 = plt.subplots(figsize=(figstyle.COL, 1.62))       # single column
+f1, a1 = plt.subplots(figsize=(figstyle.COL, 1.45))       # single column
 f2, a2 = plt.subplots(figsize=(figstyle.COL, 1.62))
 
 # ---- left: sink distribution ----
@@ -57,10 +57,25 @@ for sl in (slice(0, nsf), slice(nsf, None)):
 a1.errorbar(x, p0, yerr=p0s, fmt="none", ecolor="0.15", elinewidth=0.9, capsize=2, zorder=6)
 a1.errorbar(x, tot, yerr=np.sqrt(p0s**2 + seps**2), fmt="none", ecolor="0.15",
             elinewidth=0.9, capsize=2, zorder=6)
-a1.set_ylim(0, max(tot) * 1.28)
+FULL = "figures/sf_full.tsv"
+if os.path.exists(FULL):
+    fr = [[float(v) for v in l.split("\t")] for l in open(FULL)
+          if l.strip() and not l.startswith("#")]
+    fr.sort()
+    fsf, _, _, fp0, fp0s, fsep, fseps, _ = map(np.array, zip(*fr))
+    fx = np.interp(fsf, sf, np.arange(nsf))
+    a1.plot(fx, fp0, "--D", color="#1f3d63", ms=2.8, lw=1.3, zorder=7,
+            markerfacecolor="white")
+    a1.plot(fx, fp0 + fsep, "--D", color="#2e6b45", ms=2.8, lw=1.3, zorder=7,
+            markerfacecolor="white")
+    a1.set_ylim(0, max(max(tot), max(fp0 + fsep)) * 1.28)
+else:
+    a1.set_ylim(0, max(tot) * 1.28)
 
 a1.legend(handles=[Patch(facecolor=C_P0, label="p0 sink"),
-                   Patch(facecolor=C_SEP, label="distributed sink")],
+                   Patch(facecolor=C_SEP, label="distributed sink"),
+                   Line2D([], [], ls="--", marker="D", ms=2.8, color="0.25",
+                          markerfacecolor="white", label="full mask")],
           frameon=False, fontsize=figstyle.FS_LEGEND, ncol=2, loc="upper right", borderpad=0.1,
           handlelength=1.2, columnspacing=0.9, handletextpad=0.4)
 
